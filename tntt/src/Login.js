@@ -47,8 +47,6 @@ const useStyles = theme => ({
   }
 });
 
-
-
 class Signin extends React.Component {
   constructor(props) {
     super(props);
@@ -56,7 +54,7 @@ class Signin extends React.Component {
     this.state = {
       username: "",
       password: "",
-      isHidden: true
+      isHidden: true,
     };
   }
 
@@ -70,8 +68,18 @@ class Signin extends React.Component {
     this.setState({isHidden: !this.state.isHidden});
   }
 
-  checkAccount = (event) => {
-    console.log('aaaa');
+  onChange = (e, type) => {
+    e.preventDefault()
+    const value = e.target.value;
+    const result = {};
+    result[type] = value;
+    this.setState(result);
+    this.setState({isUsernameEmpty: !this.state.isUsernameEmpty});
+  }
+
+  checkAccount = (e) => {
+    e.preventDefault()
+    console.log(this.state.username + ' ' + this.state.password);
   }
 
   render = () => {
@@ -100,6 +108,7 @@ class Signin extends React.Component {
                 name="username"
                 autoComplete="username"
                 autoFocus
+                onChange={e => this.onChange(e, 'username')}
               />
               <TextField
                 variant="outlined"
@@ -111,6 +120,7 @@ class Signin extends React.Component {
                 type={this.state.isHidden ? "password": "text"}
                 id="password"
                 autoComplete="current-password"
+                onChange={e => this.onChange(e, 'password')}
                 InputProps={{
                   endAdornment: (
                     <InputAdornment position="end">
@@ -130,7 +140,8 @@ class Signin extends React.Component {
                 label="Remember me"
               />
               <Button
-                type="submit"
+                // type="submit"
+                disabled={(!this.state.username || !this.state.password)? true : false}
                 fullWidth
                 variant="contained"
                 color="primary"

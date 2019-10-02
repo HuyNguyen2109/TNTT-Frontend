@@ -18,6 +18,7 @@ import VisibilityOff from '@material-ui/icons/VisibilityOff';
 import IconButton from '@material-ui/core/IconButton';
 import InputAdornment from '@material-ui/core/InputAdornment';
 import SnackDialog from './SnackerBar';
+import backgroundImage from './img/background.JPG';
 
 import CryptoJS from 'crypto-js';
 
@@ -26,7 +27,7 @@ const useStyles = theme => ({
     height: '100vh',
   },
   image: {
-    backgroundImage: 'url(https://source.unsplash.com/random)',
+    backgroundImage: `url(${backgroundImage})`,
     backgroundRepeat: 'no-repeat',
     backgroundSize: 'cover',
     backgroundPosition: 'center',
@@ -57,6 +58,7 @@ class Signin extends React.Component {
     this.state = {
       username: "",
       password: "",
+      oldPassword: "",
       newPassword: "",
       confirmNewPassword: "",
       isHidden: true,
@@ -66,7 +68,7 @@ class Signin extends React.Component {
       isDefaultPassword: false,
       snackerBarStatus: false,
       snackbarMessage: "",
-      snackbarType: "",
+      snackbarType: "success",
     };
   }
 
@@ -94,6 +96,8 @@ class Signin extends React.Component {
   checkAccount = (e) => {
     e.preventDefault()
     if(this.state.password === this.state.defaultPassword) {
+      this.setState({oldPassword: this.state.password});
+      this.setState({password: ""});
       this.setState({snackbarType: "info"});
       this.setState({isDefaultPassword: true});
       this.setState({snackerBarStatus: true});
@@ -169,6 +173,7 @@ class Signin extends React.Component {
                   type={this.state.isNewPasswordHidden ? "password": "text"}
                   id="new-password"
                   autoComplete="current-password"
+                  value={this.state.newPassword}
                   onChange={e => this.onChange(e, 'newPassword')}
                   InputProps={{
                     endAdornment: (
@@ -195,6 +200,7 @@ class Signin extends React.Component {
                   id="confirm-password"
                   autoComplete="current-password"
                   onChange={e => this.onChange(e, 'confirmNewPassword')}
+                  value={this.state.confirmNewPassword}
                   InputProps={{
                     endAdornment: (
                       <InputAdornment position="end">
@@ -276,12 +282,12 @@ class Signin extends React.Component {
               
               <Grid container>
                 <Grid item xs>
-                  <Link href="#" variant="body2">
+                  <Link href="#">
                     Quên mật khẩu?
                   </Link>
                 </Grid>
                 <Grid item>
-                    <Link href="#" variant="body2">
+                    <Link href="/dang-ki">
                       {"Chưa có tài khoản? Đăng ký"}
                     </Link>
                 </Grid>

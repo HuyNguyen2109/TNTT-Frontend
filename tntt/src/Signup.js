@@ -21,6 +21,8 @@ import useMediaQuery from '@material-ui/core/useMediaQuery';
 import { useTheme } from '@material-ui/core/styles';
 import SnackDialog from './SnackerBar';
 
+import { Redirect } from 'react-router';
+
 const useStyles = theme => ({
   '@global': {
     body: {
@@ -58,10 +60,17 @@ const useStyles = theme => ({
 const ResponsiveDialog = (props) => {
   const theme = useTheme();
   const fullScreen = useMediaQuery(theme.breakpoints.down('sm'));
+  const [redirect, setRedirect] = React.useState(false);
 
   const handleClose = () => {
-    window.location.reload()
+    setRedirect(true);
   };
+
+  if(redirect){
+    return(
+      <Redirect push to="/" />
+    )
+  }
 
   return (
     <div>
@@ -81,7 +90,7 @@ const ResponsiveDialog = (props) => {
         </DialogContent>
         <DialogActions>
           <Button onClick={handleClose} color="primary" autoFocus>
-            Agree
+            Đồng ý
           </Button>
         </DialogActions>
       </Dialog>
@@ -284,7 +293,7 @@ class Signup extends React.Component {
             <ResponsiveDialog open={this.state.openDialog} />
             <Grid container justify="flex-end">
               <Grid item>
-                <Link href="#" variant="body2">
+                <Link href="/">
                   Bạn đã có tài khoản? Đăng nhập ngay!
               </Link>
               </Grid>

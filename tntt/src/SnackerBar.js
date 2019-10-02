@@ -12,7 +12,7 @@ import { amber, green } from '@material-ui/core/colors';
 
 import { withStyles } from '@material-ui/core/styles';
 
-const useStyle = theme => ({
+const useStyles = theme => ({
   close: {
     padding: theme.spacing(0.5),
   },
@@ -104,4 +104,4 @@ class SnackDialog extends React.Component {
   }
 }
 
-export default withStyles(useStyle)(SnackDialog);
+export default withStyles(useStyles)(SnackDialog);

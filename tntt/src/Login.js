@@ -17,6 +17,9 @@ import Visibility from '@material-ui/icons/Visibility';
 import VisibilityOff from '@material-ui/icons/VisibilityOff';
 import IconButton from '@material-ui/core/IconButton';
 import InputAdornment from '@material-ui/core/InputAdornment';
+import SnackDialog from './SnackerBar';
+
+import CryptoJS from 'crypto-js';
 
 const useStyles = theme => ({
   root: {
@@ -54,18 +57,29 @@ class Signin extends React.Component {
     this.state = {
       username: "",
       password: "",
+      newPassword: "",
+      confirmNewPassword: "",
       isHidden: true,
+      isNewPasswordHidden: true,
+      isConfirmPasswordHidden: true,
+      defaultPassword: "1",
+      isDefaultPassword: false,
+      snackerBarStatus: false,
+      snackbarMessage: "",
+      snackbarType: "",
     };
-  }
-
-  componentDidMount = () => {
-    if(this.props.password) {
-      this.setState({password: this.props.password});
-    }
   }
 
   toggleShow = () => {
     this.setState({isHidden: !this.state.isHidden});
+  }
+
+  toggleShowForNewPassword = () => {
+    this.setState({isNewPasswordHidden: !this.state.isNewPasswordHidden});
+  }
+
+  toggleShowForConfirmPassword = () => {
+    this.setState({isConfirmPasswordHidden: !this.state.isConfirmPasswordHidden});
   }
 
   onChange = (e, type) => {
@@ -79,7 +93,38 @@ class Signin extends React.Component {
 
   checkAccount = (e) => {
     e.preventDefault()
-    console.log(this.state.username + ' ' + this.state.password);
+    if(this.state.password === this.state.defaultPassword) {
+      this.setState({snackbarType: "info"});
+      this.setState({isDefaultPassword: true});
+      this.setState({snackerBarStatus: true});
+      this.setState({snackbarMessage: "Có vẻ như bạn vừa nhận được tài khoản từ ban quản trị, hãy đổi mật khẩu để bảo vệ tài khoản của bạn"})
+    }
+    // const plainTextToken = this.state.username + '/' + this.state.password;
+    // let encryptedToken = CryptoJS.AES.encrypt(plainTextToken, this.state.username);
+    // console.log("Token: ",encryptedToken.toString());
+
+    // let bytes = CryptoJS.AES.decrypt(encryptedToken.toString(),this.state.username);
+    // console.log("Plain text: ",bytes.toString(CryptoJS.enc.Utf8));
+  }
+
+  updateAccount = (e) => {
+    e.preventDefault()
+    if(this.state.newPassword !== this.state.confirmNewPassword) {
+      this.setState({snackbarType: "error"});
+      this.setState({snackerBarStatus: true});
+      this.setState({snackbarMessage: "Mật khẩu không khớp"})
+    }
+    else {
+      this.setState({snackbarType: "success"});
+      this.setState({snackerBarStatus: true});
+      this.setState({snackbarMessage: "Cập nhật tài khoản thành công"})
+      this.setState({isDefaultPassword: false});
+      this.setState({password: ""});
+    }
+  }
+
+  callbackSnackerBarHanlder = (callback) => {
+    this.setState({snackerBarStatus: callback})
   }
 
   render = () => {
@@ -88,8 +133,8 @@ class Signin extends React.Component {
     return (
       <Grid container component="main" className={classes.root}>
         <CssBaseline />
-        <Grid item xs={false} sm={4} md={7} className={classes.image} />
-        <Grid item xs={12} sm={8} md={5} component={Paper} elevation={6} square>
+        <Grid item xs={false} sm={4} md={9} className={classes.image} />
+        <Grid item xs={12} sm={8} md={3} component={Paper} elevation={6} square>
           <div className={classes.paper}>
             <Avatar className={classes.avatar}>
               <LockOutlinedIcon />
@@ -109,47 +154,126 @@ class Signin extends React.Component {
                 autoComplete="username"
                 autoFocus
                 onChange={e => this.onChange(e, 'username')}
+                value={this.state.username}
               />
-              <TextField
-                variant="outlined"
-                margin="normal"
-                required
-                fullWidth
-                name="password"
-                label="Mật khẩu"
-                type={this.state.isHidden ? "password": "text"}
-                id="password"
-                autoComplete="current-password"
-                onChange={e => this.onChange(e, 'password')}
-                InputProps={{
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton
-                        edge="end"
-                        aria-label="toggle password visibility"
-                        onClick={this.toggleShow}
-                      >
-                        {this.state.isHidden ? <Visibility /> : <VisibilityOff />}
-                      </IconButton>
-                    </InputAdornment>
-                  ),
-                }}
+              {
+                (this.state.isDefaultPassword)? 
+                <React.Fragment>
+                  <TextField
+                  variant="outlined"
+                  margin="normal"
+                  required
+                  fullWidth
+                  name="new-password"
+                  label="Mật khẩu mới"
+                  type={this.state.isNewPasswordHidden ? "password": "text"}
+                  id="new-password"
+                  autoComplete="current-password"
+                  onChange={e => this.onChange(e, 'newPassword')}
+                  InputProps={{
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton
+                          edge="end"
+                          aria-label="toggle password visibility"
+                          onClick={this.toggleShowForNewPassword}
+                        >
+                          {this.state.isNewPasswordHidden ? <Visibility /> : <VisibilityOff />}
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  }}
+                  />
+                  <TextField
+                  variant="outlined"
+                  margin="normal"
+                  required
+                  fullWidth
+                  name="confirm-password"
+                  label="Xác nhận lại mật khẩu mới"
+                  type={this.state.isConfirmPasswordHidden ? "password": "text"}
+                  id="confirm-password"
+                  autoComplete="current-password"
+                  onChange={e => this.onChange(e, 'confirmNewPassword')}
+                  InputProps={{
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton
+                          edge="end"
+                          aria-label="toggle password visibility"
+                          onClick={this.toggleShowForConfirmPassword}
+                        >
+                          {this.state.isConfirmPasswordHidden ? <Visibility /> : <VisibilityOff />}
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  }}
+                  />
+                  <Button
+                  // type="submit"
+                  disabled={(!this.state.newPassword || !this.state.confirmNewPassword)? true : false}
+                  fullWidth
+                  variant="contained"
+                  color="primary"
+                  className={classes.submit}
+                  onClick = {event => this.updateAccount(event)}
+                  >
+                    Cập nhật tài khoản
+                  </Button>
+                </React.Fragment>
+                : 
+                <React.Fragment>
+                  <TextField
+                  variant="outlined"
+                  margin="normal"
+                  required
+                  fullWidth
+                  name="password"
+                  label="Mật khẩu"
+                  type={this.state.isHidden ? "password": "text"}
+                  id="password"
+                  autoComplete="current-password"
+                  onChange={e => this.onChange(e, 'password')}
+                  value={this.state.password}
+                  InputProps={{
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton
+                          edge="end"
+                          aria-label="toggle password visibility"
+                          onClick={this.toggleShow}
+                        >
+                          {this.state.isHidden ? <Visibility /> : <VisibilityOff />}
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  }}
+                  />
+                  <Button
+                  // type="submit"
+                  disabled={(!this.state.username || !this.state.password)? true : false}
+                  fullWidth
+                  variant="contained"
+                  color="primary"
+                  className={classes.submit}
+                  onClick = {event => this.checkAccount(event)}
+                  >
+                    Đăng nhập
+                  </Button>
+                </React.Fragment>
+              }
+              <SnackDialog 
+                variant={this.state.snackbarType}
+                message={this.state.snackbarMessage} 
+                className={this.state.snackbarType} 
+                callback={this.callbackSnackerBarHanlder} 
+                open={this.state.snackerBarStatus}
               />
               <FormControlLabel
                 control={<Checkbox value="remember" color="primary" />}
                 label="Remember me"
               />
-              <Button
-                // type="submit"
-                disabled={(!this.state.username || !this.state.password)? true : false}
-                fullWidth
-                variant="contained"
-                color="primary"
-                className={classes.submit}
-                onClick = {event => this.checkAccount(event)}
-              >
-                Đăng nhập
-              </Button>
+              
               <Grid container>
                 <Grid item xs>
                   <Link href="#" variant="body2">

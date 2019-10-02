@@ -19,6 +19,7 @@ import DialogContentText from '@material-ui/core/DialogContentText';
 import DialogTitle from '@material-ui/core/DialogTitle';
 import useMediaQuery from '@material-ui/core/useMediaQuery';
 import { useTheme } from '@material-ui/core/styles';
+import SnackDialog from './SnackerBar';
 
 const useStyles = theme => ({
   '@global': {
@@ -51,7 +52,7 @@ const useStyles = theme => ({
   },
   cancel: {
     margin: theme.spacing(-1, 0, 2),
-  }
+  },
 })
 
 const ResponsiveDialog = (props) => {
@@ -94,7 +95,6 @@ class Signup extends React.Component {
     
     this.state = {
       openDialog: false,
-      setCloseDialog: false,
       firstName: "",
       lastName: "",
       email: "",
@@ -102,6 +102,8 @@ class Signup extends React.Component {
       selectedDate: "1990-01-01",
       selectedHolyDate: "1990-01-01",
       defaultDate: "1990-01-01",
+      snackerBarStatus: false,
+      snackbarMessage: "",
     }
   }
 
@@ -113,7 +115,29 @@ class Signup extends React.Component {
   }
 
   validateAndSend = (e) => {
-    this.setState({openDialog: !this.state.openDialog}); 
+    // eslint-disable-next-line
+    const emailRegex = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+    // eslint-disable-next-line
+    const phoneRegex = /^[\+]?[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,6}$/im
+    if(!phoneRegex.test(this.state.phoneNumber) && !emailRegex.test(this.state.email)) {
+      this.setState({snackerBarStatus: true})
+      this.setState({snackbarMessage: "Số điện thoại và email của bạn không hợp lệ"})
+    }
+    else {
+      if(!emailRegex.test(this.state.email)) {
+        this.setState({snackerBarStatus: true})
+        this.setState({snackbarMessage: "Email của bạn không hợp lệ!"})
+      }
+      else {
+        if(!phoneRegex.test(this.state.phoneNumber)) {
+          this.setState({snackerBarStatus: true})
+          this.setState({snackbarMessage: "Số điện thoại của bạn không hợp lệ"})
+        }
+        else {
+          this.setState({openDialog: !this.state.openDialog}); 
+        }
+      }
+    }  
   }
 
   clearAllData = () => {
@@ -126,6 +150,10 @@ class Signup extends React.Component {
       selectedHolyDate: "1990-01-01",
       defaultDate: "1990-01-01"
     })
+  }
+
+  callbackSnackerBarHanlder = (callback) => {
+    this.setState({snackerBarStatus: callback})
   }
 
   render = () => {
@@ -252,11 +280,12 @@ class Signup extends React.Component {
             >
               Xóa
             </Button>
+            <SnackDialog variant="error" message={this.state.snackbarMessage} className="error" callback={this.callbackSnackerBarHanlder} open={this.state.snackerBarStatus} />
             <ResponsiveDialog open={this.state.openDialog} />
             <Grid container justify="flex-end">
               <Grid item>
                 <Link href="#" variant="body2">
-                  Already have an account? Sign in
+                  Bạn đã có tài khoản? Đăng nhập ngay!
               </Link>
               </Grid>
             </Grid>

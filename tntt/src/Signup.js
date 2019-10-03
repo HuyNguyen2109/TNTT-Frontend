@@ -293,8 +293,11 @@ class Signup extends React.Component {
             <ResponsiveDialog open={this.state.openDialog} />
             <Grid container justify="flex-end">
               <Grid item>
-                <Link href="/">
-                  Bạn đã có tài khoản? Đăng nhập ngay!
+                <Link href="/" underline="none">
+                  <Button
+                    size="small"
+                    color="primary"
+                  >Bạn đã có tài khoản? Đăng nhập ngay!</Button>
               </Link>
               </Grid>
             </Grid>

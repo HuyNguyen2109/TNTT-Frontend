@@ -18,7 +18,9 @@ import VisibilityOff from '@material-ui/icons/VisibilityOff';
 import IconButton from '@material-ui/core/IconButton';
 import InputAdornment from '@material-ui/core/InputAdornment';
 import SnackDialog from './SnackerBar';
-import backgroundImage from './img/background.JPG';
+import backgroundImage from './img/background2.jpg';
+import FormDialog from './FormDialog';
+import { Redirect } from 'react-router';
 
 import CryptoJS from 'crypto-js';
 
@@ -69,6 +71,8 @@ class Signin extends React.Component {
       snackerBarStatus: false,
       snackbarMessage: "",
       snackbarType: "success",
+      formDialogStatus: false,
+      isRememberMeChecked: false,
     };
   }
 
@@ -103,6 +107,11 @@ class Signin extends React.Component {
       this.setState({snackerBarStatus: true});
       this.setState({snackbarMessage: "Có vẻ như bạn vừa nhận được tài khoản từ ban quản trị, hãy đổi mật khẩu để bảo vệ tài khoản của bạn"})
     }
+    else {
+      localStorage.setItem('username', this.state.username);
+      localStorage.setItem('isRememberMe', this.state.isRememberMeChecked)
+      this.props.history.push('/temp')
+    }
     // const plainTextToken = this.state.username + '/' + this.state.password;
     // let encryptedToken = CryptoJS.AES.encrypt(plainTextToken, this.state.username);
     // console.log("Token: ",encryptedToken.toString());
@@ -127,12 +136,29 @@ class Signin extends React.Component {
     }
   }
 
+  handleFormDialog = () => {
+    this.setState({formDialogStatus: true});
+  }
+
+  handleRememberMeChanged = (e) => {
+    this.setState({isRememberMeChecked: !this.state.isRememberMeChecked})
+  }
+
   callbackSnackerBarHanlder = (callback) => {
-    this.setState({snackerBarStatus: callback})
+    this.setState({snackerBarStatus: callback});
+  }
+
+  callbackFormDialogHandler = (callback) => {
+    this.setState({formDialogStatus: callback});
   }
 
   render = () => {
     const { classes } = this.props;
+    if(localStorage.getItem('username') !== null && localStorage.getItem('isRememberMe') === true) {
+      return(
+        <Redirect push to="/temp" />
+      )
+    }
 
     return (
       <Grid container component="main" className={classes.root}>
@@ -276,22 +302,33 @@ class Signin extends React.Component {
                 open={this.state.snackerBarStatus}
               />
               <FormControlLabel
-                control={<Checkbox value="remember" color="primary" />}
-                label="Remember me"
+                control={<Checkbox checked={this.state.isRememberMeChecked} value="remember" color="primary" onChange={e => this.handleRememberMeChanged(e)}/>}
+                label="Lưu tài khoản?"
+                
               />
-              
               <Grid container>
                 <Grid item xs>
                   <Link href="#">
-                    Quên mật khẩu?
+                  <Button 
+                    size="small" 
+                    color="primary"
+                    onClick={this.handleFormDialog}
+                    >Quên mật khẩu?</Button>
                   </Link>
                 </Grid>
                 <Grid item>
-                    <Link href="/dang-ki">
-                      {"Chưa có tài khoản? Đăng ký"}
-                    </Link>
+                  <Link href="/dang-ki">
+                    <Button 
+                      size="small" 
+                      color="primary"
+                      >Chưa có tài khoản? Đăng ký</Button>
+                  </Link>
                 </Grid>
               </Grid>
+              <FormDialog 
+                status={this.state.formDialogStatus}
+                callback={this.callbackFormDialogHandler}
+              />
               <Box mt={5}>
                 <Copyright />
               </Box>

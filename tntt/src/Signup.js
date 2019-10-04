@@ -104,6 +104,7 @@ class Signup extends React.Component {
     
     this.state = {
       openDialog: false,
+      holyName: "",
       firstName: "",
       lastName: "",
       email: "",
@@ -143,7 +144,32 @@ class Signup extends React.Component {
           this.setState({snackbarMessage: "Số điện thoại của bạn không hợp lệ"})
         }
         else {
-          this.setState({openDialog: !this.state.openDialog}); 
+          fetch('http://localhost:6000/backend/email/send', {
+            method: 'POST',
+            headers: {
+              'Accept': 'application/json',
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              holyName: this.state.holyName,
+              firstname: this.state.firstName,
+              lastname: this.state.lastName,
+              email: this.state.email,
+              text: `Chi tiết tài khoản
+                Họ và tên: ${this.state.holyName} ${this.state.firstName} ${this.state.lastName}
+                Số điện thoại: ${this.state.phoneNumber},
+                Email: ${this.state.email},
+                Sinh nhật: ${this.state.selectedDate},
+                Bổn mạng: ${this.state.selectedHolyDate}`
+            })
+          })
+          .then((result) => {
+            console.log(result);
+            this.setState({openDialog: !this.state.openDialog});
+          })
+          .catch((err) => {
+            console.log(err);
+          })
         }
       }
     }  
@@ -151,6 +177,7 @@ class Signup extends React.Component {
 
   clearAllData = () => {
     this.setState({
+      holyName: "",
       firstName: "",
       lastName: "",
       email: "",
@@ -180,6 +207,20 @@ class Signup extends React.Component {
         </Typography>
           <form className={classes.form} noValidate>
             <Grid container spacing={2}>
+              <Grid item xs={12}>
+                <TextField
+                  autoComplete="fname"
+                  name="holyName"
+                  variant="outlined"
+                  required
+                  fullWidth
+                  id="holyName"
+                  label="Tên Thánh"
+                  autoFocus
+                  value={this.state.holyName}
+                  onChange={e => this.handleFormChange(e, "holyName")}
+                />
+              </Grid>
               <Grid item xs={12} sm={6}>
                 <TextField
                   autoComplete="fname"
@@ -189,7 +230,6 @@ class Signup extends React.Component {
                   fullWidth
                   id="firstName"
                   label="Họ"
-                  autoFocus
                   value={this.state.firstName}
                   onChange={e => this.handleFormChange(e, "firstName")}
                 />
@@ -266,7 +306,8 @@ class Signup extends React.Component {
               </Grid>
             </Grid>
             <Button
-              disabled={(this.state.firstName !== "" && 
+              disabled={(this.state.holyName !== "" && 
+              this.state.firstName !== "" && 
               this.state.lastName !== "" && 
               this.state.email !== "" && 
               this.state.phoneNumber !== "" && 

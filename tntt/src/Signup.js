@@ -144,10 +144,9 @@ class Signup extends React.Component {
           this.setState({snackbarMessage: "Số điện thoại của bạn không hợp lệ"})
         }
         else {
-          fetch('http://localhost:6000/backend/email/send', {
+          fetch("http://localhost:6000/backend/email/send", {
             method: 'POST',
             headers: {
-              'Accept': 'application/json',
               'Content-Type': 'application/json'
             },
             body: JSON.stringify({

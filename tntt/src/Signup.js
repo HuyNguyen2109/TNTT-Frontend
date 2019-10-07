@@ -1,4 +1,5 @@
 import React from 'react';
+import axios from 'axios';
 import Avatar from '@material-ui/core/Avatar';
 import Button from '@material-ui/core/Button';
 import CssBaseline from '@material-ui/core/CssBaseline';
@@ -144,15 +145,10 @@ class Signup extends React.Component {
           this.setState({snackbarMessage: "Số điện thoại của bạn không hợp lệ"})
         }
         else {
-          fetch("http://localhost:6000/backend/email/send", {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              holyName: this.state.holyName,
-              firstname: this.state.firstName,
-              lastname: this.state.lastName,
+          const signUpData = {
+            holyName: this.state.holyName,
+              firstName: this.state.firstName,
+              lastName: this.state.lastName,
               email: this.state.email,
               text: `Chi tiết tài khoản
                 Họ và tên: ${this.state.holyName} ${this.state.firstName} ${this.state.lastName}
@@ -160,15 +156,36 @@ class Signup extends React.Component {
                 Email: ${this.state.email},
                 Sinh nhật: ${this.state.selectedDate},
                 Bổn mạng: ${this.state.selectedHolyDate}`
+          };
+
+          axios
+            .post('/backend/email/send', signUpData )
+            .then((result) => {
+              console.log(result);
+              this.setState({openDialog: !this.state.openDialog});
             })
-          })
-          .then((result) => {
-            console.log(result);
-            this.setState({openDialog: !this.state.openDialog});
-          })
-          .catch((err) => {
-            console.log(err);
-          })
+            .catch((error) => {
+              if (error.response) {
+                /*
+                * The request was made and the server responded with a
+                * status code that falls out of the range of 2xx
+                */
+                console.log(error.response.data);
+                console.log(error.response.status);
+                console.log(error.response.headers);
+              } else if (error.request) {
+                  /*
+                  * The request was made but no response was received, `error.request`
+                  * is an instance of XMLHttpRequest in the browser and an instance
+                  * of http.ClientRequest in Node.js
+                  */
+                  console.log(error.request);
+              } else {
+                  // Something happened in setting up the request and triggered an Error
+                  console.log('Error', error.message);
+              }
+              console.log(error);
+            })
         }
       }
     }  

@@ -23,6 +23,8 @@ import { useTheme } from '@material-ui/core/styles';
 import SnackDialog from './SnackerBar';
 
 import { Redirect } from 'react-router';
+import { MenuItem } from '@material-ui/core';
+import CircularProgress from '@material-ui/core/CircularProgress';
 
 const useStyles = theme => ({
   '@global': {
@@ -35,6 +37,9 @@ const useStyles = theme => ({
   },
   container: {
     backgroundColor: theme.palette.common.white,
+  },
+  menu: {
+    width: 80,
   },
   paper: {
     marginTop: theme.spacing(8),
@@ -56,6 +61,9 @@ const useStyles = theme => ({
   cancel: {
     margin: theme.spacing(-1, 0, 2),
   },
+  processing: {
+    margin: theme.spacing(1),
+  }
 })
 
 const ResponsiveDialog = (props) => {
@@ -115,11 +123,18 @@ class Signup extends React.Component {
       defaultDate: "1990-01-01",
       snackerBarStatus: false,
       snackbarMessage: "",
+      selectedEmailProvider: "@gmail.com",
+      isLoginClicked: false
     }
   }
 
   handleFormChange = (e, type) => {
-    const data = e.target.value;
+    let data;
+    if(type==='email'){
+      data = e.target.value.replace(/[^\w\s]/gi, "");
+    } else {
+      data = e.target.value
+    }
     const result = {};
     result[type] = data;
     this.setState(result);
@@ -127,64 +142,49 @@ class Signup extends React.Component {
 
   validateAndSend = (e) => {
     // eslint-disable-next-line
-    const emailRegex = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+    const emailRegex = /^[^A-Za-z0-9]$/;
     // eslint-disable-next-line
     const phoneRegex = /^[\+]?[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,6}$/im
+    const fullEmail = this.state.email + this.state.selectedEmailProvider;
+    this.setState({isLoginClicked: true});
     if(!phoneRegex.test(this.state.phoneNumber) && !emailRegex.test(this.state.email)) {
       this.setState({snackerBarStatus: true})
       this.setState({snackbarMessage: "Số điện thoại và email của bạn không hợp lệ"})
+      this.setState({isLoginClicked: false})
     }
     else {
-      if(!emailRegex.test(this.state.email)) {
+      if(!emailRegex.test(fullEmail)) {
         this.setState({snackerBarStatus: true})
         this.setState({snackbarMessage: "Email của bạn không hợp lệ!"})
+        this.setState({isLoginClicked: false})
       }
       else {
         if(!phoneRegex.test(this.state.phoneNumber)) {
           this.setState({snackerBarStatus: true})
           this.setState({snackbarMessage: "Số điện thoại của bạn không hợp lệ"})
+          this.setState({isLoginClicked: false})
         }
         else {
           const signUpData = {
-            holyName: this.state.holyName,
-              firstName: this.state.firstName,
-              lastName: this.state.lastName,
-              email: this.state.email,
-              text: `Chi tiết tài khoản
-                Họ và tên: ${this.state.holyName} ${this.state.firstName} ${this.state.lastName}
-                Số điện thoại: ${this.state.phoneNumber},
-                Email: ${this.state.email},
-                Sinh nhật: ${this.state.selectedDate},
-                Bổn mạng: ${this.state.selectedHolyDate}`
+            subject: `Yêu cầu mở tài khoản cho anh/chị GLV / Quý sơ/thầy ${this.state.holyName} ${this.state.firstName} ${this.state.lastName}`,
+            email: fullEmail,
+            text: `Chi tiết tài khoản
+              Họ và tên: ${this.state.holyName} ${this.state.firstName} ${this.state.lastName}
+              Số điện thoại: ${this.state.phoneNumber},
+              Email: ${fullEmail},
+              Sinh nhật: ${this.state.selectedDate},
+              Bổn mạng: ${this.state.selectedHolyDate}`
           };
 
           axios
             .post('/backend/email/send', signUpData )
             .then((result) => {
-              console.log(result);
               this.setState({openDialog: !this.state.openDialog});
             })
             .catch((error) => {
-              if (error.response) {
-                /*
-                * The request was made and the server responded with a
-                * status code that falls out of the range of 2xx
-                */
-                console.log(error.response.data);
-                console.log(error.response.status);
-                console.log(error.response.headers);
-              } else if (error.request) {
-                  /*
-                  * The request was made but no response was received, `error.request`
-                  * is an instance of XMLHttpRequest in the browser and an instance
-                  * of http.ClientRequest in Node.js
-                  */
-                  console.log(error.request);
-              } else {
-                  // Something happened in setting up the request and triggered an Error
-                  console.log('Error', error.message);
-              }
-              console.log(error);
+              this.setState({isLoginClicked: false})
+              this.setState({snackerBarStatus: true})
+              this.setState({snackbarMessage: "Đã có lỗi xảy ra trong quá trình đăng ký, vui lòng thử lại"})
             })
         }
       }
@@ -209,7 +209,18 @@ class Signup extends React.Component {
   }
 
   render = () => {
-    const { classes } = this.props
+    const { classes } = this.props;
+    const emailProviders = [
+      {
+        value: '@gmail.com'
+      },
+      {
+        value: '@yahoo.com'
+      },
+      {
+        value: '@outlook.com'
+      }
+    ];
 
     return (
       <Container component="main" maxWidth="xs" className={classes.container}>
@@ -263,7 +274,7 @@ class Signup extends React.Component {
                   onChange={e => this.handleFormChange(e, "lastName")}
                 />
               </Grid>
-              <Grid item xs={12}>
+              <Grid item xs={12} sm={7}>
                 <TextField
                   variant="outlined"
                   required
@@ -275,6 +286,31 @@ class Signup extends React.Component {
                   value={this.state.email}
                   onChange={e => this.handleFormChange(e, "email")}
                 />
+              </Grid>
+              <Grid item xs={12} sm={5}>
+                <TextField
+                  variant="outlined"
+                  required
+                  select
+                  fullWidth
+                  id="email-provider"
+                  label="Nhà cung cấp email"
+                  name="email-provider"
+                  autoComplete="email"
+                  value={this.state.selectedEmailProvider}
+                  onChange={e => this.handleFormChange(e, "selectedEmailProvider")}
+                  SelectProps={{
+                    MenuProps: {
+                      className: classes.menu
+                    }
+                  }}
+                >
+                  {emailProviders.map(emailProvider => (
+                    <MenuItem key={emailProvider.value} value={emailProvider.value}>
+                      {emailProvider.value}
+                    </MenuItem>
+                  ))}
+                </TextField>
               </Grid>
               <Grid item xs={12}>
                 <TextField
@@ -322,22 +358,23 @@ class Signup extends React.Component {
               </Grid>
             </Grid>
             <Button
-              disabled={(this.state.holyName !== "" && 
+              disabled={((this.state.holyName !== "" && 
               this.state.firstName !== "" && 
               this.state.lastName !== "" && 
               this.state.email !== "" && 
               this.state.phoneNumber !== "" && 
               this.state.selectedDate !== this.state.defaultDate && 
-              this.state.selectedHolyDate !== this.state.defaultDate) ? false : true}
+              this.state.selectedHolyDate !== this.state.defaultDate) && !this.state.isLoginClicked) ? false : true}
               fullWidth
               variant="contained"
               color="primary"
               className={classes.submit}
               onClick={e => this.validateAndSend(e)}
               >
-                Đăng ký
+                Đăng ký {(this.state.isLoginClicked) ? <CircularProgress className={classes.processing} size={15}></CircularProgress> : null}
             </Button>
             <Button
+            disabled={(this.state.isLoginClicked === false) ? false : true}
             fullWidth
             variant="contained"
             color="secondary"

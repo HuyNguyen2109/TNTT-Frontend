@@ -18,7 +18,7 @@ import VisibilityOff from '@material-ui/icons/VisibilityOff';
 import IconButton from '@material-ui/core/IconButton';
 import InputAdornment from '@material-ui/core/InputAdornment';
 import SnackDialog from './SnackerBar';
-import backgroundImage from './img/background2.jpg';
+import backgroundImage from './img/background3.jpg';
 import FormDialog from './FormDialog';
 import { Redirect } from 'react-router';
 
@@ -148,8 +148,18 @@ class Signin extends React.Component {
     this.setState({snackerBarStatus: callback});
   }
 
-  callbackFormDialogHandler = (callback) => {
+  callbackFormDialogHandler = (callback, snackBarCallback) => {
     this.setState({formDialogStatus: callback});
+    if(snackBarCallback) {
+      this.setState({snackbarType: "info"});
+      this.setState({snackerBarStatus: true});
+      this.setState({snackbarMessage: "Yêu cầu đã được gửi! Xin theo dõi email để nhận lại tài khoản!"})
+    }
+    else {
+      this.setState({snackbarType: "error"});
+      this.setState({snackerBarStatus: true});
+      this.setState({snackbarMessage: "Đã có lỗi xảy ra trong quá trình đăng ký, vui lòng thử lại"})
+    }
   }
 
   render = () => {

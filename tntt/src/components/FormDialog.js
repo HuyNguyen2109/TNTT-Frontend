@@ -28,7 +28,7 @@ class FormDialog extends React.Component {
   }
 
   handleClose = () => {
-    this.props.callback(false);
+    this.props.callback(false, null);
   };
 
   handleChange = (e, type) => {

@@ -1,4 +1,5 @@
 import React from 'react';
+import axios from 'axios';
 import Avatar from '@material-ui/core/Avatar';
 import Button from '@material-ui/core/Button';
 import CssBaseline from '@material-ui/core/CssBaseline';
@@ -21,8 +22,7 @@ import SnackDialog from './SnackerBar';
 import backgroundImage from '../img/background3.jpg';
 import FormDialog from './FormDialog';
 
-import { Redirect } from 'react-router';
-import CryptoJS from 'crypto-js';
+import cryptoJS from 'crypto-js';
 
 const useStyles = theme => ({
   root: {
@@ -103,7 +103,6 @@ class Signin extends React.Component {
   }
 
   checkAccount = (e) => {
-    e.preventDefault()
     if(this.state.password === this.state.defaultPassword) {
       this.setState({oldPassword: this.state.password});
       this.setState({password: ""});
@@ -113,16 +112,30 @@ class Signin extends React.Component {
       this.setState({snackbarMessage: "Có vẻ như bạn vừa nhận được tài khoản từ ban quản trị, hãy đổi mật khẩu để bảo vệ tài khoản của bạn"})
     }
     else {
-      localStorage.setItem('username', this.state.username);
-      localStorage.setItem('isRememberMe', this.state.isRememberMeChecked)
-      this.props.history.push('/temp')
-    }
-    // const plainTextToken = this.state.username + '/' + this.state.password;
-    // let encryptedToken = CryptoJS.AES.encrypt(plainTextToken, this.state.username);
-    // console.log("Token: ",encryptedToken.toString());
+      const loginData = {
+        'username': `${this.state.username}`,
+        'password': `${cryptoJS.AES.encrypt(this.state.password, this.state.username, {
+          mode: cryptoJS.mode.CBC,
+          padding: cryptoJS.pad.Pkcs7
+        })}`
+      };
 
-    // let bytes = CryptoJS.AES.decrypt(encryptedToken.toString(),this.state.username);
-    // console.log("Plain text: ",bytes.toString(CryptoJS.enc.Utf8));
+      axios
+        .post('/backend/user/login', loginData)
+        .then(result => {
+          localStorage.setItem('username', this.state.username);
+          localStorage.setItem('isRememberMe', this.state.isRememberMeChecked);
+          localStorage.setItem('token', result.data.data.token);
+          // this.props.history.push('/temp');
+        })
+        .catch(err => {
+          if(err.message.search('404')) {
+            this.setState({snackbarType: "error"});
+            this.setState({snackerBarStatus: true});
+            this.setState({snackbarMessage: "Mật khẩu không đúng hoặc tài khoản không tồn tại!"})
+          }
+        })
+    }
   }
 
   updateAccount = (e) => {

@@ -144,6 +144,8 @@ class Signup extends React.Component {
     // eslint-disable-next-line
     const emailRegex = /^[^A-Za-z0-9]$/;
     // eslint-disable-next-line
+    const fullEmailRegex = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+    // eslint-disable-next-line
     const phoneRegex = /^[\+]?[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,6}$/im
     const fullEmail = this.state.email + this.state.selectedEmailProvider;
     this.setState({isLoginClicked: true});
@@ -153,7 +155,7 @@ class Signup extends React.Component {
       this.setState({isLoginClicked: false})
     }
     else {
-      if(!emailRegex.test(fullEmail)) {
+      if(!fullEmailRegex.test(fullEmail)) {
         this.setState({snackerBarStatus: true})
         this.setState({snackbarMessage: "Email của bạn không hợp lệ!"})
         this.setState({isLoginClicked: false})

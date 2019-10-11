@@ -124,7 +124,7 @@ class Signup extends React.Component {
       snackerBarStatus: false,
       snackbarMessage: "",
       selectedEmailProvider: "@gmail.com",
-      isLoginClicked: false
+      isSignupClicked: false
     }
   }
 
@@ -148,23 +148,23 @@ class Signup extends React.Component {
     // eslint-disable-next-line
     const phoneRegex = /^[\+]?[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,6}$/im
     const fullEmail = this.state.email + this.state.selectedEmailProvider;
-    this.setState({isLoginClicked: true});
+    this.setState({isSignupClicked: true});
     if(!phoneRegex.test(this.state.phoneNumber) && !emailRegex.test(this.state.email)) {
       this.setState({snackerBarStatus: true})
       this.setState({snackbarMessage: "Số điện thoại và email của bạn không hợp lệ"})
-      this.setState({isLoginClicked: false})
+      this.setState({isSignupClicked: false})
     }
     else {
       if(!fullEmailRegex.test(fullEmail)) {
         this.setState({snackerBarStatus: true})
         this.setState({snackbarMessage: "Email của bạn không hợp lệ!"})
-        this.setState({isLoginClicked: false})
+        this.setState({isSignupClicked: false})
       }
       else {
         if(!phoneRegex.test(this.state.phoneNumber)) {
           this.setState({snackerBarStatus: true})
           this.setState({snackbarMessage: "Số điện thoại của bạn không hợp lệ"})
-          this.setState({isLoginClicked: false})
+          this.setState({isSignupClicked: false})
         }
         else {
           const signUpData = {
@@ -184,7 +184,7 @@ class Signup extends React.Component {
               this.setState({openDialog: !this.state.openDialog});
             })
             .catch((error) => {
-              this.setState({isLoginClicked: false})
+              this.setState({isSignupClicked: false})
               this.setState({snackerBarStatus: true})
               this.setState({snackbarMessage: "Đã có lỗi xảy ra trong quá trình đăng ký, vui lòng thử lại"})
             })
@@ -366,17 +366,17 @@ class Signup extends React.Component {
               this.state.email !== "" && 
               this.state.phoneNumber !== "" && 
               this.state.selectedDate !== this.state.defaultDate && 
-              this.state.selectedHolyDate !== this.state.defaultDate) && !this.state.isLoginClicked) ? false : true}
+              this.state.selectedHolyDate !== this.state.defaultDate) && !this.state.isSignupClicked) ? false : true}
               fullWidth
               variant="contained"
               color="primary"
               className={classes.submit}
               onClick={e => this.validateAndSend(e)}
               >
-                Đăng ký {(this.state.isLoginClicked) ? <CircularProgress className={classes.processing} size={15}></CircularProgress> : null}
+                Đăng ký {(this.state.isSignupClicked) ? <CircularProgress className={classes.processing} size={15}></CircularProgress> : null}
             </Button>
             <Button
-            disabled={(this.state.isLoginClicked === false) ? false : true}
+            disabled={(this.state.isSignupClicked === false) ? false : true}
             fullWidth
             variant="contained"
             color="secondary"

@@ -21,6 +21,7 @@ import InputAdornment from '@material-ui/core/InputAdornment';
 import SnackDialog from './SnackerBar';
 import backgroundImage from '../img/background3.jpg';
 import FormDialog from './FormDialog';
+import CircularProgress from '@material-ui/core/CircularProgress';
 
 import cryptoJS from 'crypto-js';
 
@@ -50,6 +51,9 @@ const useStyles = theme => ({
   },
   submit: {
     margin: theme.spacing(3, 0, 2),
+  },
+  processing: {
+    margin: theme.spacing(1),
   }
 });
 
@@ -73,6 +77,7 @@ class Signin extends React.Component {
       snackbarType: "success",
       formDialogStatus: false,
       isRememberMeChecked: false,
+      isLoginClicked: false,
     };
   }
   componentDidMount = () => {
@@ -103,6 +108,7 @@ class Signin extends React.Component {
   }
 
   checkAccount = (e) => {
+    this.setState({isLoginClicked: true});
     if(this.state.password === this.state.defaultPassword) {
       this.setState({oldPassword: this.state.password});
       this.setState({password: ""});
@@ -126,13 +132,14 @@ class Signin extends React.Component {
           localStorage.setItem('username', this.state.username);
           localStorage.setItem('isRememberMe', this.state.isRememberMeChecked);
           localStorage.setItem('token', result.data.data.token);
-          // this.props.history.push('/temp');
+          this.props.history.push('/temp');
         })
         .catch(err => {
           if(err.message.search('404')) {
             this.setState({snackbarType: "error"});
             this.setState({snackerBarStatus: true});
             this.setState({snackbarMessage: "Mật khẩu không đúng hoặc tài khoản không tồn tại!"})
+            this.setState({isLoginClicked: false});
           }
         })
     }
@@ -308,14 +315,14 @@ class Signin extends React.Component {
                   />
                   <Button
                   // type="submit"
-                  disabled={(!this.state.username || !this.state.password)? true : false}
+                  disabled={(this.state.username !=="" && this.state.password !== "" && !this.state.isLoginClicked)? false : true}
                   fullWidth
                   variant="contained"
                   color="primary"
                   className={classes.submit}
                   onClick = {event => this.checkAccount(event)}
                   >
-                    Đăng nhập
+                    Đăng nhập {(this.state.isLoginClicked)? <CircularProgress className={classes.processing} size={15}></CircularProgress> : null}
                   </Button>
                 </React.Fragment>
               }

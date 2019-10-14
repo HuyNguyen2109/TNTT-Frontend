@@ -1,18 +1,29 @@
-import React from 'react';
 import './App.css';
-import { BrowserRouter as Router, Route } from "react-router-dom";
+import { Router, Route } from "react-router-dom";
+import React, { Component } from 'react';
+
+import { createBrowserHistory } from 'history';
+import { ThemeProvider } from '@material-ui/styles';
+import theme from './components/Dashboard/theme';
+import 'react-perfect-scrollbar/dist/css/styles.css';
+import './components/Dashboard/assets/scss/index.scss';
+import Routes from './components/Dashboard/Routes';
+
 import SignIn from './components/Login';
 import SignUp from './components/Signup';
-import Temp from './components/tempComponent';
 
-function App() {
-  return (
-    <Router>
-      <Route path="/" exact component={SignIn} />
-      <Route path="/dang-ki" component={SignUp} />
-      <Route path="/temp" component={Temp}/>
-    </Router>
-  );
+const browserHistory = createBrowserHistory();
+
+export default class App extends Component {
+  render() {
+    return (
+      <ThemeProvider theme={theme}>
+        <Router history={browserHistory}>
+          <Route path="/" exact component={SignIn} />
+          <Route path="/dang-ki" component={SignUp} />
+          <Routes />
+        </Router>
+      </ThemeProvider>
+    );
+  }
 }
-
-export default App;

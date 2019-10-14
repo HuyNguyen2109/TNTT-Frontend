@@ -78,11 +78,13 @@ class Signin extends React.Component {
       formDialogStatus: false,
       isRememberMeChecked: false,
       isLoginClicked: false,
+      isChangedDefaultPassword: false,
+      isUpdateAccountClicked: false,
     };
   }
   componentDidMount = () => {
     if(localStorage.getItem('username')!==null && localStorage.getItem('isRememberMe') === 'true') {
-      this.props.history.push('/temp')
+      this.props.history.push('/dashboard')
     }
   }
 
@@ -108,56 +110,122 @@ class Signin extends React.Component {
   }
 
   checkAccount = (e) => {
-    this.setState({isLoginClicked: true});
-    if(this.state.password === this.state.defaultPassword) {
-      this.setState({oldPassword: this.state.password});
-      this.setState({password: ""});
-      this.setState({snackbarType: "info"});
-      this.setState({isDefaultPassword: true});
-      this.setState({snackerBarStatus: true});
-      this.setState({snackbarMessage: "Có vẻ như bạn vừa nhận được tài khoản từ ban quản trị, hãy đổi mật khẩu để bảo vệ tài khoản của bạn"})
-    }
-    else {
-      const loginData = {
-        'username': `${this.state.username}`,
-        'password': `${cryptoJS.AES.encrypt(this.state.password, this.state.username, {
-          mode: cryptoJS.mode.CBC,
-          padding: cryptoJS.pad.Pkcs7
-        })}`
-      };
+    this.setState({
+      isLoginClicked: true,
+      isChangedDefaultPassword: false
+    });
+    const loginData = {
+      'username': `${this.state.username}`,
+      'password': `${cryptoJS.AES.encrypt(this.state.password, this.state.username, {
+        mode: cryptoJS.mode.CBC,
+        padding: cryptoJS.pad.Pkcs7
+      })}`
+    };
 
-      axios
-        .post('/backend/user/login', loginData)
+    axios
+      .post('/backend/user/login', loginData)
         .then(result => {
-          localStorage.setItem('username', this.state.username);
-          localStorage.setItem('isRememberMe', this.state.isRememberMeChecked);
-          localStorage.setItem('token', result.data.data.token);
-          this.props.history.push('/temp');
-        })
-        .catch(err => {
-          if(err.message.search('404')) {
-            this.setState({snackbarType: "error"});
-            this.setState({snackerBarStatus: true});
-            this.setState({snackbarMessage: "Mật khẩu không đúng hoặc tài khoản không tồn tại!"})
-            this.setState({isLoginClicked: false});
+          if(result && this.state.password === this.state.defaultPassword) {
+            this.setState({
+              oldPassword: this.state.password,
+              password: "",
+              snackbarType: "info",
+              isDefaultPassword: true,
+              snackerBarStatus: true,
+              snackbarMessage: "Có vẻ như bạn vừa nhận được tài khoản từ ban quản trị, hãy đổi mật khẩu để bảo vệ tài khoản của bạn"
+            });
+          }
+          else {
+            localStorage.setItem('username', this.state.username);
+            localStorage.setItem('isRememberMe', this.state.isRememberMeChecked);
+            localStorage.setItem('token', result.data.data.token);
+            this.props.history.push('/dashboard');
           }
         })
-    }
+        .catch(err => {
+          if(err.response.status === 404) {
+            this.setState({
+              snackbarType: "error",
+              snackerBarStatus: true,
+              snackbarMessage: "Mật khẩu không đúng hoặc tài khoản không tồn tại!",
+              isLoginClicked: false,
+              isChangedDefaultPassword: false
+            });
+          }
+          if (err.response.status === 500) {
+            this.setState({
+              snackbarType: "error",
+              snackerBarStatus: true,
+              snackbarMessage: "Đã có lỗi xảy ra. Vui lòng thử lại!",
+              isLoginClicked: false
+            });
+          }
+        });
   }
 
   updateAccount = (e) => {
     e.preventDefault()
+    this.setState({isUpdateAccountClicked: true})
     if(this.state.newPassword !== this.state.confirmNewPassword) {
-      this.setState({snackbarType: "error"});
-      this.setState({snackerBarStatus: true});
-      this.setState({snackbarMessage: "Mật khẩu không khớp"})
+      this.setState({
+        snackbarType: "error",
+        snackerBarStatus: true,
+        snackbarMessage: "Mật khẩu không khớp",
+        isUpdateAccountClicked: false
+      });
     }
     else {
-      this.setState({snackbarType: "success"});
-      this.setState({snackerBarStatus: true});
-      this.setState({snackbarMessage: "Cập nhật tài khoản thành công"})
-      this.setState({isDefaultPassword: false});
-      this.setState({password: ""});
+      const oldLoginData = {
+        'username': `${this.state.username}`,
+        'password': `${cryptoJS.AES.encrypt(this.state.oldPassword, this.state.username, {
+          mode: cryptoJS.mode.CBC,
+          padding: cryptoJS.pad.Pkcs7
+        })}`
+      }
+      axios
+        .post('/backend/user/login', oldLoginData)
+        .then(result => {
+          const newLoginData = {
+            'username': `${this.state.username}`,
+            'password': `${cryptoJS.AES.encrypt(this.state.newPassword, this.state.username, {
+              mode: cryptoJS.mode.CBC,
+              padding: cryptoJS.pad.Pkcs7
+            })}`
+          }
+          axios
+            .post('/backend/user/update', newLoginData)
+            .then(result => {
+              if(result) {
+                this.setState({
+                  snackbarType: "success",
+                  snackerBarStatus: true,
+                  snackbarMessage: "Cập nhật tài khoản thành công",
+                  isDefaultPassword: false,
+                  password: "",
+                  isLoginClicked: false,
+                });
+              }
+            });
+        })
+        .catch(err => {
+          if(err.response.status === 404) {
+            this.setState({
+              snackbarType: "error",
+              snackerBarStatus: true,
+              snackbarMessage: "Mật khẩu không đúng hoặc tài khoản không tồn tại!",
+              isLoginClicked: false,
+              isChangedDefaultPassword: false
+            });
+          }
+          if (err.response.status === 500) {
+            this.setState({
+              snackbarType: "error",
+              snackerBarStatus: true,
+              snackbarMessage: "Đã có lỗi xảy ra. Vui lòng thử lại!",
+              isLoginClicked: false
+            });
+          }
+        });
     }
   }
 
@@ -275,7 +343,7 @@ class Signin extends React.Component {
                   />
                   <Button
                   // type="submit"
-                  disabled={(!this.state.newPassword || !this.state.confirmNewPassword)? true : false}
+                  disabled={((!this.state.newPassword || !this.state.confirmNewPassword) && !this.state.isUpdateAccountClicked)? true : false}
                   fullWidth
                   variant="contained"
                   color="primary"
@@ -322,7 +390,7 @@ class Signin extends React.Component {
                   className={classes.submit}
                   onClick = {event => this.checkAccount(event)}
                   >
-                    Đăng nhập {(this.state.isLoginClicked)? <CircularProgress className={classes.processing} size={15}></CircularProgress> : null}
+                    Đăng nhập {(this.state.isLoginClicked && this.state.isChangedDefaultPassword)? <CircularProgress className={classes.processing} size={15}></CircularProgress> : null}
                   </Button>
                 </React.Fragment>
               }

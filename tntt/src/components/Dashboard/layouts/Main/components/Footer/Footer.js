@@ -32,8 +32,7 @@ const Footer = props => {
         . 2019
       </Typography>
       <Typography variant="caption">
-        Created with love for the environment. By designers and developers who
-        love to work together in offices!
+        AAA
       </Typography>
     </div>
   );

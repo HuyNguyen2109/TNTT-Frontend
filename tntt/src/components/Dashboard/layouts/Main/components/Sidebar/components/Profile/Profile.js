@@ -1,11 +1,12 @@
 import React from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 import clsx from 'clsx';
-import PropTypes from 'prop-types';
-import { makeStyles } from '@material-ui/styles';
+import { withStyles } from '@material-ui/styles';
 import { Avatar, Typography } from '@material-ui/core';
+import logo from './default-user.png';
+import axios from 'axios';
 
-const useStyles = makeStyles(theme => ({
+const useStyles = theme => ({
   root: {
     display: 'flex',
     flexDirection: 'column',
@@ -19,44 +20,62 @@ const useStyles = makeStyles(theme => ({
   name: {
     marginTop: theme.spacing(1)
   }
-}));
+});
 
-const Profile = props => {
-  const { className, ...rest } = props;
+class Profile extends React.Component {
+  constructor(props) {
+    super(props)
 
-  const classes = useStyles();
+    this.state = {
+      fullname: '',
+      type:'',
+    }
+  }
 
-  const user = {
-    name: 'Shen Zhi',
-    avatar: '/images/avatars/avatar_11.png',
-    bio: 'Brain Director'
-  };
+  componentDidMount = () => {
+    this.getUser();
+  }
 
-  return (
-    <div
-      {...rest}
-      className={clsx(classes.root, className)}
-    >
-      <Avatar
-        alt="Person"
-        className={classes.avatar}
-        component={RouterLink}
-        src={user.avatar}
-        to="/settings"
-      />
-      <Typography
-        className={classes.name}
-        variant="h4"
+  getUser = () => {
+    axios
+      .get(`/backend/user/get-user/${localStorage.getItem('username')}`)
+      .then(result => {
+        this.setState({
+          fullname: result.data.data.fullname,
+          type: result.data.data.type
+        })
+      })
+      .catch(err => {
+        console.log(err)
+      })
+  }
+
+  render = () => {
+    const { classes, className, ...rest } = this.props;
+
+    return (
+      <div
+        {...rest}
+        className={clsx(classes.root, className)}
       >
-        {user.name}
-      </Typography>
-      <Typography variant="body2">{user.bio}</Typography>
-    </div>
-  );
+        <Avatar
+          alt="Person"
+          className={classes.avatar}
+          component={RouterLink}
+          src={logo}
+          to="/account"
+        />
+        <Typography
+          className={classes.name}
+          variant="h5"
+          align="center"
+        >
+          {this.state.fullname}
+        </Typography>
+        <Typography variant="body2" align="center">{this.state.type}</Typography>
+      </div>
+    );
+  }
 };
 
-Profile.propTypes = {
-  className: PropTypes.string
-};
-
-export default Profile;
+export default withStyles(useStyles)(Profile);

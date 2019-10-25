@@ -45,7 +45,7 @@ const useStyles = makeStyles(theme => ({
 const StatusBullet = props => {
   const { className, size, color, ...rest } = props;
 
-  const classes = useStyles();
+  const { classes } = useStyles();
 
   return (
     <span

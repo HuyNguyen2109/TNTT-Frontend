@@ -17,8 +17,8 @@ const useStyles = (theme) => ({
 });
 
 class AccountDetails extends React.Component {
-  constructor() {
-    super();
+  constructor(props) {
+    super(props);
 
     this.state = {
       username: '',
@@ -32,13 +32,31 @@ class AccountDetails extends React.Component {
     };
   }
 
-  handleChange = () => {
-    console.log("aaa")
+
+  componentDidMount = () => {
+    this.props.userdata.then(result => {
+      this.setState({
+        username: result.data.data.username,
+        holyname: result.data.data.holyname,
+        birthday: result.data.data.birthday,
+        holyBirthday: result.data.data.holy_birthday,
+        phoneNumber: result.data.data.phone_number,
+        class: result.data.data.class,
+        email: result.data.data.email
+      })
+    })
+  }
+
+  handleChange = (e, type) => {
+    let data;
+    data = e.target.value
+    const result = {};
+    result[type] = data;
+    this.setState(result);
   }
 
   render = () => {
-    const classes = this.props;
-    const { className, ...rest } = this.props;
+    const { classes, userdata, className, ...rest } = this.props;
 
     return (
       <Card
@@ -61,17 +79,17 @@ class AccountDetails extends React.Component {
             >
               <Grid
                 item
-                md={6}
+                md={12}
                 xs={12}
               >
                 <TextField
+                  disabled={true}
                   fullWidth
-                  label="First name"
+                  label="Tên tài khoản"
                   margin="dense"
-                  name="firstName"
-                  onChange={this.handleChange}
+                  name="username"
                   required
-                  value="{values.firstName}"
+                  value={this.state.username}
                   variant="outlined"
                 />
               </Grid>
@@ -82,12 +100,12 @@ class AccountDetails extends React.Component {
               >
                 <TextField
                   fullWidth
-                  label="Last name"
+                  label="Tên thánh"
                   margin="dense"
-                  name="lastName"
-                  onChange={this.handleChange}
+                  name="holyName"
+                  onChange={e=>this.handleChange(e, "holyname")}
                   required
-                  value="{values.lastName}"
+                  value={this.state.holyname}
                   variant="outlined"
                 />
               </Grid>
@@ -98,12 +116,12 @@ class AccountDetails extends React.Component {
               >
                 <TextField
                   fullWidth
-                  label="Email Address"
+                  label="Email"
                   margin="dense"
                   name="email"
-                  onChange={this.handleChange}
+                  onChange={e=>this.handleChange(e, "email")}
                   required
-                  value="{values.email}"
+                  value={this.state.email}
                   variant="outlined"
                 />
               </Grid>
@@ -114,43 +132,15 @@ class AccountDetails extends React.Component {
               >
                 <TextField
                   fullWidth
-                  label="Phone Number"
+                  label="Số điện thoại"
                   margin="dense"
                   name="phone"
-                  onChange={this.handleChange}
-                  type="number"
-                  value="{values.phone}"
+                  required
+                  onChange={e=>this.handleChange(e, "phoneNumber")}
+                  value={this.state.phoneNumber}
                   variant="outlined"
                 />
               </Grid>
-              {/* <Grid
-                item
-                md={6}
-                xs={12}
-              >
-                <TextField
-                  fullWidth
-                  label="Select State"
-                  margin="dense"
-                  name="state"
-                  onChange={this.handleChange}
-                  required
-                  select
-                  // eslint-disable-next-line react/jsx-sort-props
-                  SelectProps={{ native: true }}
-                  value="{values.state}"
-                  variant="outlined"
-                >
-                  {states.map(option => (
-                    <option
-                      key={option.value}
-                      value={option.value}
-                    >
-                      {option.label}
-                    </option>
-                  ))}
-                </TextField>
-              </Grid> */}
               <Grid
                 item
                 md={6}
@@ -158,12 +148,52 @@ class AccountDetails extends React.Component {
               >
                 <TextField
                   fullWidth
-                  label="Country"
+                  label="Sinh Nhật"
                   margin="dense"
-                  name="country"
-                  onChange={this.handleChange}
+                  name="birthday"
+                  onChange={e=>this.handleChange(e, "birthday")}
                   required
-                  value="{values.country}"
+                  type="date"
+                  value={this.state.birthday}
+                  variant="outlined"
+                  InputLabelProps={{
+                    shrink: true,
+                  }}
+                />
+              </Grid>
+              <Grid
+                item
+                md={6}
+                xs={12}
+              >
+                <TextField
+                  fullWidth
+                  label="Bổn mạng"
+                  margin="dense"
+                  name="holyBirthday"
+                  onChange={e=>this.handleChange(e, "holyBirthday")}
+                  required
+                  type="date"
+                  value={this.state.holyBirthday}
+                  variant="outlined"
+                  InputLabelProps={{
+                    shrink: true,
+                  }}
+                />
+              </Grid>
+              <Grid
+                item
+                md={6}
+                xs={12}
+              >
+                <TextField
+                  disabled={true}
+                  fullWidth
+                  label="Lớp"
+                  margin="dense"
+                  name="class"
+                  required
+                  value={this.state.class}
                   variant="outlined"
                 />
               </Grid>

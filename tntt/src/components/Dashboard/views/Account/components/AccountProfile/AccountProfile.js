@@ -35,8 +35,8 @@ const useStyles = theme => ({
 });
 
 class AccountProfile extends React.Component {
-  constructor(props){
-    super(props);
+  constructor(){
+    super();
 
     this.state = {
       username: '',
@@ -50,7 +50,8 @@ class AccountProfile extends React.Component {
   }
 
   render = () => {
-    const { classes, className, ...rest } = this.props;
+    const classes = this.props; 
+    const { className, ...rest } = this.props;
 
     return (
       <Card

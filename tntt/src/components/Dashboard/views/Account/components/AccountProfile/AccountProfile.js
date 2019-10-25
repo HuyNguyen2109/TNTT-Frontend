@@ -1,6 +1,7 @@
 import React from 'react';
 import clsx from 'clsx';
 import moment from 'moment';
+import PropTypes from 'prop-types';
 import { withStyles } from '@material-ui/styles';
 import {
   Card,
@@ -24,7 +25,7 @@ const useStyles = theme => ({
     height: 110,
     width: 100,
     flexShrink: 0,
-    flexGrow: 0
+    flexGrow: 0,
   },
   progress: {
     marginTop: theme.spacing(2)
@@ -39,18 +40,34 @@ class AccountProfile extends React.Component {
     super();
 
     this.state = {
-      username: '',
+      holyname: '',
       fullname: '',
-      type:'',
+      birthday: '1990-01-01',
+      holyBirthday: '1990-01-01',
+      email: '',
+      phoneNumber: '',
+      type: '',
     };
   };
 
   componentDidMount = () => {
-    console.log('AccountProfile');
+    this.props.userdata.then(result => {
+      this.setState({
+        //for display on website
+        fullname: result.data.data.fullname,
+        holyname: result.data.data.holyname,
+        //for calculating the progress
+        birthday: result.data.data.birthday,
+        holyBirthday: result.data.data.holy_birthday,
+        phoneNumber: result.data.data.phone_number,
+        email: result.data.data.email,
+        type: result.data.data.type
+      })
+    })
   }
 
   render = () => {
-    const classes = this.props; 
+    const { classes } = this.props; 
     const { className, ...rest } = this.props;
 
     return (
@@ -65,21 +82,21 @@ class AccountProfile extends React.Component {
                 gutterBottom
                 variant="h4"
               >
-                Nguyen Nhut Huy
+                {`${this.state.holyname} ${this.state.fullname}`}
               </Typography>
               <Typography
                 className={classes.locationText}
                 color="textSecondary"
                 variant="body1"
               >
-                Ho Chi Minh
+                {this.state.type}
               </Typography>
               <Typography
                 className={classes.dateText}
                 color="textSecondary"
                 variant="body1"
               >
-                {moment().format('hh:mm A')} (Timezone)
+                {moment().format('hh:mm A')} (+7)
               </Typography>
             </div>
             <Avatar
@@ -109,6 +126,10 @@ class AccountProfile extends React.Component {
       </Card>
     )
   }
+};
+
+AccountProfile.propTypes = {
+  className: PropTypes.string
 };
 
 export default withStyles(useStyles)(AccountProfile);

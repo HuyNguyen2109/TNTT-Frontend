@@ -13,48 +13,15 @@ const useStyles = theme => ({
 
 
 class Account extends React.Component {
-  constructor(props) {
-    super(props);
-
-    this.state = {
-      username: '',
-      holyname: '',
-      fullname: '',
-      birthday: '',
-      holyBirthday: '',
-      phoneNumber: '',
-      class: '',
-      password: '',
-      type: '',
-      email: ''
-    };
-  }
-
-  componentDidMount = () => {
-    this.getUser();
-    console.log(this.state.fullname);
-  }
-
   getUser = () => {
-    axios
-      .get(`/backend/user/get-user/${localStorage.getItem('username')}`)
-      .then(result => {
-        console.log(result)
-        this.setState({
-          fullname: result.data.data.fullname,
-          type: result.data.data.type
-        })
-      })
-      .catch(err => {
-        console.log(err)
-      })
+    return axios.get(`/backend/user/get-user/${localStorage.getItem('username')}`)
   }
 
   render = () => {
-    const classes = this.props;
+    const { classes } = this.props;
 
     return (
-      <div className={classes.root} style={{padding: 35}}>
+      <div className={classes.root}>
         <Grid
           container
           spacing={4}
@@ -66,7 +33,7 @@ class Account extends React.Component {
             xl={4}
             xs={12}
           >
-            <AccountProfile />
+            <AccountProfile userdata={this.getUser()}/>
           </Grid>
           <Grid
             item
@@ -75,7 +42,7 @@ class Account extends React.Component {
             xl={8}
             xs={12}
           >
-            <AccountDetails />
+            <AccountDetails userdata={this.getUser()}/>
           </Grid>
         </Grid>
       </div>

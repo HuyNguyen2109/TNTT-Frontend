@@ -187,10 +187,12 @@ class Signin extends React.Component {
         .then(result => {
           const newLoginData = {
             'username': `${this.state.username}`,
-            'password': `${cryptoJS.AES.encrypt(this.state.newPassword, this.state.username, {
-              mode: cryptoJS.mode.CBC,
-              padding: cryptoJS.pad.Pkcs7
-            })}`
+            'content': {
+              'password': `${cryptoJS.AES.encrypt(this.state.newPassword, this.state.username, {
+                mode: cryptoJS.mode.CBC,
+                padding: cryptoJS.pad.Pkcs7
+              })}`
+            }
           }
           axios
             .post('/backend/user/update', newLoginData)

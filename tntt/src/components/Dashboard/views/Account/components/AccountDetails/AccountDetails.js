@@ -1,6 +1,7 @@
 import React from 'react';
 import clsx from 'clsx';
 import { withStyles } from '@material-ui/styles';
+import axios from 'axios';
 import {
   Card,
   CardHeader,
@@ -37,12 +38,13 @@ class AccountDetails extends React.Component {
     this.props.userdata.then(result => {
       this.setState({
         username: result.data.data.username,
+        fullname: result.data.data.fullname,
         holyname: result.data.data.holyname,
         birthday: result.data.data.birthday,
         holyBirthday: result.data.data.holy_birthday,
         phoneNumber: result.data.data.phone_number,
         class: result.data.data.class,
-        email: result.data.data.email
+        email: result.data.data.email,
       })
     })
   }
@@ -53,6 +55,30 @@ class AccountDetails extends React.Component {
     const result = {};
     result[type] = data;
     this.setState(result);
+  }
+
+  updateAccount = (e) => {
+    e.preventDefault();
+    const updateData = {
+      'username':`${localStorage.getItem('username')}`,
+      'content': {
+        'fullname': `${this.state.fullname}`,
+        'holyname': `${this.state.holyname}`,
+        'email': `${this.state.email}`,
+        'phoneNumber': `${this.state.phoneNumber}`,
+        'birthday': `${this.state.birthday}`,
+        'holyBirthday': `${this.state.holyBirthday}`
+      }
+    };
+
+    axios
+      .post('/backend/user/update', updateData)
+      .then(result => {
+        window.location.reload()
+      })
+      .catch(err => {
+        console.log(err)
+      })
   }
 
   render = () => {
@@ -68,8 +94,8 @@ class AccountDetails extends React.Component {
           noValidate
         >
           <CardHeader
-            subheader="The information can be edited"
-            title="Profile"
+            subheader="Chỉnh sửa những thông tin cần thiết"
+            title="Thông tin cá nhân"
           />
           <Divider />
           <CardContent>
@@ -204,8 +230,9 @@ class AccountDetails extends React.Component {
             <Button
               color="primary"
               variant="contained"
+              onClick={e => this.updateAccount(e)}
             >
-              Save details
+              Cập nhật tài khoản
         </Button>
           </CardActions>
         </form>

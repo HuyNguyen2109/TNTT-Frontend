@@ -10,8 +10,7 @@ import {
   Avatar,
   Typography,
   Divider,
-  Button,
-  LinearProgress
+  Button
 } from '@material-ui/core';
 import logo from '../AccountProfile/default-user.png';
 
@@ -104,13 +103,13 @@ class AccountProfile extends React.Component {
               src={logo}
             />
           </div>
-          <div className={classes.progress}>
+          {/* <div className={classes.progress}>
             <Typography variant="body1">Profile Completeness: 70%</Typography>
             <LinearProgress
               value={70}
               variant="determinate"
             />
-          </div>
+          </div> */}
         </CardContent>
         <Divider />
         <CardActions>

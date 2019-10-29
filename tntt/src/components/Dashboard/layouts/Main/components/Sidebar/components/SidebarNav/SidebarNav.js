@@ -4,10 +4,11 @@ import React, { forwardRef } from 'react';
 import { NavLink as RouterLink } from 'react-router-dom';
 import clsx from 'clsx';
 import PropTypes from 'prop-types';
-import { makeStyles } from '@material-ui/styles';
+import { withStyles } from '@material-ui/styles';
 import { List, ListItem, Button, colors } from '@material-ui/core';
+import Collapse from '@material-ui/core/Collapse';
 
-const useStyles = makeStyles(theme => ({
+const useStyles = theme => ({
   root: {},
   item: {
     display: 'flex',
@@ -37,8 +38,11 @@ const useStyles = makeStyles(theme => ({
     '& $icon': {
       color: theme.palette.primary.main
     }
-  }
-}));
+  },
+  nested: {
+    paddingLeft: theme.spacing(4),
+  },
+});
 
 const CustomRouterLink = forwardRef((props, ref) => (
   <div
@@ -49,40 +53,92 @@ const CustomRouterLink = forwardRef((props, ref) => (
   </div>
 ));
 
-const SidebarNav = props => {
-  const { pages, className, ...rest } = props;
+class SidebarNav extends React.Component {
+  constructor(props) {
+    super(props)
 
-  const classes = useStyles();
+    this.state = {
+      open: false,
+    }
+  }
 
-  return (
-    <List
-      {...rest}
-      className={clsx(classes.root, className)}
-    >
-      {pages.map(page => (
-        <ListItem
-          className={classes.item}
-          disableGutters
-          key={page.title}
-        >
-          <Button
-            activeClassName={classes.active}
-            className={classes.button}
-            component={CustomRouterLink}
-            to={page.href}
-          >
-            <div className={classes.icon}>{page.icon}</div>
-            {page.title}
-          </Button>
-        </ListItem>
-      ))}
-    </List>
-  );
-};
+  expandMenu = () => {
+    this.setState({
+      open: !this.state.open
+    })
+  }
+
+  render = () => {
+    const { classes, pages, className, ...rest } = this.props;
+
+    return (
+      <List
+        {...rest}
+        className={clsx(classes.root, className)}
+      >
+        {pages.map(page => (
+          (page.title === 'Thiếu Nhi')?
+            <React.Fragment>
+              <ListItem
+                className={classes.item}
+                disableGutters
+                key={page.title}
+              >
+                <Button
+                  className={classes.button}
+                  onClick={this.expandMenu}
+                >
+                  <div className={classes.icon}>{page.icon}</div>
+                  {page.title}
+                </Button>
+              </ListItem>
+              <Collapse in={this.state.open} timeout="auto">
+                <List>
+                  {pages[0].children.map(children => (
+                    <ListItem
+                      className={classes.item}
+                      disableGutters
+                      key={children.title}
+                    >
+                      <Button
+                        activeClassName={classes.active}
+                        className={classes.button}
+                        component={CustomRouterLink}
+                        to={children.href}
+                      >
+                        <div className={classes.icon} />
+                        {children.title}
+                      </Button>
+                    </ListItem>
+                  ))}
+                </List>
+              </Collapse>
+            </React.Fragment>
+            :
+            <ListItem
+              className={classes.item}
+              disableGutters
+              key={page.title}
+            >
+              <Button
+                activeClassName={classes.active}
+                className={classes.button}
+                component={CustomRouterLink}
+                to={page.href}
+              >
+                <div className={classes.icon}>{page.icon}</div>
+                {page.title}
+              </Button>
+            </ListItem>
+        ))}
+      </List>
+    );
+  }
+}
 
 SidebarNav.propTypes = {
   className: PropTypes.string,
   pages: PropTypes.array.isRequired
 };
 
-export default SidebarNav;
+export default withStyles(useStyles)(SidebarNav);

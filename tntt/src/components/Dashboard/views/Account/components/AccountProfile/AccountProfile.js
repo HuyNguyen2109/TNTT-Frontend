@@ -16,22 +16,6 @@ import logo from '../AccountProfile/default-user.png';
 
 const useStyles = theme => ({
   root: {},
-  details: {
-    display: 'flex'
-  },
-  avatar: {
-    marginLeft: 'auto',
-    height: 110,
-    width: 100,
-    flexShrink: 0,
-    flexGrow: 0,
-  },
-  progress: {
-    marginTop: theme.spacing(2)
-  },
-  uploadButton: {
-    marginRight: theme.spacing(2)
-  }
 });
 
 class AccountProfile extends React.Component {
@@ -46,10 +30,12 @@ class AccountProfile extends React.Component {
       email: '',
       phoneNumber: '',
       type: '',
+      currentTime: '',
     };
   };
 
   componentDidMount = () => {
+    this.displayTime();
     this.props.userdata.then(result => {
       this.setState({
         //for display on website
@@ -63,6 +49,13 @@ class AccountProfile extends React.Component {
         type: result.data.data.type
       })
     })
+  };
+
+  displayTime = () => {
+    this.setState({
+      currentTime: moment().format('hh:mm:ss A')
+    })
+    setTimeout(this.displayTime, 1000);
   }
 
   render = () => {
@@ -95,7 +88,7 @@ class AccountProfile extends React.Component {
                 color="textSecondary"
                 variant="body1"
               >
-                {moment().format('hh:mm A')} (+7)
+                {this.state.currentTime} (+7)
               </Typography>
             </div>
             <Avatar
@@ -103,13 +96,6 @@ class AccountProfile extends React.Component {
               src={logo}
             />
           </div>
-          {/* <div className={classes.progress}>
-            <Typography variant="body1">Profile Completeness: 70%</Typography>
-            <LinearProgress
-              value={70}
-              variant="determinate"
-            />
-          </div> */}
         </CardContent>
         <Divider />
         <CardActions>
@@ -118,9 +104,9 @@ class AccountProfile extends React.Component {
             color="primary"
             variant="text"
           >
-            Upload picture
+            Cập nhật ảnh đại diện
           </Button>
-          <Button variant="text">Remove picture</Button>
+          <Button variant="text">Xóa ảnh đại diện</Button>
         </CardActions>
       </Card>
     )

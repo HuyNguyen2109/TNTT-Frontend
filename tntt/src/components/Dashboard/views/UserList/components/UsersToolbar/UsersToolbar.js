@@ -4,7 +4,7 @@ import clsx from 'clsx';
 import { makeStyles } from '@material-ui/styles';
 import { Button } from '@material-ui/core';
 
-import { SearchInput } from 'components';
+// import { SearchInput } from 'component';
 
 const useStyles = makeStyles(theme => ({
   root: {},
@@ -50,10 +50,10 @@ const UsersToolbar = props => {
         </Button>
       </div>
       <div className={classes.row}>
-        <SearchInput
+        {/* <SearchInput
           className={classes.searchInput}
           placeholder="Search user"
-        />
+        /> */}
       </div>
     </div>
   );

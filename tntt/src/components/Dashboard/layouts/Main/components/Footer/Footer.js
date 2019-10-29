@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import clsx from 'clsx';
 import { makeStyles } from '@material-ui/styles';
 import { Typography, Link } from '@material-ui/core';
+import moment from 'moment';
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -24,15 +25,15 @@ const Footer = props => {
         &copy;{' '}
         <Link
           component="a"
-          href="https://devias.io/"
+          href="#"
           target="_blank"
         >
-          Devias IO
+          Xứ đoàn Annê Lê Thị Thành
         </Link>
-        . 2019
+        . {moment().year()}
       </Typography>
       <Typography variant="caption">
-        AAA
+        Giáo xứ Cao Thái
       </Typography>
     </div>
   );

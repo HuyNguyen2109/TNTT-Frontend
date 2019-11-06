@@ -94,20 +94,20 @@ class SidebarNav extends React.Component {
               </ListItem>
               <Collapse in={this.state.open} timeout="auto">
                 <List>
-                  {pages[0].children.map(children => (
+                  {pages[0].children.map(child => (
                     <ListItem
                       className={classes.item}
                       disableGutters
-                      key={children.title}
+                      key={child.title}
                     >
                       <Button
                         activeClassName={classes.active}
                         className={classes.button}
                         component={CustomRouterLink}
-                        to={children.href}
+                        to={child.href}
                       >
                         <div className={classes.icon} />
-                        {children.title}
+                        {child.title}
                       </Button>
                     </ListItem>
                   ))}

@@ -7,6 +7,7 @@ import DashboardIcon from '@material-ui/icons/Dashboard';
 import PeopleIcon from '@material-ui/icons/People';
 import AccountBoxIcon from '@material-ui/icons/AccountBox';
 import { Profile, SidebarNav } from './components';
+import axios from 'axios';
 
 const useStyles = theme => ({
   drawer: {
@@ -36,8 +37,29 @@ class Sidebar extends React.Component {
     super(props)
 
     this.state = {
+      classes: []
+    };
+  }
 
-    }
+  componentDidMount = () => {
+    return this.getClass();
+  }
+
+  getClass = () => {
+    return axios
+      .get('/backend/class/all')
+      .then(result => {
+        let classArr = [];
+        result.data.data.forEach(res => {
+          classArr.push({
+            'title': res.ID,
+            'href': res.path
+          })
+        })
+        this.setState({
+          classes: classArr
+        });
+      });
   }
 
   render = () => {
@@ -46,24 +68,7 @@ class Sidebar extends React.Component {
       {
         title: 'Thiếu Nhi',
         icon: <DashboardIcon />,
-        children: [
-          {
-            title: 'item1',
-            href: '/dashboard'
-          },
-          {
-            title: 'item2',
-            href: '#'
-          },
-          {
-            title: 'item3',
-            href: '#'
-          },
-          {
-            title: 'item4',
-            href: '#'
-          }
-        ]
+        children: this.state.classes
       },
       {
         title: 'Danh sách GLV',

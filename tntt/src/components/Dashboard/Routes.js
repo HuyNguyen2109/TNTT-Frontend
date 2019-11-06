@@ -18,7 +18,7 @@ const Routes = () => {
         component={DashboardView}
         exact
         layout={MainLayout}
-        path="/dashboard"
+        path="/dashboard/all"
       />
       <RouteWithLayout
         component={UserListView}

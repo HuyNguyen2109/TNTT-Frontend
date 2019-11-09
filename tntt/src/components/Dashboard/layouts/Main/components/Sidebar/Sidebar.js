@@ -52,7 +52,7 @@ class Sidebar extends React.Component {
         let classArr = [];
         result.data.data.forEach(res => {
           classArr.push({
-            'title': res.ID,
+            'title': res.Value,
             'href': res.path
           })
         })

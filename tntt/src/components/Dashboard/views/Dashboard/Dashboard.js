@@ -61,31 +61,83 @@ class Dashboard extends React.Component {
       tablePage: 0,
       selectedRecord: [],
       numberOfRecord: 0,
+      currentClass: '',
+    }
+  }
+
+  componentDidUpdate = (prevProps) => {
+    if(this.props.location.pathname.split("/")[2] !== prevProps.location.pathname.split("/")[2]) {
+      return this.getData(null, this.state.tablePage, this.state.itemPerPage) && this.getNumberOfRecord();
     }
   }
 
   componentDidMount = () => {
-    this.getData(null, this.state.tablePage, this.state.itemPerPage);
-    this.getNumberOfRecord();
+    return this.getData(null, this.state.tablePage, this.state.itemPerPage) && this.getNumberOfRecord();
   }
 
   getNumberOfRecord = () => {
-    return axios
-      .get('/backend/children/count')
+    if(this.props.location.pathname !== '/dashboard/all') 
+    {
+      return axios
+      .get('/backend/class/by-path', {
+        params: {
+          path: this.props.location.pathname
+        }
+      })
+      .then(result => {
+        const classID = result.data.data[0].ID;
+        this.setState({
+          currentClass: result.data.data[0].Value
+        })
+        return axios
+        .get('/backend/children/count', {
+          params: {
+            condition: classID
+          }
+        })
+      })
       .then(result => {
         this.setState({
           numberOfRecord: result.data.data
         })
       })
+      .catch(err => {
+        console.log(err);
+      })
+    }
+    else {
+      return axios
+      .get('/backend/children/count',{
+        params: {
+          condition: 'all'
+        }
+      })
+      .then(result => {
+        this.setState({
+          numberOfRecord: result.data.data
+        })
+      })
+      .catch(err => {
+        console.log(err);
+      })
+    }  
   }
 
   getData = (pathname, page, itemPerPage) => {
     return axios
-      .get(`/backend/children/all/${page}`, {
+      .get('/backend/class/by-path', {
         params: {
-          itemPerPage: itemPerPage,
-          class: 'all'
+          path: this.props.location.pathname
         }
+      })
+      .then(result => {
+        const className = result.data.data[0].ID;
+        return axios.get(`/backend/children/all/${page}`, {
+          params: {
+            itemPerPage: itemPerPage,
+            class: className
+          }
+        })
       })
       .then(result => {
         this.setState({
@@ -122,7 +174,7 @@ class Dashboard extends React.Component {
         >
           <Grid item xs={12}>
             <div>
-              <h1>{(this.props.location.pathname.split("/")[2] === 'all')? "Danh sách chung" : "Danh sách lớp"}</h1>
+              <h1>{(this.props.location.pathname.split("/")[2] === 'all')? "Danh sách chung" : `Danh sách lớp ${this.state.currentClass}`}</h1>
             </div>
           </Grid>
           <Grid item xs={12}>
@@ -147,6 +199,7 @@ class Dashboard extends React.Component {
                           <TableCell>Ngày Thêm Sức</TableCell>
                           <TableCell>Địa chỉ</TableCell>
                           <TableCell>Liên lạc</TableCell>
+                          <TableCell>Lớp</TableCell>
                         </TableRow>
                       </TableHead>
                       <TableBody>
@@ -169,6 +222,7 @@ class Dashboard extends React.Component {
                             <TableCell>{record.day_of_confirmation}</TableCell>
                             <TableCell>{record.address}</TableCell>
                             <TableCell>{record.contact}</TableCell>
+                            <TableCell>{record.class}</TableCell>
                           </TableRow>
                         ))}
                       </TableBody>

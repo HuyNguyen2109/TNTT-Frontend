@@ -12,13 +12,15 @@ import {
 } from './views';
 
 const Routes = () => {
+  
+
   return (
     <Switch>
       <RouteWithLayout
         component={DashboardView}
         exact
         layout={MainLayout}
-        path="/dashboard/all"
+        path="/dashboard/*"
       />
       <RouteWithLayout
         component={UserListView}

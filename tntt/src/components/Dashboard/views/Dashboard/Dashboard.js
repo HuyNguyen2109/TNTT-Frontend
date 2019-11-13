@@ -12,7 +12,8 @@ import {
   TableRow,
   TablePagination,
   CardActions,
-  Grid
+  Grid,
+  Button
 } from '@material-ui/core';
 import clsx from 'clsx';
 
@@ -34,9 +35,6 @@ const useStyles = theme => ({
   },
   actions: {
     justifyContent: 'flex-end'
-  },
-  tableCell: {
-    position: "sticky",
   },
 });
 
@@ -172,7 +170,7 @@ class Dashboard extends React.Component {
           container
           className={classes.root}
         >
-          <Grid item xs={12}>
+          <Grid item xs={12} style={{marginBottom: '2em'}}>
             <div>
               <h1>{(this.props.location.pathname.split("/")[2] === 'all')? "Danh sách chung" : `Danh sách lớp ${this.state.currentClass}`}</h1>
             </div>
@@ -187,8 +185,8 @@ class Dashboard extends React.Component {
                     <Table stickyHeader aria-label="sticky table">
                       <TableHead>
                         <TableRow>
-                          <TableCell className={classes.tableCell}>Tên Thánh và Họ</TableCell>
-                          <TableCell className={classes.tableCell}>Tên</TableCell>
+                          <TableCell>Tên Thánh và Họ</TableCell>
+                          <TableCell>Tên</TableCell>
                           <TableCell>Họ tên Cha</TableCell>
                           <TableCell>Họ tên Mẹ</TableCell>
                           <TableCell>Giáo khu</TableCell>
@@ -240,6 +238,7 @@ class Dashboard extends React.Component {
                   rowsPerPage={this.state.itemPerPage}
                   rowsPerPageOptions={[10, 25, 50]} />
               </CardActions>
+              <Button variant="contained" color="primary">Thêm mới</Button>
             </Card>
           </Grid>
         </Grid>

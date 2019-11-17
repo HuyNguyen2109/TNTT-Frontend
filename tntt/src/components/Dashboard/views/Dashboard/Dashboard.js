@@ -1,26 +1,24 @@
 import React from 'react';
 import { withStyles } from '@material-ui/styles';
-import PerfectScrollbar from 'react-perfect-scrollbar';
 import axios from 'axios';
 import {
   AddCircle
 } from '@material-ui/icons/';
 import {
-  Card,
-  CardContent,
   Table,
   TableBody,
   TableCell,
   TableHead,
   TableRow,
   TablePagination,
-  CardActions,
   Grid,
   Button,
   TextField,
-  Collapse
+  Collapse,
+  MenuItem,
+  Typography,
+  Paper
 } from '@material-ui/core';
-import clsx from 'clsx';
 
 const useStyles = theme => ({
   root: {
@@ -31,16 +29,18 @@ const useStyles = theme => ({
     padding: 0
   },
   inner: {
-    maxHeight: 450,
+    maxHeight: 440,
     overflow: 'auto',
   },
   nameContainer: {
-    display: 'flex',
-    alignItems: 'center'
+    padding: theme.spacing(2)
   },
   actions: {
     justifyContent: 'flex-end'
   },
+  menu: {
+    width: 200,
+  }
 });
 
 class Dashboard extends React.Component {
@@ -71,14 +71,22 @@ class Dashboard extends React.Component {
       newLastName: '',
       newFatherName: '',
       newMotherName: '',
-      newDiocese: '',
-      newgender: '',
+      newDiocese: 'Giuse',
+      newGender: 'Nam',
       newClass: '',
       newBirthday: '',
       newDayOfBaptism: '',
       newDayofEucharist: '',
       newDayofConfirmation: '',
+
+      dioceses: ['Giuse', 'Nữ Vương Mân Côi', 'Anna', 'Phêrô'],
+      genders: ['Nam', 'Nữ'],
+
+      windowsWidth: 0,
+      windowsHeight: 0,
     }
+
+    this.updateWindowDimensions = this.updateWindowDimensions.bind(this);
   }
 
   componentDidUpdate = (prevProps) => {
@@ -92,7 +100,20 @@ class Dashboard extends React.Component {
   }
 
   componentDidMount = () => {
+    this.updateWindowDimensions();
+    window.addEventListener("resize", this.updateWindowDimensions.bind(this));
     return this.getData(null, this.state.tablePage, this.state.itemPerPage) && this.getNumberOfRecord();
+  }
+
+  componentWillUnmount = () => {
+    window.removeEventListener("resize", this.updateWindowDimensions.bind(this));
+  }
+
+  updateWindowDimensions() {
+    this.setState({ 
+      windowsWidth: window.innerWidth, 
+      windowsHeight: window.innerHeight 
+    });
   }
 
   getNumberOfRecord = () => {
@@ -197,124 +218,235 @@ class Dashboard extends React.Component {
   }
 
   render = () => {
-    const { classes, className } = this.props;
+    const { classes } = this.props;
+    const columns = [
+      {
+        id: 'firstname',
+        label: "Tên Thánh và Họ",
+        minWidth: 100,
+        align: 'left'
+      },
+      {
+        id: 'lastname',
+        label: "Tên",
+        minWidth: 100,
+        align: 'left'
+      },
+      {
+        id: 'father_name',
+        label: "Họ tên Cha",
+        minWidth: 100,
+        align: 'left'
+      },
+      {
+        id: 'mother_name',
+        label: "Họ tên Mẹ",
+        minWidth: 100,
+        align: 'left'
+      },
+      {
+        id: 'diocese',
+        label: "Giáo khu",
+        minWidth: 100,
+        align: 'center'
+      },
+      {
+        id: 'male',
+        label: "Giới tính",
+        minWidth: 100,
+        align: 'center'
+      },
+      {
+        id: 'birthday',
+        label: "Sinh nhật",
+        minWidth: 100,
+        align: 'center'
+      },
+      {
+        id: 'day_of_baptism',
+        label: "Ngày Rửa Tội",
+        minWidth: 100,
+        align: 'center'
+      },
+      {
+        id: 'day_of_eucharist',
+        label: "Ngày Rước Lễ",
+        minWidth: 100,
+        align: 'center'
+      },
+      {
+        id: 'day_of_confirmation',
+        label: "Ngày Thêm Sức",
+        minWidth: 100,
+        align: 'center'
+      },
+      {
+        id: 'address',
+        label: "Địa chỉ",
+        minWidth: 100,
+        align: 'left'
+      },
+      {
+        id: 'contact',
+        label: "Liên lạc",
+        minWidth: 100,
+        align: 'left'
+      },
+      {
+        id: 'class',
+        label: "Lớp",
+        minWidth: 100,
+        align: 'center'
+      },
+    ]
 
     return (
-      <Grid
-        container
-        className={classes.root}
-      >
-        <Grid item xs={12} style={{ marginBottom: '2em' }}>
-          <div>
-            <h1>{(this.props.location.pathname.split("/")[2] === 'all') ? "Danh sách chung" : `Danh sách lớp ${this.state.currentClass}`}</h1>
+      <div className={(this.state.windowsWidth < 500) ? {padding: 0} : classes.root}>
+        <Paper className={classes.root}>
+          <Typography variant="h4">
+            {(this.props.location.pathname.split("/")[2] === 'all') ? "Danh sách chung" : `Danh sách lớp ${this.state.currentClass}`}
+          </Typography>
+          <div className={classes.inner}>
+            <Table stickyHeader aria-label="sticky table">
+              <TableHead>
+                <TableRow>
+                  {columns.map(col => (
+                    <TableCell
+                      key={col.id}
+                      align={col.align}
+                      style={{ minWidth: col.minWidth }}>
+                      {col.label}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {this.state.records.map(record => (
+                  <TableRow
+                    role="checkbox"
+                    hover
+                    key={record.ID}
+                    tabIndex={this.state.selectedRecord.indexOf(record.ID) !== -1}
+                  >
+                    {columns.map(col => {
+                      const value = record[col.id];
+                      return (
+                        <TableCell key={col.id} align={col.align}>
+                          {col.id !== 'male' ? value : (col.id === 'male' && value === 'x') ? 'Nam' : 'Nữ'}
+                        </TableCell>
+                      );
+                    })}
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           </div>
-        </Grid>
-        <Grid item xs={12}>
-          <Card
-            className={clsx(classes.root, className)}
-          >
-            <CardContent className={classes.content}>
-              <PerfectScrollbar>
-                <div className={classes.inner}>
-                  <Table stickyHeader aria-label="sticky table">
-                    <TableHead>
-                      <TableRow>
-                        <TableCell>Tên Thánh và Họ</TableCell>
-                        <TableCell>Tên</TableCell>
-                        <TableCell>Họ tên Cha</TableCell>
-                        <TableCell>Họ tên Mẹ</TableCell>
-                        <TableCell>Giáo khu</TableCell>
-                        <TableCell>Giới tính</TableCell>
-                        <TableCell>Sinh nhật</TableCell>
-                        <TableCell>Ngày Rửa Tội</TableCell>
-                        <TableCell>Ngày Rước Lễ</TableCell>
-                        <TableCell>Ngày Thêm Sức</TableCell>
-                        <TableCell>Địa chỉ</TableCell>
-                        <TableCell>Liên lạc</TableCell>
-                        <TableCell>Lớp</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {this.state.records.map(record => (
-                        <TableRow
-                          className={classes.tableRow}
-                          hover
-                          key={record.ID}
-                          selected={this.state.selectedRecord.indexOf(record.ID) !== -1}
-                        >
-                          <TableCell>{record.firstname}</TableCell>
-                          <TableCell>{record.lastname}</TableCell>
-                          <TableCell>{record.father_name}</TableCell>
-                          <TableCell>{record.mother_name}</TableCell>
-                          <TableCell>{record.diocese}</TableCell>
-                          <TableCell>{(record.male === "x") ? "Nam" : "Nữ"}</TableCell>
-                          <TableCell>{record.birthday}</TableCell>
-                          <TableCell>{record.day_of_baptism}</TableCell>
-                          <TableCell>{record.day_of_eucharist}</TableCell>
-                          <TableCell>{record.day_of_confirmation}</TableCell>
-                          <TableCell>{record.address}</TableCell>
-                          <TableCell>{record.contact}</TableCell>
-                          <TableCell>{record.class}</TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              </PerfectScrollbar>
-            </CardContent>
-            <CardActions className={classes.actions}>
-              <TablePagination
-                component="div"
-                count={this.state.numberOfRecord}
-                onChangePage={(e, page) => this.handleChangePage(e, page)}
-                onChangeRowsPerPage={e => this.handleChangeRowsPerPage(e)}
-                page={this.state.tablePage}
-                rowsPerPage={this.state.itemPerPage}
-                rowsPerPageOptions={[10, 25, 50]}
-                labelRowsPerPage="Số lượng dòng trên trang" />
-              <Button variant="contained" color="primary" onClick={e => this.toggleExpansionForm(e)}><AddCircle fontSize="small" /> Thêm mới</Button>
-            </CardActions>
-
-            <Collapse in={this.state.isExpansionButton}>
-              <Grid container spacing={2}>
-                <Grid item xs={12} sm={6}>
-                  <TextField
-                    required
-                    label="Tên thánh và Họ"
-                    name="firstName"
-                    id="firstName"
-                    value={this.state.newFirstname}
-                    onChange={e => this.handleFormChange(e, "newFirstname")}
-                    fullWidth
-                  />
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <TextField
-                    required
-                    label="Tên"
-                    name="lastName"
-                    id="lastName"
-                    value={this.state.newLastName}
-                    onChange={e => this.handleFormChange(e, "newLastName")}
-                    fullWidth
-                  />
-                </Grid>
-                <Grid item xs={12} sm={3}>
-                  <TextField
-                    required
-                    label="Họ tên Cha"
-                    name="fatherName"
-                    id="fatherName"
-                    value={this.state.newFatherName}
-                    onChange={e => this.handleFormChange(e, "newFatherName")}
-                    fullWidth
-                  />
-                </Grid>
+          <TablePagination
+            component="div"
+            count={this.state.numberOfRecord}
+            onChangePage={(e, page) => this.handleChangePage(e, page)}
+            onChangeRowsPerPage={e => this.handleChangeRowsPerPage(e)}
+            page={this.state.tablePage}
+            rowsPerPage={this.state.itemPerPage}
+            rowsPerPageOptions={[10, 25, 50]}
+            labelRowsPerPage="Dòng" />
+          <Button variant="contained" color="primary" onClick={e => this.toggleExpansionForm(e)}><AddCircle fontSize="small" /> Thêm mới</Button>
+          <Collapse in={this.state.isExpansionButton}>
+            <Grid container spacing={2}>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  required
+                  label="Tên thánh và Họ"
+                  name="firstName"
+                  id="firstName"
+                  value={this.state.newFirstname}
+                  onChange={e => this.handleFormChange(e, "newFirstname")}
+                  fullWidth
+                />
               </Grid>
-            </Collapse>
-          </Card>
-        </Grid>
-      </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  required
+                  label="Tên"
+                  name="lastName"
+                  id="lastName"
+                  value={this.state.newLastName}
+                  onChange={e => this.handleFormChange(e, "newLastName")}
+                  fullWidth
+                />
+              </Grid>
+              <Grid item xs={12} sm={3}>
+                <TextField
+                  required
+                  label="Họ tên Cha"
+                  name="fatherName"
+                  id="fatherName"
+                  value={this.state.newFatherName}
+                  onChange={e => this.handleFormChange(e, "newFatherName")}
+                  fullWidth
+                />
+              </Grid>
+              <Grid item xs={12} sm={3}>
+                <TextField
+                  required
+                  label="Họ tên Mẹ"
+                  name="motherName"
+                  id="motherName"
+                  value={this.state.newMotherName}
+                  onChange={e => this.handleFormChange(e, "newMotherName")}
+                  fullWidth
+                />
+              </Grid>
+              <Grid item xs={12} sm={3}>
+                <TextField
+                  required
+                  select
+                  label="Giáo khu"
+                  name="diocese"
+                  id="diocese"
+                  value={this.state.newDiocese}
+                  onChange={e => this.handleFormChange(e, "newDiocese")}
+                  fullWidth
+                  SelectProps={{
+                    MenuProps: {
+                      className: classes.menu
+                    }
+                  }}
+                >
+                  {this.state.dioceses.map(diocese => (
+                    <MenuItem key={diocese} value={diocese}>
+                      {diocese}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              </Grid>
+              <Grid item xs={12} sm={3}>
+                <TextField
+                  required
+                  select
+                  label="Giới tính"
+                  name="gender"
+                  id="gender"
+                  value={this.state.newGender}
+                  onChange={e => this.handleFormChange(e, "newGender")}
+                  fullWidth
+                  SelectProps={{
+                    MenuProps: {
+                      className: classes.menu
+                    }
+                  }}
+                >
+                  {this.state.genders.map(gender => (
+                    <MenuItem key={gender} value={gender}>
+                      {gender}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              </Grid>
+            </Grid>
+          </Collapse>
+        </Paper>
+      </div>
     );
   }
 }

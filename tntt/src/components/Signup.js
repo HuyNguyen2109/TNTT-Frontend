@@ -26,6 +26,13 @@ import { Redirect } from 'react-router';
 import { MenuItem } from '@material-ui/core';
 import CircularProgress from '@material-ui/core/CircularProgress';
 
+import {
+  MuiPickersUtilsProvider,
+  KeyboardDatePicker
+} from '@material-ui/pickers';
+import DateFnsUtils from '@date-io/date-fns';
+import moment from 'moment';
+
 const useStyles = theme => ({
   '@global': {
     body: {
@@ -75,8 +82,8 @@ const ResponsiveDialog = (props) => {
     setRedirect(true);
   };
 
-  if(redirect){
-    return(
+  if (redirect) {
+    return (
       <Redirect push to="/" />
     )
   }
@@ -110,7 +117,7 @@ const ResponsiveDialog = (props) => {
 class Signup extends React.Component {
   constructor(props) {
     super(props)
-    
+
     this.state = {
       openDialog: false,
       holyName: "",
@@ -118,9 +125,9 @@ class Signup extends React.Component {
       lastName: "",
       email: "",
       phoneNumber: "",
-      selectedDate: "1990-01-01",
-      selectedHolyDate: "1990-01-01",
-      defaultDate: "1990-01-01",
+      selectedDate: moment("1990-01-01").format(),
+      selectedHolyDate: moment("1990-01-01").format(),
+      defaultDate: moment("1990-01-01").format(),
       snackerBarStatus: false,
       snackbarMessage: "",
       selectedEmailProvider: "@gmail.com",
@@ -130,8 +137,10 @@ class Signup extends React.Component {
 
   handleFormChange = (e, type) => {
     let data;
-    if(type==='email'){
+    if (type === 'email') {
       data = e.target.value.replace(/[^\w\s]/gi, "");
+    } else if (type === "selectedDate" || type === "selectedHolyDate"){
+      data = e
     } else {
       data = e.target.value
     }
@@ -148,23 +157,23 @@ class Signup extends React.Component {
     // eslint-disable-next-line
     const phoneRegex = /^[\+]?[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,6}$/im
     const fullEmail = this.state.email + this.state.selectedEmailProvider;
-    this.setState({isSignupClicked: true});
-    if(!phoneRegex.test(this.state.phoneNumber) && !emailRegex.test(this.state.email)) {
-      this.setState({snackerBarStatus: true})
-      this.setState({snackbarMessage: "Số điện thoại và email của bạn không hợp lệ"})
-      this.setState({isSignupClicked: false})
+    this.setState({ isSignupClicked: true });
+    if (!phoneRegex.test(this.state.phoneNumber) && !emailRegex.test(this.state.email)) {
+      this.setState({ snackerBarStatus: true })
+      this.setState({ snackbarMessage: "Số điện thoại và email của bạn không hợp lệ" })
+      this.setState({ isSignupClicked: false })
     }
     else {
-      if(!fullEmailRegex.test(fullEmail)) {
-        this.setState({snackerBarStatus: true})
-        this.setState({snackbarMessage: "Email của bạn không hợp lệ!"})
-        this.setState({isSignupClicked: false})
+      if (!fullEmailRegex.test(fullEmail)) {
+        this.setState({ snackerBarStatus: true })
+        this.setState({ snackbarMessage: "Email của bạn không hợp lệ!" })
+        this.setState({ isSignupClicked: false })
       }
       else {
-        if(!phoneRegex.test(this.state.phoneNumber)) {
-          this.setState({snackerBarStatus: true})
-          this.setState({snackbarMessage: "Số điện thoại của bạn không hợp lệ"})
-          this.setState({isSignupClicked: false})
+        if (!phoneRegex.test(this.state.phoneNumber)) {
+          this.setState({ snackerBarStatus: true })
+          this.setState({ snackbarMessage: "Số điện thoại của bạn không hợp lệ" })
+          this.setState({ isSignupClicked: false })
         }
         else {
           const signUpData = {
@@ -174,23 +183,23 @@ class Signup extends React.Component {
               Họ và tên: ${this.state.holyName} ${this.state.firstName} ${this.state.lastName}
               Số điện thoại: ${this.state.phoneNumber},
               Email: ${fullEmail},
-              Sinh nhật: ${this.state.selectedDate},
-              Bổn mạng: ${this.state.selectedHolyDate}`
+              Sinh nhật: ${moment(this.state.selectedDate).format("DD/MM/YYYY")},
+              Bổn mạng: ${moment(this.state.selectedHolyDate).format("DD/MM/YYYY")}`
           };
 
           axios
-            .post('/backend/email/send', signUpData )
+            .post('/backend/email/send', signUpData)
             .then((result) => {
-              this.setState({openDialog: !this.state.openDialog});
+              this.setState({ openDialog: !this.state.openDialog });
             })
             .catch((error) => {
-              this.setState({isSignupClicked: false})
-              this.setState({snackerBarStatus: true})
-              this.setState({snackbarMessage: "Đã có lỗi xảy ra trong quá trình đăng ký, vui lòng thử lại"})
+              this.setState({ isSignupClicked: false })
+              this.setState({ snackerBarStatus: true })
+              this.setState({ snackbarMessage: "Đã có lỗi xảy ra trong quá trình đăng ký, vui lòng thử lại" })
             })
         }
       }
-    }  
+    }
   }
 
   clearAllData = () => {
@@ -207,7 +216,7 @@ class Signup extends React.Component {
   }
 
   callbackSnackerBarHanlder = (callback) => {
-    this.setState({snackerBarStatus: callback})
+    this.setState({ snackerBarStatus: callback })
   }
 
   render = () => {
@@ -326,62 +335,58 @@ class Signup extends React.Component {
                   onChange={e => this.handleFormChange(e, "phoneNumber")}
                 />
               </Grid>
-              <Grid item xs={12}>
-                <TextField
-                  variant="outlined"
-                  required
-                  fullWidth
-                  type="date"
-                  id="birthday"
-                  label="Ngày sinh"
-                  name="birthday"
-                  value={this.state.selectedDate}
-                  InputLabelProps={{
-                    shrink: true,
-                  }}
-                  onChange={e => this.handleFormChange(e, "selectedDate")}
-                />
-              </Grid>
-              <Grid item xs={12}>
-                <TextField
-                  variant="outlined"
-                  required
-                  fullWidth
-                  type="date"
-                  id="holy-birthday"
-                  label="Bổn mạng"
-                  name="holy-birthday"
-                  value={this.state.selectedHolyDate}
-                  InputLabelProps={{
-                    shrink: true,
-                  }}
-                  onChange={e => this.handleFormChange(e, "selectedHolyDate")}
-                />
-              </Grid>
+              <MuiPickersUtilsProvider utils={DateFnsUtils}>
+                <Grid item xs={12}>
+                  <KeyboardDatePicker
+                    fullWidth
+                    format="dd/MM/yyyy"
+                    id="birthday"
+                    label="Ngày sinh"
+                    inputVariant="outlined"
+                    value={this.state.selectedDate}
+                    onChange={e => this.handleFormChange(e, "selectedDate")}
+                    KeyboardButtonProps={{
+                      'aria-label': 'change date',
+                    }} />
+                </Grid>
+                <Grid item xs={12}>
+                  <KeyboardDatePicker
+                    fullWidth
+                    inputVariant="outlined"
+                    format="dd/MM/yyyy"
+                    id="holy-birthday"
+                    label="Bổn mạng"
+                    value={this.state.selectedHolyDate}
+                    onChange={e => this.handleFormChange(e, "selectedHolyDate")}
+                    KeyboardButtonProps={{
+                      'aria-label': 'change date',
+                    }} />
+                </Grid>
+              </MuiPickersUtilsProvider>
             </Grid>
             <Button
-              disabled={((this.state.holyName !== "" && 
-              this.state.firstName !== "" && 
-              this.state.lastName !== "" && 
-              this.state.email !== "" && 
-              this.state.phoneNumber !== "" && 
-              this.state.selectedDate !== this.state.defaultDate && 
-              this.state.selectedHolyDate !== this.state.defaultDate) && !this.state.isSignupClicked) ? false : true}
+              disabled={((this.state.holyName !== "" &&
+                this.state.firstName !== "" &&
+                this.state.lastName !== "" &&
+                this.state.email !== "" &&
+                this.state.phoneNumber !== "" &&
+                this.state.selectedDate !== this.state.defaultDate &&
+                this.state.selectedHolyDate !== this.state.defaultDate) && !this.state.isSignupClicked) ? false : true}
               fullWidth
               variant="contained"
               color="primary"
               className={classes.submit}
               onClick={e => this.validateAndSend(e)}
-              >
-                Đăng ký {(this.state.isSignupClicked) ? <CircularProgress className={classes.processing} size={15}></CircularProgress> : null}
+            >
+              Đăng ký {(this.state.isSignupClicked) ? <CircularProgress className={classes.processing} size={15}></CircularProgress> : null}
             </Button>
             <Button
-            disabled={(this.state.isSignupClicked === false) ? false : true}
-            fullWidth
-            variant="contained"
-            color="secondary"
-            className={classes.cancel}
-            onClick={this.clearAllData}
+              disabled={(this.state.isSignupClicked === false) ? false : true}
+              fullWidth
+              variant="contained"
+              color="secondary"
+              className={classes.cancel}
+              onClick={this.clearAllData}
             >
               Xóa
             </Button>
@@ -394,7 +399,7 @@ class Signup extends React.Component {
                     size="small"
                     color="primary"
                   >Bạn đã có tài khoản? Đăng nhập ngay!</Button>
-              </Link>
+                </Link>
               </Grid>
             </Grid>
           </form>

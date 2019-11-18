@@ -11,14 +11,12 @@ import {
   TableHead,
   TableRow,
   TablePagination,
-  Grid,
   Button,
-  TextField,
-  Collapse,
-  MenuItem,
   Typography,
   Paper
 } from '@material-ui/core';
+
+import FloatingForm from './components/floatingForm';
 
 const useStyles = theme => ({
   root: {
@@ -67,21 +65,6 @@ class Dashboard extends React.Component {
       currentClass: '',
       isExpansionButton: false,
 
-      newFirstname: '',
-      newLastName: '',
-      newFatherName: '',
-      newMotherName: '',
-      newDiocese: 'Giuse',
-      newGender: 'Nam',
-      newClass: '',
-      newBirthday: '',
-      newDayOfBaptism: '',
-      newDayofEucharist: '',
-      newDayofConfirmation: '',
-
-      dioceses: ['Giuse', 'Nữ Vương Mân Côi', 'Anna', 'Phêrô'],
-      genders: ['Nam', 'Nữ'],
-
       windowsWidth: 0,
       windowsHeight: 0,
     }
@@ -110,9 +93,9 @@ class Dashboard extends React.Component {
   }
 
   updateWindowDimensions() {
-    this.setState({ 
-      windowsWidth: window.innerWidth, 
-      windowsHeight: window.innerHeight 
+    this.setState({
+      windowsWidth: window.innerWidth,
+      windowsHeight: window.innerHeight
     });
   }
 
@@ -204,11 +187,10 @@ class Dashboard extends React.Component {
     return this.getData(null, page, this.state.itemPerPage);
   }
 
-  handleFormChange = (e, type) => {
-    let data = e.target.value;
-    const result = {};
-    result[type] = data;
-    this.setState(result);
+  handleCallBackFloatingform = (callback) => {
+    this.setState({
+      isExpansionButton: callback
+    })
   }
 
   toggleExpansionForm = (e) => {
@@ -301,7 +283,7 @@ class Dashboard extends React.Component {
     ]
 
     return (
-      <div className={(this.state.windowsWidth < 500) ? {padding: 0} : classes.root}>
+      <div className={(this.state.windowsWidth < 500) ? { padding: 0 } : classes.root}>
         <Paper className={classes.root}>
           <Typography variant="h4">
             {(this.props.location.pathname.split("/")[2] === 'all') ? "Danh sách chung" : `Danh sách lớp ${this.state.currentClass}`}
@@ -326,7 +308,7 @@ class Dashboard extends React.Component {
                     role="checkbox"
                     hover
                     key={record.ID}
-                    tabIndex={this.state.selectedRecord.indexOf(record.ID) !== -1}
+                    tabIndex={-1}
                   >
                     {columns.map(col => {
                       const value = record[col.id];
@@ -351,100 +333,7 @@ class Dashboard extends React.Component {
             rowsPerPageOptions={[10, 25, 50]}
             labelRowsPerPage="Dòng" />
           <Button variant="contained" color="primary" onClick={e => this.toggleExpansionForm(e)}><AddCircle fontSize="small" /> Thêm mới</Button>
-          <Collapse in={this.state.isExpansionButton}>
-            <Grid container spacing={2}>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  required
-                  label="Tên thánh và Họ"
-                  name="firstName"
-                  id="firstName"
-                  value={this.state.newFirstname}
-                  onChange={e => this.handleFormChange(e, "newFirstname")}
-                  fullWidth
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  required
-                  label="Tên"
-                  name="lastName"
-                  id="lastName"
-                  value={this.state.newLastName}
-                  onChange={e => this.handleFormChange(e, "newLastName")}
-                  fullWidth
-                />
-              </Grid>
-              <Grid item xs={12} sm={3}>
-                <TextField
-                  required
-                  label="Họ tên Cha"
-                  name="fatherName"
-                  id="fatherName"
-                  value={this.state.newFatherName}
-                  onChange={e => this.handleFormChange(e, "newFatherName")}
-                  fullWidth
-                />
-              </Grid>
-              <Grid item xs={12} sm={3}>
-                <TextField
-                  required
-                  label="Họ tên Mẹ"
-                  name="motherName"
-                  id="motherName"
-                  value={this.state.newMotherName}
-                  onChange={e => this.handleFormChange(e, "newMotherName")}
-                  fullWidth
-                />
-              </Grid>
-              <Grid item xs={12} sm={3}>
-                <TextField
-                  required
-                  select
-                  label="Giáo khu"
-                  name="diocese"
-                  id="diocese"
-                  value={this.state.newDiocese}
-                  onChange={e => this.handleFormChange(e, "newDiocese")}
-                  fullWidth
-                  SelectProps={{
-                    MenuProps: {
-                      className: classes.menu
-                    }
-                  }}
-                >
-                  {this.state.dioceses.map(diocese => (
-                    <MenuItem key={diocese} value={diocese}>
-                      {diocese}
-                    </MenuItem>
-                  ))}
-                </TextField>
-              </Grid>
-              <Grid item xs={12} sm={3}>
-                <TextField
-                  required
-                  select
-                  label="Giới tính"
-                  name="gender"
-                  id="gender"
-                  value={this.state.newGender}
-                  onChange={e => this.handleFormChange(e, "newGender")}
-                  fullWidth
-                  SelectProps={{
-                    MenuProps: {
-                      className: classes.menu
-                    }
-                  }}
-                >
-                  {this.state.genders.map(gender => (
-                    <MenuItem key={gender} value={gender}>
-                      {gender}
-                    </MenuItem>
-                  ))}
-                </TextField>
-              </Grid>
-            </Grid>
-          </Collapse>
+          <FloatingForm open={this.state.isExpansionButton} callback={this.handleCallBackFloatingform}/>
         </Paper>
       </div>
     );

@@ -78,7 +78,7 @@ class SidebarNav extends React.Component {
       >
         {pages.map(page => (
           (page.title === 'Thiếu Nhi')?
-            <React.Fragment>
+            <React.Fragment key={page.title}>
               <ListItem
                 className={classes.item}
                 disableGutters

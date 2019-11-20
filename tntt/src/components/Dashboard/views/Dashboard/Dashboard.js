@@ -2,21 +2,22 @@ import React from 'react';
 import { withStyles } from '@material-ui/styles';
 import axios from 'axios';
 import {
-  AddCircle
+  Cached,
+  Add,
+  Edit,
+  Search,
 } from '@material-ui/icons/';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
-  TablePagination,
-  Button,
+  Grid,
   Typography,
-  Paper
+  Paper,
+  TextField,
+  InputAdornment
 } from '@material-ui/core';
+import MaterialTable from 'material-table';
 
 import FloatingForm from './components/floatingForm';
+import tableIcons from './components/tableIcons';
 
 const useStyles = theme => ({
   root: {
@@ -27,8 +28,9 @@ const useStyles = theme => ({
     padding: 0
   },
   inner: {
-    maxHeight: 440,
+    maxHeight: 500,
     overflow: 'auto',
+    marginTop: theme.spacing(1)
   },
   nameContainer: {
     padding: theme.spacing(2)
@@ -38,8 +40,10 @@ const useStyles = theme => ({
   },
   menu: {
     width: 200,
-  }
+  },
 });
+
+
 
 class Dashboard extends React.Component {
   constructor(props) {
@@ -64,12 +68,16 @@ class Dashboard extends React.Component {
       numberOfRecord: 0,
       currentClass: '',
       isExpansionButton: false,
+      floatingFormType: 'new',
 
       windowsWidth: 0,
       windowsHeight: 0,
+      search: '',
     }
 
     this.updateWindowDimensions = this.updateWindowDimensions.bind(this);
+
+    this.myRef = React.createRef();
   }
 
   componentDidUpdate = (prevProps) => {
@@ -97,6 +105,10 @@ class Dashboard extends React.Component {
       windowsWidth: window.innerWidth,
       windowsHeight: window.innerHeight
     });
+  }
+
+  scrollToRef = () => {
+    window.scrollTo(0, this.myRef.offsetTop)
   }
 
   getNumberOfRecord = () => {
@@ -173,6 +185,11 @@ class Dashboard extends React.Component {
 
   }
 
+  reloadData = (e) => {
+    console.log('aaa')
+    return this.getData(null, 0, this.state.itemPerPage) && this.getNumberOfRecord();
+  }
+
   handleChangeRowsPerPage = (e) => {
     this.setState({
       itemPerPage: e.target.value
@@ -180,7 +197,14 @@ class Dashboard extends React.Component {
     return this.getData(null, this.state.tablePage, e.target.value);
   }
 
-  handleChangePage = (e, page) => {
+  handleChangeRowsPerPageforMaterialTable = (pageSize) => {
+    this.setState({
+      itemPerPage: pageSize
+    })
+    return this.getData(null, this.state.tablePage, pageSize);
+  }
+
+  handleChangePage = (page) => {
     this.setState({
       tablePage: page
     })
@@ -193,94 +217,100 @@ class Dashboard extends React.Component {
     })
   }
 
+  handleRowSelection = (e, rowData) => {
+    this.setState({
+      isExpansionButton: true,
+      floatingFormType: 'edit'
+    })
+  }
+
+  handleSearch = (e, type) => {
+    const result = {};
+    let data = e.target.value;
+    result[type] = data;
+    this.setState(result)
+    
+    return axios
+      .get('/backend/children/find', {
+        params: {
+          search: e.target.value
+        }
+      })
+      .then(result => {
+        this.setState({
+          records: result.data.data,
+          numberOfRecord: result.data.data.length
+        })
+      })
+      .catch(err => {
+        console.log(err);
+      })
+  }
+
   toggleExpansionForm = (e) => {
     this.setState({
-      isExpansionButton: !this.state.isExpansionButton
+      isExpansionButton: !this.state.isExpansionButton,
+      floatingFormType: 'new'
     })
   }
 
   render = () => {
     const { classes } = this.props;
-    const columns = [
+
+    const materialColumns = [
       {
-        id: 'firstname',
-        label: "Tên Thánh và Họ",
-        minWidth: 100,
-        align: 'left'
+        title: 'Tên Thánh và Họ',
+        field: 'firstname'
       },
       {
-        id: 'lastname',
-        label: "Tên",
-        minWidth: 100,
-        align: 'left'
+        title: 'Tên',
+        field: 'lastname',
       },
       {
-        id: 'father_name',
-        label: "Họ tên Cha",
-        minWidth: 100,
-        align: 'left'
+        title: 'Họ tên Cha',
+        field: 'father_name',
       },
       {
-        id: 'mother_name',
-        label: "Họ tên Mẹ",
-        minWidth: 100,
-        align: 'left'
+        title: 'Họ tên Mẹ',
+        field: 'mother_name',
       },
       {
-        id: 'diocese',
-        label: "Giáo khu",
-        minWidth: 100,
-        align: 'center'
+        title: 'Giáo khu',
+        field: 'diocese',
       },
       {
-        id: 'male',
-        label: "Giới tính",
-        minWidth: 100,
-        align: 'center'
+        title: 'Nam',
+        field: 'male',
       },
       {
-        id: 'birthday',
-        label: "Sinh nhật",
-        minWidth: 100,
-        align: 'center'
+        title: 'Sinh nhật',
+        field: 'birthday',
       },
       {
-        id: 'day_of_baptism',
-        label: "Ngày Rửa Tội",
-        minWidth: 100,
-        align: 'center'
+        title: 'Ngày Rửa tội',
+        field: 'day_of_baptism',
       },
       {
-        id: 'day_of_eucharist',
-        label: "Ngày Rước Lễ",
-        minWidth: 100,
-        align: 'center'
+        title: 'Ngày Rước lễ',
+        field: 'day_of_eucharist',
       },
       {
-        id: 'day_of_confirmation',
-        label: "Ngày Thêm Sức",
-        minWidth: 100,
-        align: 'center'
+        title: 'Ngày Thêm sức',
+        field: 'day_of_confirmation',
       },
       {
-        id: 'address',
-        label: "Địa chỉ",
-        minWidth: 100,
-        align: 'left'
+        title: 'Địa chỉ',
+        field: 'address',
       },
       {
-        id: 'contact',
-        label: "Liên lạc",
-        minWidth: 100,
-        align: 'left'
+        title: 'Liên lạc',
+        field: 'contact',
       },
       {
-        id: 'class',
-        label: "Lớp",
-        minWidth: 100,
-        align: 'center'
-      },
-    ]
+        title: 'Lớp',
+        field: 'class',
+      }
+    ];
 
     return (
       <div className={(this.state.windowsWidth < 500) ? { padding: 0 } : classes.root}>
@@ -288,52 +318,84 @@ class Dashboard extends React.Component {
           <Typography variant="h4">
             {(this.props.location.pathname.split("/")[2] === 'all') ? "Danh sách chung" : `Danh sách lớp ${this.state.currentClass}`}
           </Typography>
+          <Grid container alignItems="flex-start" justify="flex-end" direction="row">
+            <TextField 
+              placeholder="Tìm kiếm..."
+              id="searchField"
+              value={this.state.search}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="end">
+                    <Search />
+                  </InputAdornment>
+                ),
+              }}
+              onChange={(e) => this.handleSearch(e, "search")}
+            />
+          </Grid>
           <div className={classes.inner}>
-            <Table stickyHeader aria-label="sticky table">
-              <TableHead>
-                <TableRow>
-                  {columns.map(col => (
-                    <TableCell
-                      key={col.id}
-                      align={col.align}
-                      style={{ minWidth: col.minWidth }}>
-                      {col.label}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {this.state.records.map(record => (
-                  <TableRow
-                    role="checkbox"
-                    hover
-                    key={record.ID}
-                    tabIndex={-1}
-                  >
-                    {columns.map(col => {
-                      const value = record[col.id];
-                      return (
-                        <TableCell key={col.id} align={col.align}>
-                          {col.id !== 'male' ? value : (col.id === 'male' && value === 'x') ? 'Nam' : 'Nữ'}
-                        </TableCell>
-                      );
-                    })}
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+            <MaterialTable
+              icons={tableIcons}
+              columns={materialColumns}
+              data={this.state.records}
+              onChangePage={(page) => this.handleChangePage(page)}
+              onChangeRowsPerPage={pageSize => this.handleChangeRowsPerPageforMaterialTable(pageSize)}
+              totalCount={this.state.numberOfRecord}
+              page={this.state.tablePage}
+              localization={{
+                header: {
+                  actions: ''
+                },
+                pagination: {
+                  previousTooltip: "Trang trước",
+                  nextTooltip: "Trang sau",
+                  firstTooltip: "Trang đầu",
+                  lastTooltip: "Trang cuối",
+                  labelRowsSelect: "Dòng"
+                }
+              }}
+              options={{
+                showFirstLastPageButtons: true,
+                pageSizeOptions: [10, 25, 50],
+                pageSize: this.state.itemPerPage,
+                paging: true,
+                headerStyle: {
+                  position: 'sticky',
+                  top: 0,
+                  backgroundColor: '#38b6ff',
+                  color: '#000000',
+                  fontSize: 14,
+                },
+                maxBodyHeight: '370px',
+                search: false,
+                emptyRowsWhenPaging: false,
+              }}
+              onSearchChange={(e) => console.log("search changed: " + e)}
+              actions={[
+                {
+                  icon: () => { return <Edit/> },
+                  tooltip: "Chỉnh sửa",
+                  onClick: (e, rowData) => {
+                    this.handleRowSelection(e, rowData);
+                    this.scrollToRef()
+                  }
+                },
+                {
+                  icon: () => {return <Add />},
+                  tooltip: "Đăng ký thiếu nhi mới",
+                  isFreeAction: true,
+                  onClick: (e) => this.toggleExpansionForm(e)
+                },
+                {
+                  icon: () => {return <Cached />},
+                  tooltip: "Cập nhật danh sách",
+                  isFreeAction: true,
+                  onClick: () => this.myRef.current && this.myRef.current.onQueryChange(),
+                }
+              ]}
+              />
           </div>
-          <TablePagination
-            component="div"
-            count={this.state.numberOfRecord}
-            onChangePage={(e, page) => this.handleChangePage(e, page)}
-            onChangeRowsPerPage={e => this.handleChangeRowsPerPage(e)}
-            page={this.state.tablePage}
-            rowsPerPage={this.state.itemPerPage}
-            rowsPerPageOptions={[10, 25, 50]}
-            labelRowsPerPage="Dòng" />
-          <Button variant="contained" color="primary" onClick={e => this.toggleExpansionForm(e)}><AddCircle fontSize="small" /> Thêm mới</Button>
-          <FloatingForm open={this.state.isExpansionButton} callback={this.handleCallBackFloatingform}/>
+          <FloatingForm open={this.state.isExpansionButton} callback={this.handleCallBackFloatingform} type={this.state.floatingFormType}/>
         </Paper>
       </div>
     );

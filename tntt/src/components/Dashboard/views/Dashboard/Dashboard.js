@@ -2,22 +2,31 @@ import React from 'react';
 import { withStyles } from '@material-ui/styles';
 import axios from 'axios';
 import {
-  Cached,
   Add,
   Edit,
-  Search,
 } from '@material-ui/icons/';
 import {
-  Grid,
   Typography,
   Paper,
-  TextField,
-  InputAdornment
 } from '@material-ui/core';
-import MaterialTable from 'material-table';
+
+import {
+  Grid,
+  VirtualTable,
+  TableHeaderRow,
+  PagingPanel,
+  SearchPanel,
+  Toolbar,
+  TableFixedColumns
+} from '@devexpress/dx-react-grid-material-ui'
+import {
+  PagingState,
+  SortingState,
+  CustomPaging,
+  SearchState,
+} from '@devexpress/dx-react-grid'
 
 import FloatingForm from './components/floatingForm';
-import tableIcons from './components/tableIcons';
 
 const useStyles = theme => ({
   root: {
@@ -28,7 +37,6 @@ const useStyles = theme => ({
     padding: 0
   },
   inner: {
-    maxHeight: 500,
     overflow: 'auto',
     marginTop: theme.spacing(1)
   },
@@ -42,8 +50,6 @@ const useStyles = theme => ({
     width: 200,
   },
 });
-
-
 
 class Dashboard extends React.Component {
   constructor(props) {
@@ -69,15 +75,92 @@ class Dashboard extends React.Component {
       currentClass: '',
       isExpansionButton: false,
       floatingFormType: 'new',
+      search: '',
 
       windowsWidth: 0,
       windowsHeight: 0,
-      search: '',
+
+      materialColumns: [
+        {
+          title: 'Họ và tên thánh',
+          name: 'firstname'
+        },
+        {
+          title: 'Tên',
+          name: 'lastname'
+        },
+        {
+          title: 'Họ tên Cha',
+          name: 'father_name',
+        },
+        {
+          title: 'Họ tên Mẹ',
+          name: 'mother_name',
+        },
+        {
+          title: 'Giáo khu',
+          name: 'diocese',
+          searchable: false
+        },
+        {
+          title: 'Nam',
+          name: 'male',
+        },
+        {
+          title: 'Sinh nhật',
+          name: 'birthday',
+        },
+        {
+          title: 'Ngày Rửa tội',
+          name: 'day_of_baptism',
+        },
+        {
+          title: 'Ngày Rước lễ',
+          name: 'day_of_eucharist',
+        },
+        {
+          title: 'Ngày Thêm sức',
+          name: 'day_of_confirmation',
+        },
+        {
+          title: 'Địa chỉ',
+          name: 'address',
+        },
+        {
+          title: 'Liên lạc',
+          name: 'contact',
+        },
+        {
+          title: 'Lớp',
+          name: 'class',
+        }
+      ],
+      columnExtensions: [
+        {
+          columnName: 'firstname',
+          width: '200px',
+        },
+        {
+          columnName: 'father_name',
+          width: '250px'
+        },
+        {
+          columnName: 'mother_name',
+          width: '250px'
+        },
+        {
+          columnName: 'diocese',
+          align: 'center'
+        },
+        {
+          columnName: 'male',
+          align: 'center'
+        },
+      ],
+      leftColumns: ['firstname', 'lastname']
     }
 
     this.updateWindowDimensions = this.updateWindowDimensions.bind(this);
-
-    this.myRef = React.createRef();
   }
 
   componentDidUpdate = (prevProps) => {
@@ -85,15 +168,16 @@ class Dashboard extends React.Component {
       this.setState({
         tablePage: 0
       });
-
-      return this.getData(null, 0, this.state.itemPerPage) && this.getNumberOfRecord();
+      this.getData(0, this.state.itemPerPage);
+      this.getNumberOfRecord()
     }
   }
 
   componentDidMount = () => {
     this.updateWindowDimensions();
     window.addEventListener("resize", this.updateWindowDimensions.bind(this));
-    return this.getData(null, this.state.tablePage, this.state.itemPerPage) && this.getNumberOfRecord();
+    this.getData(this.state.tablePage, this.state.itemPerPage);
+    this.getNumberOfRecord();
   }
 
   componentWillUnmount = () => {
@@ -105,10 +189,6 @@ class Dashboard extends React.Component {
       windowsWidth: window.innerWidth,
       windowsHeight: window.innerHeight
     });
-  }
-
-  scrollToRef = () => {
-    window.scrollTo(0, this.myRef.offsetTop)
   }
 
   getNumberOfRecord = () => {
@@ -158,7 +238,7 @@ class Dashboard extends React.Component {
     }
   }
 
-  getData = (pathname, page, itemPerPage) => {
+  getData = (page, itemPerPage) => {
     return axios
       .get('/backend/class/by-path', {
         params: {
@@ -175,8 +255,13 @@ class Dashboard extends React.Component {
         })
       })
       .then(result => {
+        let modifiedData = result.data.data;
+        // modifiedData.forEach(row => {
+        //   row.firstname = row.firstname + ' ' + row.lastname;
+        //   delete row.lastname;
+        // })
         this.setState({
-          records: result.data.data
+          records: modifiedData,
         })
       })
       .catch(err => {
@@ -185,30 +270,18 @@ class Dashboard extends React.Component {
 
   }
 
-  reloadData = (e) => {
-    console.log('aaa')
-    return this.getData(null, 0, this.state.itemPerPage) && this.getNumberOfRecord();
-  }
-
-  handleChangeRowsPerPage = (e) => {
+  handleChangeRowsPerPage = (size) => {
     this.setState({
-      itemPerPage: e.target.value
+      itemPerPage: size
     })
-    return this.getData(null, this.state.tablePage, e.target.value);
-  }
-
-  handleChangeRowsPerPageforMaterialTable = (pageSize) => {
-    this.setState({
-      itemPerPage: pageSize
-    })
-    return this.getData(null, this.state.tablePage, pageSize);
+    this.getData(this.state.tablePage, size);
   }
 
   handleChangePage = (page) => {
     this.setState({
       tablePage: page
     })
-    return this.getData(null, page, this.state.itemPerPage);
+    return this.getData(page, this.state.itemPerPage);
   }
 
   handleCallBackFloatingform = (callback) => {
@@ -224,27 +297,32 @@ class Dashboard extends React.Component {
     })
   }
 
-  handleSearch = (e, type) => {
-    const result = {};
-    let data = e.target.value;
-    result[type] = data;
-    this.setState(result)
-    
-    return axios
+  handleSearchChange = (text) => {
+    console.log(text);
+    this.setState({
+      search: text
+    })
+    if(text !== '') {
+      return axios
       .get('/backend/children/find', {
         params: {
-          search: e.target.value
+          search: text
         }
       })
       .then(result => {
+        let modifiedData = result.data.data;
         this.setState({
-          records: result.data.data,
-          numberOfRecord: result.data.data.length
+          records: modifiedData,
+          numberOfRecord: modifiedData.length
         })
       })
       .catch(err => {
         console.log(err);
       })
+    }
+    else {
+      return this.getData(0, this.state.itemPerPage) && this.getNumberOfRecord()
+    }
   }
 
   toggleExpansionForm = (e) => {
@@ -256,61 +334,7 @@ class Dashboard extends React.Component {
 
   render = () => {
     const { classes } = this.props;
-
-    const materialColumns = [
-      {
-        title: 'Tên Thánh và Họ',
-        field: 'firstname'
-      },
-      {
-        title: 'Tên',
-        field: 'lastname',
-      },
-      {
-        title: 'Họ tên Cha',
-        field: 'father_name',
-      },
-      {
-        title: 'Họ tên Mẹ',
-        field: 'mother_name',
-      },
-      {
-        title: 'Giáo khu',
-        field: 'diocese',
-      },
-      {
-        title: 'Nam',
-        field: 'male',
-      },
-      {
-        title: 'Sinh nhật',
-        field: 'birthday',
-      },
-      {
-        title: 'Ngày Rửa tội',
-        field: 'day_of_baptism',
-      },
-      {
-        title: 'Ngày Rước lễ',
-        field: 'day_of_eucharist',
-      },
-      {
-        title: 'Ngày Thêm sức',
-        field: 'day_of_confirmation',
-      },
-      {
-        title: 'Địa chỉ',
-        field: 'address',
-      },
-      {
-        title: 'Liên lạc',
-        field: 'contact',
-      },
-      {
-        title: 'Lớp',
-        field: 'class',
-      }
-    ];
+    
 
     return (
       <div className={(this.state.windowsWidth < 500) ? { padding: 0 } : classes.root}>
@@ -318,84 +342,42 @@ class Dashboard extends React.Component {
           <Typography variant="h4">
             {(this.props.location.pathname.split("/")[2] === 'all') ? "Danh sách chung" : `Danh sách lớp ${this.state.currentClass}`}
           </Typography>
-          <Grid container alignItems="flex-start" justify="flex-end" direction="row">
-            <TextField 
-              placeholder="Tìm kiếm..."
-              id="searchField"
-              value={this.state.search}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="end">
-                    <Search />
-                  </InputAdornment>
-                ),
-              }}
-              onChange={(e) => this.handleSearch(e, "search")}
-            />
-          </Grid>
           <div className={classes.inner}>
-            <MaterialTable
-              icons={tableIcons}
-              columns={materialColumns}
-              data={this.state.records}
-              onChangePage={(page) => this.handleChangePage(page)}
-              onChangeRowsPerPage={pageSize => this.handleChangeRowsPerPageforMaterialTable(pageSize)}
-              totalCount={this.state.numberOfRecord}
-              page={this.state.tablePage}
-              localization={{
-                header: {
-                  actions: ''
-                },
-                pagination: {
-                  previousTooltip: "Trang trước",
-                  nextTooltip: "Trang sau",
-                  firstTooltip: "Trang đầu",
-                  lastTooltip: "Trang cuối",
-                  labelRowsSelect: "Dòng"
-                }
-              }}
-              options={{
-                showFirstLastPageButtons: true,
-                pageSizeOptions: [10, 25, 50],
-                pageSize: this.state.itemPerPage,
-                paging: true,
-                headerStyle: {
-                  position: 'sticky',
-                  top: 0,
-                  backgroundColor: '#38b6ff',
-                  color: '#000000',
-                  fontSize: 14,
-                },
-                maxBodyHeight: '370px',
-                search: false,
-                emptyRowsWhenPaging: false,
-              }}
-              onSearchChange={(e) => console.log("search changed: " + e)}
-              actions={[
-                {
-                  icon: () => { return <Edit/> },
-                  tooltip: "Chỉnh sửa",
-                  onClick: (e, rowData) => {
-                    this.handleRowSelection(e, rowData);
-                    this.scrollToRef()
-                  }
-                },
-                {
-                  icon: () => {return <Add />},
-                  tooltip: "Đăng ký thiếu nhi mới",
-                  isFreeAction: true,
-                  onClick: (e) => this.toggleExpansionForm(e)
-                },
-                {
-                  icon: () => {return <Cached />},
-                  tooltip: "Cập nhật danh sách",
-                  isFreeAction: true,
-                  onClick: () => this.myRef.current && this.myRef.current.onQueryChange(),
-                }
-              ]}
-              />
+            <Grid rows={this.state.records} columns={this.state.materialColumns}>
+              <SearchState
+                value={this.state.search}
+                onValueChange={text => this.handleSearchChange(text)}
+                />
+              <PagingState
+                defaultCurrentPage={this.state.tablePage}
+                defaultPageSize={this.state.itemPerPage}
+                currentPage={this.state.tablePage}
+                onCurrentPageChange={page => this.handleChangePage(page)}
+                pageSize={this.state.itemPerPage}
+                onPageSizeChange={size => this.handleChangeRowsPerPage(size)} />
+              <CustomPaging
+                totalCount={this.state.numberOfRecord} />
+              <VirtualTable 
+                columnExtensions={this.state.columnExtensions}/>  
+              <TableHeaderRow 
+                messages={{
+                  sortingHint: 'Sắp xếp'
+                }}/>
+              <TableFixedColumns 
+                leftColumns={this.state.leftColumns}/>
+              <Toolbar />
+              <SearchPanel 
+                messages={{
+                  searchPlaceholder: 'Tìm kiếm'
+                }}/>
+              <PagingPanel
+                pageSizes={[10, 25, 50]} />
+            </Grid>
           </div>
-          <FloatingForm open={this.state.isExpansionButton} callback={this.handleCallBackFloatingform} type={this.state.floatingFormType}/>
+          <FloatingForm
+            open={this.state.isExpansionButton}
+            callback={this.handleCallBackFloatingform}
+            type={this.state.floatingFormType} />
         </Paper>
       </div>
     );

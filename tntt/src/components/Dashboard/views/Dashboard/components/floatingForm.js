@@ -5,7 +5,8 @@ import {
 import {
   Collapse,
   Tabs,
-  Tab
+  Tab,
+  TextField
 } from '@material-ui/core';
 
 import BasicInformation from './tabs/basicInformation';
@@ -31,6 +32,12 @@ class FloatingForm extends React.Component {
     }
   }
 
+  componentDidUpdate = (prevProps) => {
+    if(this.props.type !== prevProps.type) {
+      console.log(this.props.selectedData)
+    }
+  }
+
   a11yProps = (index) => {
     return {
       id: `simple-tab-${index}`,
@@ -52,7 +59,7 @@ class FloatingForm extends React.Component {
           <Tab label="Thông tin chung" {...this.a11yProps(0)} />
           <Tab label="Điểm" {...this.a11yProps(1)} disabled={(type === 'edit')? false : true}/>
         </Tabs>
-        <BasicInformation value={this.state.value} index={0} callback={this.props.callback} type={this.props.type}/>
+        <BasicInformation value={this.state.value} index={0} callback={this.props.callback} type={this.props.type} data={this.props.selectedData}/>
       </Collapse>
     )
   }

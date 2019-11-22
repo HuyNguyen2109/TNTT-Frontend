@@ -61,8 +61,7 @@ class BasicInformation extends React.Component {
 
     this.state = {
       newAddress: '',
-      newFirstname: '',
-      newLastName: '',
+      newName: '',
       newFatherName: '',
       newMotherName: '',
       newDiocese: 'Giuse',
@@ -125,33 +124,15 @@ class BasicInformation extends React.Component {
         aria-labelledby={`simple-tab-${index}`}
       >
         <Grid container spacing={2}>
-          <Grid item xs={12} sm={6}>
+          <Grid item xs={12}>
             <TextField
               required
               autoFocus
-              label="Tên thánh và Họ"
-              name="firstName"
-              id="firstName"
+              label="Tên Thiếu nhi"
+              name="name"
+              id="name"
               value={this.state.newFirstname}
-              onChange={e => this.handleFormChange(e, "newFirstname")}
-              fullWidth
-              InputProps={{
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <Person />
-                  </InputAdornment>
-                ),
-              }}
-            />
-          </Grid>
-          <Grid item xs={12} sm={6}>
-            <TextField
-              required
-              label="Tên"
-              name="lastName"
-              id="lastName"
-              value={this.state.newLastName}
-              onChange={e => this.handleFormChange(e, "newLastName")}
+              onChange={e => this.handleFormChange(e, "newName")}
               fullWidth
               InputProps={{
                 endAdornment: (

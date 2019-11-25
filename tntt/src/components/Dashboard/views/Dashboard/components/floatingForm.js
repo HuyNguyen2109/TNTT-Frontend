@@ -6,7 +6,6 @@ import {
   Collapse,
   Tabs,
   Tab,
-  TextField
 } from '@material-ui/core';
 
 import BasicInformation from './tabs/basicInformation';

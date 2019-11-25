@@ -7,6 +7,7 @@ import {
   Edit,
   Cached,
   GetApp,
+  Publish,
 } from '@material-ui/icons/';
 import {
   Paper,
@@ -129,7 +130,7 @@ class Dashboard extends React.Component {
   componentDidUpdate = (prevProps) => {
     if (this.props.location.pathname.split("/")[2] !== prevProps.location.pathname.split("/")[2]) {
       this.setState({
-        tablePage: 0
+        tablePage: 0,
       });
       this.getData(0, this.state.itemPerPage, null);
       this.getNumberOfRecord()
@@ -417,7 +418,7 @@ class Dashboard extends React.Component {
                 maxBodyHeight: '500px',
                 search: true,
                 emptyRowsWhenPaging: false,
-                debounceInterval: 500
+                debounceInterval: 1500
               }}
               actions={[
                 {
@@ -441,9 +442,15 @@ class Dashboard extends React.Component {
                 },
                 {
                   icon: () => {return <GetApp />},
-                  tooltip: "Tải toàn bộ danh sách",
+                  tooltip: "Sao lưu toàn bộ danh sách",
                   isFreeAction: true,
-                  onClick: () => alert('Clicked!'),
+                  onClick: () => alert('This button is not implemented yet!'),
+                },
+                {
+                  icon: () => {return <Publish />},
+                  tooltip: "Tải lên danh sách đã sao lưu",
+                  isFreeAction: true,
+                  onClick: () => alert('This button is not implemented yet'),
                 }
               ]}
               />

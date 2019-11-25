@@ -6,11 +6,10 @@ import {
   Add,
   Edit,
   Cached,
+  GetApp,
 } from '@material-ui/icons/';
 import {
-  Typography,
   Paper,
-  Button
 } from '@material-ui/core';
 import MaterialTable from 'material-table';
 
@@ -121,6 +120,7 @@ class Dashboard extends React.Component {
         }
       ],
       isLoadingData: true,
+      action: 'view',
     };
 
     this.updateWindowDimensions = this.updateWindowDimensions.bind(this);
@@ -131,7 +131,7 @@ class Dashboard extends React.Component {
       this.setState({
         tablePage: 0
       });
-      this.getData(0, this.state.itemPerPage);
+      this.getData(0, this.state.itemPerPage, null);
       this.getNumberOfRecord()
     }
   }
@@ -139,7 +139,7 @@ class Dashboard extends React.Component {
   componentDidMount = () => {
     this.updateWindowDimensions();
     window.addEventListener("resize", this.updateWindowDimensions.bind(this));
-    return this.getData(this.state.tablePage, this.state.itemPerPage) && this.getNumberOfRecord();
+    return this.getData(this.state.tablePage, this.state.itemPerPage, null) && this.getNumberOfRecord();
   }
 
   componentWillUnmount = () => {
@@ -219,7 +219,7 @@ class Dashboard extends React.Component {
     }
   }
 
-  getData = (page, itemPerPage) => {
+  getData = (page, itemPerPage, search) => {
     return axios
       .get('/backend/class/by-path', {
         params: {
@@ -231,7 +231,8 @@ class Dashboard extends React.Component {
         return axios.get(`/backend/children/all/${page}`, {
           params: {
             itemPerPage: itemPerPage,
-            class: className
+            class: className,
+            search: search
           }
         })
       })
@@ -248,7 +249,7 @@ class Dashboard extends React.Component {
         })
         this.setState({
           records: modifiedData,
-          isLoadingData: false
+          isLoadingData: false,
         })
       })
       .catch(err => {
@@ -259,10 +260,13 @@ class Dashboard extends React.Component {
   reloadData = () => {
     this.setState({
       records: [],
-      isLoadingData: true
+      isLoadingData: true,
+      tablePage: 0,
+      itemPerPage: 10,
+      search: ''
     });
 
-    return this.getData(0, 10) && this.getNumberOfRecord();
+    return this.getData(0, 10, null) && this.getNumberOfRecord();
   }
 
   handleChangeRowsPerPage = (size) => {
@@ -270,7 +274,7 @@ class Dashboard extends React.Component {
       itemPerPage: size,
       isLoadingData: true
     })
-    this.getData(this.state.tablePage, size);
+    return (this.state.action === 'search')? this.getData(this.state.tablePage, size, this.state.search) : this.getData(this.state.tablePage, size);
   }
 
   handleChangePage = (page) => {
@@ -278,7 +282,7 @@ class Dashboard extends React.Component {
       tablePage: page,
       isLoadingData: true
     })
-    return this.getData(page, this.state.itemPerPage);
+    return (this.state.action === 'search')? this.getData(page, this.state.itemPerPage, this.state.search) : this.getData(page, this.state.itemPerPage);
   }
 
   handleCallBackFloatingform = (callback) => {
@@ -296,26 +300,47 @@ class Dashboard extends React.Component {
   }
 
   handleSearchChange = (text) => {
-    console.log(text)
     this.setState({
       search: text,
       records: [],
       isLoadingData: true,
-      tablePage: 0
+      tablePage: 0,
+      numberOfRecord: 0,
+      itemPerPage: 10,
+      action: 'search'
     })
     if(text !== '') {
       return axios
-      .get('/backend/children/find', {
+      .get('/backend/class/by-path', {
         params: {
-          search: text
+          path: this.props.location.pathname
         }
       })
       .then(result => {
+        const className = result.data.data[0].ID;
+        return axios.get(`/backend/children/all/${this.state.tablePage}`, {
+          params: {
+            itemPerPage: this.state.tablePage,
+            class: className,
+            search: text
+          }
+        })
+      })
+      .then(result => {
         let modifiedData = result.data.data;
+        modifiedData.forEach(row => {
+          // row.firstname = row.firstname + ' ' + row.lastname;
+          // delete row.lastname;
+          
+          row.birthday = (row.birthday === '' ? row.birthday : moment(this.formatDate(row.birthday)).format('DD/MM/YYYY'))
+          row.day_of_baptism = (row.day_of_baptism === '' ? row.day_of_baptism : moment(this.formatDate(row.day_of_baptism)).format('DD/MM/YYYY'))
+          row.day_of_eucharist = (row.day_of_eucharist === '' ? row.day_of_eucharist : moment(this.formatDate(row.day_of_eucharist)).format('DD/MM/YYYY'))
+          row.day_of_confirmation = (row.day_of_confirmation === ''? row.day_of_confirmation : moment(this.formatDate(row.day_of_confirmation)).format('DD/MM/YYYY'));
+        })
         this.setState({
           records: modifiedData,
-          numberOfRecord: modifiedData.length,
-          isLoadingData: false
+          isLoadingData: false,
+          numberOfRecord: modifiedData.length
         })
       })
       .catch(err => {
@@ -323,17 +348,14 @@ class Dashboard extends React.Component {
       })
     }
     else {
+      this.setState({
+        action: 'view'
+      })
       return this.getData(0, this.state.itemPerPage) && this.getNumberOfRecord()
     }
   }
 
-  handleSeachChangeForMaterialTable = () => {
-    this.setState({
-      tablePage: 0
-    })
-  }
-
-  toggleExpansionForm = (e) => {
+  toggleExpansionForm = () => {
     this.setState({
       isExpansionButton: !this.state.isExpansionButton,
       floatingFormType: 'new'
@@ -373,6 +395,10 @@ class Dashboard extends React.Component {
                 },
                 body: {
                   emptyDataSourceMessage: 'Không có dữ liệu!'
+                },
+                toolbar: {
+                  searchPlaceholder: 'Tìm kiếm...',
+                  searchTooltip: 'Tìm kiếm'
                 }
               }}
               options={{
@@ -380,6 +406,7 @@ class Dashboard extends React.Component {
                 pageSizeOptions: [10, 25, 50],
                 pageSize: this.state.itemPerPage,
                 paging: true,
+                sorting: false,
                 headerStyle: {
                   position: 'sticky',
                   top: 0,
@@ -404,13 +431,19 @@ class Dashboard extends React.Component {
                   icon: () => {return <Add />},
                   tooltip: "Đăng ký thiếu nhi mới",
                   isFreeAction: true,
-                  onClick: (e) => this.toggleExpansionForm(e)
+                  onClick: () => this.toggleExpansionForm()
                 },
                 {
                   icon: () => {return <Cached />},
                   tooltip: "Cập nhật danh sách",
                   isFreeAction: true,
                   onClick: () => this.reloadData(),
+                },
+                {
+                  icon: () => {return <GetApp />},
+                  tooltip: "Tải toàn bộ danh sách",
+                  isFreeAction: true,
+                  onClick: () => alert('Clicked!'),
                 }
               ]}
               />

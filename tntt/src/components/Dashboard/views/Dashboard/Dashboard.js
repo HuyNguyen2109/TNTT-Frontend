@@ -356,6 +356,15 @@ class Dashboard extends React.Component {
     }
   }
 
+  handleExportData = () => {
+    axios
+      .get('/backend/children/export')
+      .then(result => {
+        const children = result.data.data;
+        console.log(children);
+      })
+  }
+
   toggleExpansionForm = () => {
     this.setState({
       isExpansionButton: !this.state.isExpansionButton,
@@ -444,7 +453,7 @@ class Dashboard extends React.Component {
                   icon: () => {return <GetApp />},
                   tooltip: "Sao lưu toàn bộ danh sách",
                   isFreeAction: true,
-                  onClick: () => alert('This button is not implemented yet!'),
+                  onClick: () => this.handleExportData(),
                 },
                 {
                   icon: () => {return <Publish />},

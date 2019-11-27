@@ -360,8 +360,10 @@ class Dashboard extends React.Component {
     axios
       .get('/backend/children/export')
       .then(result => {
-        const children = result.data.data;
-        console.log(children);
+        console.log(result);
+      })
+      .catch(err => {
+        console.log(err);
       })
   }
 

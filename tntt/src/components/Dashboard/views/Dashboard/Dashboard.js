@@ -1,17 +1,26 @@
 import React from 'react';
-import { withStyles } from '@material-ui/styles';
+import {
+  withStyles,
+  createMuiTheme,
+  MuiThemeProvider,
+} from '@material-ui/core/styles';
 import axios from 'axios';
 import moment from 'moment';
 import {
-  Add,
+  PersonAdd,
   Edit,
   Cached,
-  GetApp,
-  Publish,
+  Backup,
+  Restore,
+  InsertDriveFile,
+  Check,
+  Clear,
 } from '@material-ui/icons/';
 import {
   Paper,
   Button,
+  Typography,
+  Toolbar
 } from '@material-ui/core';
 import MaterialTable from 'material-table';
 
@@ -40,7 +49,30 @@ const useStyles = theme => ({
   menu: {
     width: 200,
   },
+  exportDialog: {
+    padding: theme.spacing(4),
+    width: '100%',
+  },
+  flexGrow: {
+    flexGrow: 1
+  },
 });
+
+const confirmButon = createMuiTheme({
+  palette: {
+    primary: {
+      500: '#25d366'
+    },
+  },
+})
+
+const errorButton = createMuiTheme({
+  palette: {
+    secondary: {
+      A400: '#f42069'
+    },
+  },
+})
 
 class Dashboard extends React.Component {
   constructor(props) {
@@ -123,6 +155,10 @@ class Dashboard extends React.Component {
       ],
       isLoadingData: true,
       action: 'view',
+
+      isUploadDialogOpen: false,
+      restoreFileName: '',
+      restoreFile:'',
     };
 
     this.updateWindowDimensions = this.updateWindowDimensions.bind(this);
@@ -271,6 +307,22 @@ class Dashboard extends React.Component {
     return this.getData(0, 10, null) && this.getNumberOfRecord();
   }
 
+  postRestoreFile = () => {
+    const data = new FormData();
+    data.append('files', this.state.restoreFile);
+    return axios
+      .post('/backend/children/restore', data)
+      .then(res => {
+        if(res.data.code === "I001") {
+          this.reloadData();
+          this.handleCloseRestoreFile();
+        }
+      })
+      .catch(err=> {
+        console.log(err)
+      })
+  }
+
   handleChangeRowsPerPage = (size) => {
     this.setState({
       itemPerPage: size,
@@ -361,6 +413,7 @@ class Dashboard extends React.Component {
     axios
       .get('/backend/children/export')
       .then(result => {
+        console.log(result);
         let data = new Blob([result.data.data], { type: 'text/csv;charset=utf-8;' });
         let csvURL = window.URL.createObjectURL(data);
         let link = document.createElement('a');
@@ -378,7 +431,25 @@ class Dashboard extends React.Component {
   }
 
   handleFileChange = (e) => {
-    console.log(e.target.files[0]);
+    const name = e.target.files[0].name;
+    const lastDot = name.lastIndexOf('.');
+
+    const fileName = name.substring(0, lastDot);
+    const ext = name.substring(lastDot + 1);
+    this.setState({
+      restoreFileName: name,
+      isUploadDialogOpen: true,
+      restoreFile: e.target.files[0]
+    });
+  }
+
+  handleCloseRestoreFile = () => {
+    this.setState({
+      restoreFileName: '',
+      isUploadDialogOpen: false
+    })
+    let file = document.getElementById('filePicker');
+    file.value = '';
   }
 
   toggleExpansionForm = () => {
@@ -454,7 +525,7 @@ class Dashboard extends React.Component {
                   }
                 },
                 {
-                  icon: () => { return <Add /> },
+                  icon: () => { return <PersonAdd /> },
                   tooltip: "Đăng ký thiếu nhi mới",
                   isFreeAction: true,
                   onClick: () => this.toggleExpansionForm()
@@ -466,13 +537,13 @@ class Dashboard extends React.Component {
                   onClick: () => this.reloadData(),
                 },
                 {
-                  icon: () => { return <GetApp /> },
+                  icon: () => { return <Backup /> },
                   tooltip: "Sao lưu toàn bộ danh sách",
                   isFreeAction: true,
                   onClick: () => this.handleExportData(),
                 },
                 {
-                  icon: () => { return <Publish /> },
+                  icon: () => { return <Restore /> },
                   tooltip: "Phục hồi danh sách",
                   isFreeAction: true,
                   onClick: () => this.handleRestoreData(),
@@ -480,12 +551,37 @@ class Dashboard extends React.Component {
               ]}
             />
           </div>
+          {(this.state.isUploadDialogOpen) ?
+            <Toolbar className={classes.exportDialog}>
+              <Typography variant="subtitle1" display="inline">
+                <InsertDriveFile fontSize="small" /> Bạn có muốn phục hồi CSDL từ tập tin "{this.state.restoreFileName}"?
+              </Typography>
+              <div className={classes.flexGrow} />
+              <MuiThemeProvider theme={confirmButon}>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  className={classes.formButton}
+                  style={{ marginRight: '1em' }}
+                  onClick={this.postRestoreFile}
+                >
+                  <Check /></Button>
+              </MuiThemeProvider>
+              <MuiThemeProvider theme={errorButton}>
+                <Button
+                  variant="contained"
+                  color="secondary"
+                  className={classes.formButton}
+                  onClick={() => this.handleCloseRestoreFile()}>
+                  <Clear /></Button>
+              </MuiThemeProvider>
+            </Toolbar> : null}
           <FloatingForm
             open={this.state.isExpansionButton}
             callback={this.handleCallBackFloatingform}
             type={this.state.floatingFormType}
             selectedData={this.state.selectedRecord} />
-          <input id="filePicker" type="file" onChange={e => this.handleFileChange(e)} accept=".csv" style={{'display': 'none'}}/>
+          <input id="filePicker" type="file" onChange={e => this.handleFileChange(e)} accept=".csv" style={{ 'display': 'none' }} />
         </Paper>
       </div>
     );

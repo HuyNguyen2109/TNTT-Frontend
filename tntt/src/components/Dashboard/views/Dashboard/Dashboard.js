@@ -11,6 +11,7 @@ import {
 } from '@material-ui/icons/';
 import {
   Paper,
+  Button,
 } from '@material-ui/core';
 import MaterialTable from 'material-table';
 
@@ -73,7 +74,7 @@ class Dashboard extends React.Component {
       materialColumn: [
         {
           title: 'Tên Thiếu nhi',
-          field:  'name'
+          field: 'name'
         },
         {
           title: 'Họ tên Cha',
@@ -155,21 +156,21 @@ class Dashboard extends React.Component {
   }
 
   formatDate = (dateString) => {
-    if(dateString.indexOf('-') > -1) {
+    if (dateString.indexOf('-') > -1) {
       let dateArr = dateString.split('-');
-      return dateArr[2] + '-' + 
-      ((dateArr[1].charAt(0) !== '0' && parseInt(dateArr[1]) < 10)? '0' + dateArr[1] : dateArr[1]) + '-' + 
-      ((dateArr[0].charAt(0) !== '0' && parseInt(dateArr[0]) < 10)? '0' + dateArr[0] : dateArr[0]);
-    } else if(dateString.indexOf('/') > -1) {
+      return dateArr[2] + '-' +
+        ((dateArr[1].charAt(0) !== '0' && parseInt(dateArr[1]) < 10) ? '0' + dateArr[1] : dateArr[1]) + '-' +
+        ((dateArr[0].charAt(0) !== '0' && parseInt(dateArr[0]) < 10) ? '0' + dateArr[0] : dateArr[0]);
+    } else if (dateString.indexOf('/') > -1) {
       let dateArr = dateString.split('/');
-      return dateArr[2] + '-' + 
-      ((dateArr[1].charAt(0) !== '0' && parseInt(dateArr[1]) < 10)? '0' + dateArr[1] : dateArr[1]) + '-' + 
-      ((dateArr[0].charAt(0) !== '0' && parseInt(dateArr[0]) < 10)? '0' + dateArr[0] : dateArr[0]);
-    } else if(dateString.indexOf('.') > -1) {
+      return dateArr[2] + '-' +
+        ((dateArr[1].charAt(0) !== '0' && parseInt(dateArr[1]) < 10) ? '0' + dateArr[1] : dateArr[1]) + '-' +
+        ((dateArr[0].charAt(0) !== '0' && parseInt(dateArr[0]) < 10) ? '0' + dateArr[0] : dateArr[0]);
+    } else if (dateString.indexOf('.') > -1) {
       let dateArr = dateString.split('.');
-      return dateArr[2] + '-' + 
-      ((dateArr[1].charAt(0) !== '0' && parseInt(dateArr[1]) < 10)? '0' + dateArr[1] : dateArr[1]) + '-' + 
-      ((dateArr[0].charAt(0) !== '0' && parseInt(dateArr[0]) < 10)? '0' + dateArr[0] : dateArr[0]);
+      return dateArr[2] + '-' +
+        ((dateArr[1].charAt(0) !== '0' && parseInt(dateArr[1]) < 10) ? '0' + dateArr[1] : dateArr[1]) + '-' +
+        ((dateArr[0].charAt(0) !== '0' && parseInt(dateArr[0]) < 10) ? '0' + dateArr[0] : dateArr[0]);
     } else return dateString;
   }
 
@@ -242,11 +243,11 @@ class Dashboard extends React.Component {
         modifiedData.forEach(row => {
           // row.firstname = row.firstname + ' ' + row.lastname;
           // delete row.lastname;
-          
+
           row.birthday = (row.birthday === '' ? row.birthday : moment(this.formatDate(row.birthday)).format('DD/MM/YYYY'))
           row.day_of_baptism = (row.day_of_baptism === '' ? row.day_of_baptism : moment(this.formatDate(row.day_of_baptism)).format('DD/MM/YYYY'))
           row.day_of_eucharist = (row.day_of_eucharist === '' ? row.day_of_eucharist : moment(this.formatDate(row.day_of_eucharist)).format('DD/MM/YYYY'))
-          row.day_of_confirmation = (row.day_of_confirmation === ''? row.day_of_confirmation : moment(this.formatDate(row.day_of_confirmation)).format('DD/MM/YYYY'));
+          row.day_of_confirmation = (row.day_of_confirmation === '' ? row.day_of_confirmation : moment(this.formatDate(row.day_of_confirmation)).format('DD/MM/YYYY'));
         })
         this.setState({
           records: modifiedData,
@@ -275,7 +276,7 @@ class Dashboard extends React.Component {
       itemPerPage: size,
       isLoadingData: true
     })
-    return (this.state.action === 'search')? this.getData(this.state.tablePage, size, this.state.search) : this.getData(this.state.tablePage, size);
+    return (this.state.action === 'search') ? this.getData(this.state.tablePage, size, this.state.search) : this.getData(this.state.tablePage, size);
   }
 
   handleChangePage = (page) => {
@@ -283,7 +284,7 @@ class Dashboard extends React.Component {
       tablePage: page,
       isLoadingData: true
     })
-    return (this.state.action === 'search')? this.getData(page, this.state.itemPerPage, this.state.search) : this.getData(page, this.state.itemPerPage);
+    return (this.state.action === 'search') ? this.getData(page, this.state.itemPerPage, this.state.search) : this.getData(page, this.state.itemPerPage);
   }
 
   handleCallBackFloatingform = (callback) => {
@@ -310,43 +311,43 @@ class Dashboard extends React.Component {
       itemPerPage: 10,
       action: 'search'
     })
-    if(text !== '') {
+    if (text !== '') {
       return axios
-      .get('/backend/class/by-path', {
-        params: {
-          path: this.props.location.pathname
-        }
-      })
-      .then(result => {
-        const className = result.data.data[0].ID;
-        return axios.get(`/backend/children/all/${this.state.tablePage}`, {
+        .get('/backend/class/by-path', {
           params: {
-            itemPerPage: this.state.tablePage,
-            class: className,
-            search: text
+            path: this.props.location.pathname
           }
         })
-      })
-      .then(result => {
-        let modifiedData = result.data.data;
-        modifiedData.forEach(row => {
-          // row.firstname = row.firstname + ' ' + row.lastname;
-          // delete row.lastname;
-          
-          row.birthday = (row.birthday === '' ? row.birthday : moment(this.formatDate(row.birthday)).format('DD/MM/YYYY'))
-          row.day_of_baptism = (row.day_of_baptism === '' ? row.day_of_baptism : moment(this.formatDate(row.day_of_baptism)).format('DD/MM/YYYY'))
-          row.day_of_eucharist = (row.day_of_eucharist === '' ? row.day_of_eucharist : moment(this.formatDate(row.day_of_eucharist)).format('DD/MM/YYYY'))
-          row.day_of_confirmation = (row.day_of_confirmation === ''? row.day_of_confirmation : moment(this.formatDate(row.day_of_confirmation)).format('DD/MM/YYYY'));
+        .then(result => {
+          const className = result.data.data[0].ID;
+          return axios.get(`/backend/children/all/${this.state.tablePage}`, {
+            params: {
+              itemPerPage: this.state.tablePage,
+              class: className,
+              search: text
+            }
+          })
         })
-        this.setState({
-          records: modifiedData,
-          isLoadingData: false,
-          numberOfRecord: modifiedData.length
+        .then(result => {
+          let modifiedData = result.data.data;
+          modifiedData.forEach(row => {
+            // row.firstname = row.firstname + ' ' + row.lastname;
+            // delete row.lastname;
+
+            row.birthday = (row.birthday === '' ? row.birthday : moment(this.formatDate(row.birthday)).format('DD/MM/YYYY'))
+            row.day_of_baptism = (row.day_of_baptism === '' ? row.day_of_baptism : moment(this.formatDate(row.day_of_baptism)).format('DD/MM/YYYY'))
+            row.day_of_eucharist = (row.day_of_eucharist === '' ? row.day_of_eucharist : moment(this.formatDate(row.day_of_eucharist)).format('DD/MM/YYYY'))
+            row.day_of_confirmation = (row.day_of_confirmation === '' ? row.day_of_confirmation : moment(this.formatDate(row.day_of_confirmation)).format('DD/MM/YYYY'));
+          })
+          this.setState({
+            records: modifiedData,
+            isLoadingData: false,
+            numberOfRecord: modifiedData.length
+          })
         })
-      })
-      .catch(err => {
-        console.log(err);
-      })
+        .catch(err => {
+          console.log(err);
+        })
     }
     else {
       this.setState({
@@ -360,11 +361,24 @@ class Dashboard extends React.Component {
     axios
       .get('/backend/children/export')
       .then(result => {
-        console.log(result);
+        let data = new Blob([result.data.data], { type: 'text/csv;charset=utf-8;' });
+        let csvURL = window.URL.createObjectURL(data);
+        let link = document.createElement('a');
+        link.href = csvURL;
+        link.setAttribute('download', `Bản sao TNTT-${moment().format('DDMMYYYYHHMMSS')}.csv`);
+        link.click();
       })
       .catch(err => {
         console.log(err);
       })
+  }
+
+  handleRestoreData = () => {
+    document.getElementById('filePicker').click();
+  }
+
+  handleFileChange = (e) => {
+    console.log(e.target.files[0]);
   }
 
   toggleExpansionForm = () => {
@@ -376,7 +390,7 @@ class Dashboard extends React.Component {
 
   render = () => {
     const { classes } = this.props;
-    
+
 
     return (
       <div className={(this.state.windowsWidth < 500) ? { padding: 0, width: '100%' } : classes.root}>
@@ -429,48 +443,49 @@ class Dashboard extends React.Component {
                 maxBodyHeight: '500px',
                 search: true,
                 emptyRowsWhenPaging: false,
-                debounceInterval: 1500
+                debounceInterval: 1500,
               }}
               actions={[
                 {
-                  icon: () => { return <Edit/> },
+                  icon: () => { return <Edit /> },
                   tooltip: "Chỉnh sửa",
                   onClick: (e, rowData) => {
                     this.handleRowSelection(e, rowData);
                   }
                 },
                 {
-                  icon: () => {return <Add />},
+                  icon: () => { return <Add /> },
                   tooltip: "Đăng ký thiếu nhi mới",
                   isFreeAction: true,
                   onClick: () => this.toggleExpansionForm()
                 },
                 {
-                  icon: () => {return <Cached />},
+                  icon: () => { return <Cached /> },
                   tooltip: "Cập nhật danh sách",
                   isFreeAction: true,
                   onClick: () => this.reloadData(),
                 },
                 {
-                  icon: () => {return <GetApp />},
+                  icon: () => { return <GetApp /> },
                   tooltip: "Sao lưu toàn bộ danh sách",
                   isFreeAction: true,
                   onClick: () => this.handleExportData(),
                 },
                 {
-                  icon: () => {return <Publish />},
-                  tooltip: "Tải lên danh sách đã sao lưu",
+                  icon: () => { return <Publish /> },
+                  tooltip: "Phục hồi danh sách",
                   isFreeAction: true,
-                  onClick: () => alert('This button is not implemented yet'),
+                  onClick: () => this.handleRestoreData(),
                 }
               ]}
-              />
+            />
           </div>
           <FloatingForm
             open={this.state.isExpansionButton}
             callback={this.handleCallBackFloatingform}
             type={this.state.floatingFormType}
             selectedData={this.state.selectedRecord} />
+          <input id="filePicker" type="file" onChange={e => this.handleFileChange(e)} accept=".csv" style={{'display': 'none'}}/>
         </Paper>
       </div>
     );

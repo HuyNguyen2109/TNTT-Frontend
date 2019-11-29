@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { createRef } from 'react';
 import {
   withStyles,
   createMuiTheme,
@@ -15,12 +15,18 @@ import {
   InsertDriveFile,
   Check,
   Clear,
+  Delete,
 } from '@material-ui/icons/';
 import {
   Paper,
   Button,
   Typography,
-  Toolbar
+  Toolbar,
+  Chip,
+  Card,
+  CardHeader,
+  CardContent,
+  CardAction,
 } from '@material-ui/core';
 import MaterialTable from 'material-table';
 
@@ -56,6 +62,13 @@ const useStyles = theme => ({
   flexGrow: {
     flexGrow: 1
   },
+  chipsContainer: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    '& > *': {
+      margin: theme.spacing(0.5),
+    },
+  },
 });
 
 const confirmButon = createMuiTheme({
@@ -72,6 +85,17 @@ const errorButton = createMuiTheme({
       A400: '#f42069'
     },
   },
+})
+
+const colorChips = createMuiTheme({
+  palette: {
+    primary: {
+      500: '#67edcc'
+    },
+    secondary: {
+      A400: '#f7c6cb'
+    }
+  }
 })
 
 class Dashboard extends React.Component {
@@ -159,10 +183,15 @@ class Dashboard extends React.Component {
       isUploadDialogOpen: false,
       restoreFileName: '',
       restoreFile:'',
+
+      selectedRows: [],
     };
 
     this.updateWindowDimensions = this.updateWindowDimensions.bind(this);
+    this.myRef = createRef();
   }
+
+  scrollToRef = () => this.myRef.current.scrollIntoView({ behavior: 'smooth'});
 
   componentDidUpdate = (prevProps) => {
     if (this.props.location.pathname.split("/")[2] !== prevProps.location.pathname.split("/")[2]) {
@@ -308,6 +337,9 @@ class Dashboard extends React.Component {
   }
 
   postRestoreFile = () => {
+    this.setState({
+      isLoadingData: true
+    })
     const data = new FormData();
     data.append('files', this.state.restoreFile);
     return axios
@@ -336,6 +368,7 @@ class Dashboard extends React.Component {
       tablePage: page,
       isLoadingData: true
     })
+    console.log(this.state.selectedRows);
     return (this.state.action === 'search') ? this.getData(page, this.state.itemPerPage, this.state.search) : this.getData(page, this.state.itemPerPage);
   }
 
@@ -346,6 +379,7 @@ class Dashboard extends React.Component {
   }
 
   handleRowSelection = (e, rowData) => {
+    this.scrollToRef();
     this.setState({
       isExpansionButton: true,
       floatingFormType: 'edit',
@@ -383,9 +417,6 @@ class Dashboard extends React.Component {
         .then(result => {
           let modifiedData = result.data.data;
           modifiedData.forEach(row => {
-            // row.firstname = row.firstname + ' ' + row.lastname;
-            // delete row.lastname;
-
             row.birthday = (row.birthday === '' ? row.birthday : moment(this.formatDate(row.birthday)).format('DD/MM/YYYY'))
             row.day_of_baptism = (row.day_of_baptism === '' ? row.day_of_baptism : moment(this.formatDate(row.day_of_baptism)).format('DD/MM/YYYY'))
             row.day_of_eucharist = (row.day_of_eucharist === '' ? row.day_of_eucharist : moment(this.formatDate(row.day_of_eucharist)).format('DD/MM/YYYY'))
@@ -431,6 +462,7 @@ class Dashboard extends React.Component {
   }
 
   handleFileChange = (e) => {
+    this.scrollToRef();
     const name = e.target.files[0].name;
     const lastDot = name.lastIndexOf('.');
 
@@ -452,11 +484,56 @@ class Dashboard extends React.Component {
     file.value = '';
   }
 
+  handleDeleteRow = (e, rowData) => {
+    let r = window.confirm('Bạn có chắc muốn xóa em Thiếu nhi này?');
+    if(r === true) {
+      this.setState({
+        isLoadingData: true
+      });
+      return axios
+        .delete('/backend/children/delete/by-name', {
+          params: {
+            name: rowData.name
+          }
+        })
+        .then(res => {
+          if(res.data.code === "I001") {
+            this.reloadData()
+          }
+        })
+        .catch(err => {
+          alert(err);
+        })
+      }
+  }
+
+  handleRowClick = (e, rowData) => {
+    let joined;
+    if(this.state.selectedRows.length > 0) {
+      this.state.selectedRows.forEach(row => {
+        if(row === rowData) {
+          joined = this.state.selectedRows.filter(o => o !== rowData);
+        }
+        else {
+          joined = this.state.selectedRows.concat(rowData);
+        }
+      });
+    }
+    else {
+      joined = this.state.selectedRows.concat(rowData);
+    }
+    this.setState({
+      selectedRows: joined
+    })
+    console.log(joined);
+  }
+
   toggleExpansionForm = () => {
     this.setState({
       isExpansionButton: !this.state.isExpansionButton,
       floatingFormType: 'new'
     })
+    this.scrollToRef();
   }
 
   render = () => {
@@ -476,6 +553,7 @@ class Dashboard extends React.Component {
               onChangePage={(page) => this.handleChangePage(page)}
               onChangeRowsPerPage={pageSize => this.handleChangeRowsPerPage(pageSize)}
               onSearchChange={(text) => this.handleSearchChange(text)}
+              onRowClick={(e, rowData) => this.handleRowClick(e, rowData)}
               totalCount={this.state.numberOfRecord}
               isLoading={this.state.isLoadingData}
               page={this.state.tablePage}
@@ -525,6 +603,13 @@ class Dashboard extends React.Component {
                   }
                 },
                 {
+                  icon: () => { return <Delete /> },
+                  tooltip: "Xóa",
+                  onClick: (e, rowData) => {
+                    this.handleDeleteRow(e, rowData);
+                  }
+                },
+                {
                   icon: () => { return <PersonAdd /> },
                   tooltip: "Đăng ký thiếu nhi mới",
                   isFreeAction: true,
@@ -551,6 +636,17 @@ class Dashboard extends React.Component {
               ]}
             />
           </div>
+          {(this.state.selectedRows.length > 0)? 
+            <Card>
+              <CardContent className={classes.chipsContainer}>
+                <Typography variant="subtitle1">Đã chọn: {this.state.selectedRows.length}</Typography>
+                {this.state.selectedRows.map(row => (
+                  <MuiThemeProvider theme={colorChips} key={row.name}>
+                    <Chip label={row.name} size="small" color={(row.male === 'x') ? 'primary' : 'secondary'} />
+                  </MuiThemeProvider>
+                ))}
+              </CardContent>
+            </Card> : null}
           {(this.state.isUploadDialogOpen) ?
             <Toolbar className={classes.exportDialog}>
               <Typography variant="subtitle1" display="inline">
@@ -583,6 +679,7 @@ class Dashboard extends React.Component {
             selectedData={this.state.selectedRecord} />
           <input id="filePicker" type="file" onChange={e => this.handleFileChange(e)} accept=".csv" style={{ 'display': 'none' }} />
         </Paper>
+        <div ref={this.myRef} />
       </div>
     );
   }

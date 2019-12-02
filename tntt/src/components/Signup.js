@@ -7,7 +7,7 @@ import TextField from '@material-ui/core/TextField';
 import Link from '@material-ui/core/Link';
 import Grid from '@material-ui/core/Grid';
 import Box from '@material-ui/core/Box';
-import LockOutlinedIcon from '@material-ui/icons/LockOutlined';
+import PersonAddOutlinedIcon from '@material-ui/icons/PersonAddOutlined';
 import Typography from '@material-ui/core/Typography';
 import { withStyles } from '@material-ui/core/styles';
 import Container from '@material-ui/core/Container';
@@ -56,7 +56,7 @@ const useStyles = theme => ({
   },
   avatar: {
     margin: theme.spacing(1),
-    backgroundColor: theme.palette.secondary.main,
+    backgroundColor: theme.palette.primary.main,
   },
   form: {
     width: '100%', // Fix IE 11 issue.
@@ -238,7 +238,7 @@ class Signup extends React.Component {
         <CssBaseline />
         <div className={classes.paper}>
           <Avatar className={classes.avatar}>
-            <LockOutlinedIcon />
+            <PersonAddOutlinedIcon />
           </Avatar>
           <Typography component="h1" variant="h5">
             Đăng ký tài khoản
@@ -383,8 +383,8 @@ class Signup extends React.Component {
             <Button
               disabled={(this.state.isSignupClicked === false) ? false : true}
               fullWidth
-              variant="contained"
-              color="secondary"
+              variant="outlined"
+              color="primary"
               className={classes.cancel}
               onClick={this.clearAllData}
             >

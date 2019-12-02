@@ -16,6 +16,8 @@ import {
   Check,
   Clear,
   Delete,
+  PlaylistAddCheck,
+  Cancel,
 } from '@material-ui/icons/';
 import {
   Paper,
@@ -23,9 +25,6 @@ import {
   Typography,
   Toolbar,
   Chip,
-  Card,
-  CardContent,
-  CardAction,
   Collapse,
 } from '@material-ui/core';
 import MaterialTable from 'material-table';
@@ -55,6 +54,9 @@ const useStyles = theme => ({
   menu: {
     width: 200,
   },
+  formButton: {
+    marginTop: theme.spacing(2),
+  },
   exportDialog: {
     padding: theme.spacing(4),
     width: '100%',
@@ -63,30 +65,13 @@ const useStyles = theme => ({
     flexGrow: 1
   },
   chipsContainer: {
-    backgroundColor: '#e35d6a',
-    display: 'flex',
+    backgroundColor: '#ff8a80',
     flexWrap: 'wrap',
     '& > *': {
       margin: theme.spacing(0.5),
     },
   },
 });
-
-const confirmButon = createMuiTheme({
-  palette: {
-    primary: {
-      500: '#25d366'
-    },
-  },
-})
-
-const errorButton = createMuiTheme({
-  palette: {
-    secondary: {
-      A400: '#f42069'
-    },
-  },
-})
 
 const colorChips = createMuiTheme({
   palette: {
@@ -356,6 +341,31 @@ class Dashboard extends React.Component {
       })
   }
 
+  multipleDelete = () => {
+    let childrenNames = []
+    this.state.selectedRows.forEach(row => {
+      childrenNames.push(row.name)
+    });
+
+    return axios
+      .delete('/backend/children/delete/by-names', {
+        params: {
+          names: childrenNames
+        }
+      })
+      .then(res => {
+        if (res.data.code === "I001") {
+          this.reloadData();
+          this.setState({
+            selectedRows: []
+          })
+        }
+      })
+      .catch(err => {
+        console.log(err)
+      })
+  }
+
   handleChangeRowsPerPage = (size) => {
     this.setState({
       itemPerPage: size,
@@ -365,12 +375,24 @@ class Dashboard extends React.Component {
   }
 
   handleChangePage = (page) => {
-    this.setState({
-      tablePage: page,
-      isLoadingData: true,
-      selectedRows: []
-    })
-    return (this.state.action === 'search') ? this.getData(page, this.state.itemPerPage, this.state.search) : this.getData(page, this.state.itemPerPage);
+    if (this.state.selectedRows.length > 0) {
+      let ask = window.confirm('Bạn có chắc muốn hủy bỏ việc chọn lựa này?')
+      if (ask === true) {
+        this.setState({
+          selectedRows: [],
+          tablePage: page,
+          isLoadingData: true,
+        })
+        return (this.state.action === 'search') ? this.getData(page, this.state.itemPerPage, this.state.search) : this.getData(page, this.state.itemPerPage);
+      }
+    }
+    else {
+      this.setState({
+        tablePage: page,
+        isLoadingData: true,
+      })
+      return (this.state.action === 'search') ? this.getData(page, this.state.itemPerPage, this.state.search) : this.getData(page, this.state.itemPerPage);
+    }
   }
 
   handleCallBackFloatingform = (callback) => {
@@ -517,6 +539,18 @@ class Dashboard extends React.Component {
     })
   }
 
+  handleSelectAll = () => {
+    this.setState({
+      selectedRows: this.state.records
+    })
+  }
+
+  handleCancelAll = () => {
+    this.setState({
+      selectedRows: []
+    })
+  }
+
   toggleExpansionForm = () => {
     this.setState({
       isExpansionButton: !this.state.isExpansionButton,
@@ -574,7 +608,7 @@ class Dashboard extends React.Component {
                 headerStyle: {
                   position: 'sticky',
                   top: 0,
-                  backgroundColor: '#38b6ff',
+                  backgroundColor: '#ffa000',
                   color: '#000000',
                   fontSize: 14,
                 },
@@ -584,7 +618,7 @@ class Dashboard extends React.Component {
                 debounceInterval: 1500,
                 rowStyle: rowData => {
                   if (this.state.selectedRows.indexOf(rowData) !== -1) {
-                    return { backgroundColor: 'yellow' }
+                    return { backgroundColor: '#ffecb3' }
                   }
                   return {};
                 }
@@ -627,21 +661,36 @@ class Dashboard extends React.Component {
                   tooltip: "Phục hồi danh sách",
                   isFreeAction: true,
                   onClick: () => this.handleRestoreData(),
+                },
+                {
+                  icon: () => { return <PlaylistAddCheck /> },
+                  tooltip: "Chọn toàn bộ trang này",
+                  isFreeAction: true,
+                  onClick: () => this.handleSelectAll(),
                 }
               ]}
             />
           </div>
           <Collapse in={(this.state.selectedRows.length > 0) ? true : false}>
-            <Card>
-              <CardContent className={classes.chipsContainer}>
-                <Typography variant="subtitle1">Đã chọn: {this.state.selectedRows.length}</Typography>
-                {this.state.selectedRows.map(row => (
-                  <MuiThemeProvider theme={colorChips} key={row.name}>
-                    <Chip label={row.name} size="small" color={(row.male === 'x') ? 'primary' : 'secondary'} />
-                  </MuiThemeProvider>
-                ))}
-              </CardContent>
-            </Card>
+            <Toolbar className={classes.chipsContainer}>
+              <Typography variant="subtitle1">Đã chọn: {this.state.selectedRows.length}</Typography>
+              {this.state.selectedRows.map(row => (
+                <MuiThemeProvider theme={colorChips} key={row.name}>
+                  <Chip label={row.name} size="small" color={(row.male === 'x') ? 'primary' : 'secondary'} />
+                </MuiThemeProvider>
+              ))}
+              <div className={classes.flexGrow} />
+              <Button
+                className={classes.formButton}
+                onClick={this.multipleDelete}
+                tooltip="Xóa tất cả"
+              ><Delete /></Button>
+              <Button
+                className={classes.formButton}
+                onClick={this.handleCancelAll}
+                tooltip="Xóa tất cả"
+              ><Cancel /></Button>
+            </Toolbar>
           </Collapse>
           {(this.state.isUploadDialogOpen) ?
             <Toolbar className={classes.exportDialog}>
@@ -649,24 +698,20 @@ class Dashboard extends React.Component {
                 <InsertDriveFile fontSize="small" /> Bạn có muốn phục hồi CSDL từ tập tin "{this.state.restoreFileName}"?
               </Typography>
               <div className={classes.flexGrow} />
-              <MuiThemeProvider theme={confirmButon}>
-                <Button
-                  variant="contained"
-                  color="primary"
-                  className={classes.formButton}
-                  style={{ marginRight: '1em' }}
-                  onClick={this.postRestoreFile}
-                >
-                  <Check /></Button>
-              </MuiThemeProvider>
-              <MuiThemeProvider theme={errorButton}>
-                <Button
-                  variant="contained"
-                  color="secondary"
-                  className={classes.formButton}
-                  onClick={() => this.handleCloseRestoreFile()}>
-                  <Clear /></Button>
-              </MuiThemeProvider>
+              <Button
+                variant="contained"
+                color="primary"
+                className={classes.formButton}
+                style={{ marginRight: '1em' }}
+                onClick={this.postRestoreFile}
+              >
+                <Check /></Button>
+              <Button
+                variant="outlined"
+                color="primary"
+                className={classes.formButton}
+                onClick={() => this.handleCloseRestoreFile()}>
+                <Clear /></Button>
             </Toolbar> : null}
           <FloatingForm
             open={this.state.isExpansionButton}

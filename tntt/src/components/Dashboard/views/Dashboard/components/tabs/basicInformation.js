@@ -1,8 +1,6 @@
 import React from 'react';
 import {
   withStyles,
-  createMuiTheme,
-  MuiThemeProvider
 } from '@material-ui/core/styles';
 import {
   Cancel,
@@ -39,22 +37,6 @@ const useStyles = theme => ({
   },
 });
 
-const confirmButon = createMuiTheme({
-  palette: {
-    primary: {
-      500: '#25d366'
-    },
-  },
-})
-
-const errorButton = createMuiTheme({
-  palette: {
-    secondary: {
-      A400: '#f42069'
-    },
-  },
-})
-
 class BasicInformation extends React.Component {
   constructor(props) {
     super(props)
@@ -85,14 +67,14 @@ class BasicInformation extends React.Component {
 
   getClass = () => {
     return axios
-    .get('/backend/class/all')
-    .then(result => {
-      let classes = result.data.data;
-      classes = classes.filter(el => el.Value !== "Chung");
-      this.setState({
-        classes: classes
+      .get('/backend/class/all')
+      .then(result => {
+        let classes = result.data.data;
+        classes = classes.filter(el => el.Value !== "Chung");
+        this.setState({
+          classes: classes
+        })
       })
-    })
   }
 
   handleCloseFloatingForm = (e) => {
@@ -312,7 +294,7 @@ class BasicInformation extends React.Component {
             />
           </Grid>
           <Grid item xs={12} sm={4}>
-          <TextField
+            <TextField
               required
               select
               label="Lớp"
@@ -337,34 +319,26 @@ class BasicInformation extends React.Component {
         </Grid>
         <Grid container alignItems="flex-start" justify="flex-end" direction="row" spacing={2}>
           {(this.props.type === "edit") ?
-            <MuiThemeProvider theme={confirmButon}>
-              <Button
-                variant="contained"
-                color="primary"
-                className={classes.formButton}
-                style={{ marginRight: '1em' }}
-              >
-                <Update fontSize="small" />Cập nhật</Button>
-            </MuiThemeProvider>
-            :
-            <MuiThemeProvider theme={confirmButon}>
-              <Button
-                variant="contained"
-                color="primary"
-                className={classes.formButton}
-                style={{ marginRight: '1em' }}
-              >
-                <Check fontSize="small" />Xác nhận</Button>
-            </MuiThemeProvider>
-          }
-          <MuiThemeProvider theme={errorButton}>
             <Button
               variant="contained"
-              color="secondary"
+              color="primary"
               className={classes.formButton}
-              onClick={e => this.handleCloseFloatingForm(e)}>
-              <Cancel fontSize="small" />Hủy bỏ</Button>
-          </MuiThemeProvider>
+              style={{ marginRight: '1em' }}
+            ><Update fontSize="small" />Cập nhật</Button>
+            :
+            <Button
+              variant="contained"
+              color="primary"
+              className={classes.formButton}
+              style={{ marginRight: '1em' }}
+            ><Check fontSize="small" />Xác nhận</Button>
+          }
+          <Button
+            variant="outlined"
+            color="primary"
+            className={classes.formButton}
+            onClick={e => this.handleCloseFloatingForm(e)}>
+            <Cancel fontSize="small" />Hủy bỏ</Button>
         </Grid>
       </div>
     )

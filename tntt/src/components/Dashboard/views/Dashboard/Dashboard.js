@@ -24,9 +24,9 @@ import {
   Toolbar,
   Chip,
   Card,
-  CardHeader,
   CardContent,
   CardAction,
+  Collapse,
 } from '@material-ui/core';
 import MaterialTable from 'material-table';
 
@@ -63,6 +63,7 @@ const useStyles = theme => ({
     flexGrow: 1
   },
   chipsContainer: {
+    backgroundColor: '#e35d6a',
     display: 'flex',
     flexWrap: 'wrap',
     '& > *': {
@@ -182,7 +183,7 @@ class Dashboard extends React.Component {
 
       isUploadDialogOpen: false,
       restoreFileName: '',
-      restoreFile:'',
+      restoreFile: '',
 
       selectedRows: [],
     };
@@ -191,7 +192,7 @@ class Dashboard extends React.Component {
     this.myRef = createRef();
   }
 
-  scrollToRef = () => this.myRef.current.scrollIntoView({ behavior: 'smooth'});
+  scrollToRef = () => this.myRef.current.scrollIntoView({ behavior: 'smooth' });
 
   componentDidUpdate = (prevProps) => {
     if (this.props.location.pathname.split("/")[2] !== prevProps.location.pathname.split("/")[2]) {
@@ -345,12 +346,12 @@ class Dashboard extends React.Component {
     return axios
       .post('/backend/children/restore', data)
       .then(res => {
-        if(res.data.code === "I001") {
+        if (res.data.code === "I001") {
           this.reloadData();
           this.handleCloseRestoreFile();
         }
       })
-      .catch(err=> {
+      .catch(err => {
         console.log(err)
       })
   }
@@ -366,9 +367,9 @@ class Dashboard extends React.Component {
   handleChangePage = (page) => {
     this.setState({
       tablePage: page,
-      isLoadingData: true
+      isLoadingData: true,
+      selectedRows: []
     })
-    console.log(this.state.selectedRows);
     return (this.state.action === 'search') ? this.getData(page, this.state.itemPerPage, this.state.search) : this.getData(page, this.state.itemPerPage);
   }
 
@@ -464,10 +465,6 @@ class Dashboard extends React.Component {
   handleFileChange = (e) => {
     this.scrollToRef();
     const name = e.target.files[0].name;
-    const lastDot = name.lastIndexOf('.');
-
-    const fileName = name.substring(0, lastDot);
-    const ext = name.substring(lastDot + 1);
     this.setState({
       restoreFileName: name,
       isUploadDialogOpen: true,
@@ -486,7 +483,7 @@ class Dashboard extends React.Component {
 
   handleDeleteRow = (e, rowData) => {
     let r = window.confirm('Bạn có chắc muốn xóa em Thiếu nhi này?');
-    if(r === true) {
+    if (r === true) {
       this.setState({
         isLoadingData: true
       });
@@ -497,35 +494,27 @@ class Dashboard extends React.Component {
           }
         })
         .then(res => {
-          if(res.data.code === "I001") {
+          if (res.data.code === "I001") {
             this.reloadData()
           }
         })
         .catch(err => {
           alert(err);
         })
-      }
+    }
   }
 
   handleRowClick = (e, rowData) => {
     let joined;
-    if(this.state.selectedRows.length > 0) {
-      this.state.selectedRows.forEach(row => {
-        if(row === rowData) {
-          joined = this.state.selectedRows.filter(o => o !== rowData);
-        }
-        else {
-          joined = this.state.selectedRows.concat(rowData);
-        }
-      });
+    if (this.state.selectedRows.includes(rowData) === true) {
+      joined = this.state.selectedRows.filter(o => o !== rowData);
     }
     else {
       joined = this.state.selectedRows.concat(rowData);
     }
     this.setState({
-      selectedRows: joined
+      selectedRows: joined,
     })
-    console.log(joined);
   }
 
   toggleExpansionForm = () => {
@@ -593,6 +582,12 @@ class Dashboard extends React.Component {
                 search: true,
                 emptyRowsWhenPaging: false,
                 debounceInterval: 1500,
+                rowStyle: rowData => {
+                  if (this.state.selectedRows.indexOf(rowData) !== -1) {
+                    return { backgroundColor: 'yellow' }
+                  }
+                  return {};
+                }
               }}
               actions={[
                 {
@@ -636,7 +631,7 @@ class Dashboard extends React.Component {
               ]}
             />
           </div>
-          {(this.state.selectedRows.length > 0)? 
+          <Collapse in={(this.state.selectedRows.length > 0) ? true : false}>
             <Card>
               <CardContent className={classes.chipsContainer}>
                 <Typography variant="subtitle1">Đã chọn: {this.state.selectedRows.length}</Typography>
@@ -646,7 +641,8 @@ class Dashboard extends React.Component {
                   </MuiThemeProvider>
                 ))}
               </CardContent>
-            </Card> : null}
+            </Card>
+          </Collapse>
           {(this.state.isUploadDialogOpen) ?
             <Toolbar className={classes.exportDialog}>
               <Typography variant="subtitle1" display="inline">

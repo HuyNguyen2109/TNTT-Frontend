@@ -9,6 +9,7 @@ import {
   LocationOn,
   Phone,
   Update,
+  Backspace,
 } from '@material-ui/icons/';
 import {
   MuiPickersUtilsProvider,
@@ -35,6 +36,9 @@ const useStyles = theme => ({
   formButton: {
     marginTop: theme.spacing(2),
   },
+  iconInButton: {
+    margin: theme.spacing(1)
+  }
 });
 
 class BasicInformation extends React.Component {
@@ -65,6 +69,21 @@ class BasicInformation extends React.Component {
     return this.getClass();
   }
 
+  componentDidUpdate = (prevProps) => {
+    if (this.props.type === 'edit' && JSON.stringify(prevProps.selectedData.name) !== JSON.stringify(this.props.selectedData.name)) {
+      const data = this.props.selectedData
+      this.setState({
+        newName: data.name,
+        newFatherName: data.father_name,
+        newMotherName: data.mother_name,
+
+        newGender: (data.male === 'x') ? "Nam" : "Nữ",
+        newContact: data.contact,
+
+      })
+    }
+  }
+
   getClass = () => {
     return axios
       .get('/backend/class/all')
@@ -78,6 +97,20 @@ class BasicInformation extends React.Component {
   }
 
   handleCloseFloatingForm = (e) => {
+    this.setState({
+      newAddress: '',
+      newName: '',
+      newFatherName: '',
+      newMotherName: '',
+      newDiocese: 'Giuse',
+      newGender: 'Nam',
+      newContact: '',
+      newClass: '',
+      newBirthday: moment("1990-01-01").format(),
+      newDayOfBaptism: moment("1990-01-01").format(),
+      newDayofEucharist: moment("1990-01-01").format(),
+      newDayofConfirmation: moment("1990-01-01").format(),
+    })
     this.props.callback(false);
   }
 
@@ -113,7 +146,7 @@ class BasicInformation extends React.Component {
               label="Tên Thiếu nhi"
               name="name"
               id="name"
-              value={this.state.newFirstname}
+              value={this.state.newName}
               onChange={e => this.handleFormChange(e, "newName")}
               fullWidth
               InputProps={{
@@ -322,23 +355,35 @@ class BasicInformation extends React.Component {
             <Button
               variant="contained"
               color="primary"
+              size="small"
               className={classes.formButton}
               style={{ marginRight: '1em' }}
-            ><Update fontSize="small" />Cập nhật</Button>
+            ><Update className={classes.iconInButton} fontSize="small"/>Cập nhật</Button>
             :
-            <Button
-              variant="contained"
-              color="primary"
-              className={classes.formButton}
-              style={{ marginRight: '1em' }}
-            ><Check fontSize="small" />Xác nhận</Button>
+            <div>
+              <Button
+                variant="contained"
+                color="primary"
+                size="small"
+                className={classes.formButton}
+                style={{ marginRight: '1em' }}
+              ><Check className={classes.iconInButton} fontSize="small"/>Xác nhận</Button>
+              <Button
+                variant="contained"
+                color="secondary"
+                size="small"
+                className={classes.formButton}
+                style={{ marginRight: '1em' }}
+              ><Backspace className={classes.iconInButton} fontSize="small"/>Xóa</Button>
+            </div>
           }
           <Button
             variant="outlined"
             color="primary"
+            size="small"
             className={classes.formButton}
             onClick={e => this.handleCloseFloatingForm(e)}>
-            <Cancel fontSize="small" />Hủy bỏ</Button>
+            <Cancel className={classes.iconInButton} fontSize="small"/>Hủy bỏ</Button>
         </Grid>
       </div>
     )

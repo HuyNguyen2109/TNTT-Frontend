@@ -27,13 +27,16 @@ class FloatingForm extends React.Component {
     super(props)
 
     this.state = {
-      value: 0
+      value: 0,
+      selectedData: {}
     }
   }
 
   componentDidUpdate = (prevProps) => {
-    if(this.props.type !== prevProps.type) {
-      console.log(this.props.selectedData)
+    if(this.props.type === 'edit' && this.props.selectedData.name !== prevProps.selectedData.name) {
+      this.setState({
+        selectedData: this.props.selectedData
+      })
     }
   }
 
@@ -48,6 +51,7 @@ class FloatingForm extends React.Component {
     this.setState({
       value: tab
     })
+    console.log(this.state.selectedData);
   }
 
   render = () => {
@@ -58,7 +62,7 @@ class FloatingForm extends React.Component {
           <Tab label="Thông tin chung" {...this.a11yProps(0)} />
           <Tab label="Điểm" {...this.a11yProps(1)} disabled={(type === 'edit')? false : true}/>
         </Tabs>
-        <BasicInformation value={this.state.value} index={0} callback={this.props.callback} type={this.props.type} data={this.props.selectedData}/>
+        <BasicInformation value={this.state.value} index={0} callback={this.props.callback} type={this.props.type} selectedData={this.state.selectedData}/>
       </Collapse>
     )
   }

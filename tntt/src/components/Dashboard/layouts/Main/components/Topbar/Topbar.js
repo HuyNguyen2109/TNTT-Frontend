@@ -54,7 +54,10 @@ class Topbar extends React.Component {
               width="40px"
             />
           </RouterLink>
-          <Typography variant="h6" style={{marginLeft: '1em'}}>Xứ đoàn Annê Lê Thị Thành</Typography>
+          <div>
+            <Typography variant="h6" style={{ marginLeft: '1em' }}>Xứ đoàn Annê Lê Thị Thành</Typography>
+            <Typography variant="subtitle1" style={{ marginLeft: '1em' }}>Giáo xứ Cao Thái</Typography>
+          </div>
           <div className={classes.flexGrow} />
           <Hidden mdDown>
             <IconButton color="inherit">

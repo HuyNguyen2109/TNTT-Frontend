@@ -43,7 +43,7 @@ const useStyles = theme => ({
   inner: {
     overflow: 'auto',
     marginTop: theme.spacing(1),
-    maxHeight: 650
+    maxHeight: 750
   },
   nameContainer: {
     padding: theme.spacing(2)
@@ -206,25 +206,6 @@ class Dashboard extends React.Component {
     });
   }
 
-  formatDate = (dateString) => {
-    if (dateString.indexOf('-') > -1) {
-      let dateArr = dateString.split('-');
-      return dateArr[2] + '-' +
-        ((dateArr[1].charAt(0) !== '0' && parseInt(dateArr[1]) < 10) ? '0' + dateArr[1] : dateArr[1]) + '-' +
-        ((dateArr[0].charAt(0) !== '0' && parseInt(dateArr[0]) < 10) ? '0' + dateArr[0] : dateArr[0]);
-    } else if (dateString.indexOf('/') > -1) {
-      let dateArr = dateString.split('/');
-      return dateArr[2] + '-' +
-        ((dateArr[1].charAt(0) !== '0' && parseInt(dateArr[1]) < 10) ? '0' + dateArr[1] : dateArr[1]) + '-' +
-        ((dateArr[0].charAt(0) !== '0' && parseInt(dateArr[0]) < 10) ? '0' + dateArr[0] : dateArr[0]);
-    } else if (dateString.indexOf('.') > -1) {
-      let dateArr = dateString.split('.');
-      return dateArr[2] + '-' +
-        ((dateArr[1].charAt(0) !== '0' && parseInt(dateArr[1]) < 10) ? '0' + dateArr[1] : dateArr[1]) + '-' +
-        ((dateArr[0].charAt(0) !== '0' && parseInt(dateArr[0]) < 10) ? '0' + dateArr[0] : dateArr[0]);
-    } else return dateString;
-  }
-
   getNumberOfRecord = () => {
     if (this.props.location.pathname !== '/dashboard/all') {
       return axios
@@ -295,10 +276,10 @@ class Dashboard extends React.Component {
           // row.firstname = row.firstname + ' ' + row.lastname;
           // delete row.lastname;
 
-          row.birthday = (row.birthday === '' ? row.birthday : moment(this.formatDate(row.birthday)).format('DD/MM/YYYY'))
-          row.day_of_baptism = (row.day_of_baptism === '' ? row.day_of_baptism : moment(this.formatDate(row.day_of_baptism)).format('DD/MM/YYYY'))
-          row.day_of_eucharist = (row.day_of_eucharist === '' ? row.day_of_eucharist : moment(this.formatDate(row.day_of_eucharist)).format('DD/MM/YYYY'))
-          row.day_of_confirmation = (row.day_of_confirmation === '' ? row.day_of_confirmation : moment(this.formatDate(row.day_of_confirmation)).format('DD/MM/YYYY'));
+          row.birthday = (row.birthday === '' ? row.birthday : moment(row.birthday).format('DD/MM/YYYY'))
+          row.day_of_baptism = (row.day_of_baptism === '' ? row.day_of_baptism : moment(row.day_of_baptism).format('DD/MM/YYYY'))
+          row.day_of_eucharist = (row.day_of_eucharist === '' ? row.day_of_eucharist : moment(row.day_of_eucharist).format('DD/MM/YYYY'))
+          row.day_of_confirmation = (row.day_of_confirmation === '' ? row.day_of_confirmation : moment(row.day_of_confirmation).format('DD/MM/YYYY'));
         })
         this.setState({
           records: modifiedData,
@@ -440,10 +421,10 @@ class Dashboard extends React.Component {
         .then(result => {
           let modifiedData = result.data.data;
           modifiedData.forEach(row => {
-            row.birthday = (row.birthday === '' ? row.birthday : moment(this.formatDate(row.birthday)).format('DD/MM/YYYY'))
-            row.day_of_baptism = (row.day_of_baptism === '' ? row.day_of_baptism : moment(this.formatDate(row.day_of_baptism)).format('DD/MM/YYYY'))
-            row.day_of_eucharist = (row.day_of_eucharist === '' ? row.day_of_eucharist : moment(this.formatDate(row.day_of_eucharist)).format('DD/MM/YYYY'))
-            row.day_of_confirmation = (row.day_of_confirmation === '' ? row.day_of_confirmation : moment(this.formatDate(row.day_of_confirmation)).format('DD/MM/YYYY'));
+            row.birthday = (row.birthday === '' ? row.birthday : moment(row.birthday).format('DD/MM/YYYY'))
+            row.day_of_baptism = (row.day_of_baptism === '' ? row.day_of_baptism : moment(row.day_of_baptism).format('DD/MM/YYYY'))
+            row.day_of_eucharist = (row.day_of_eucharist === '' ? row.day_of_eucharist : moment(row.day_of_eucharist).format('DD/MM/YYYY'))
+            row.day_of_confirmation = (row.day_of_confirmation === '' ? row.day_of_confirmation : moment(row.day_of_confirmation).format('DD/MM/YYYY'));
           })
           this.setState({
             records: modifiedData,
@@ -549,7 +530,6 @@ class Dashboard extends React.Component {
           <div className={classes.inner}>
             {/* Table */}
             <MaterialTable
-              title={<Button onClick={() => alert("Clicked!!!")}>Click me!</Button>}
               icons={tableIcons}
               columns={this.state.materialColumn}
               data={this.state.records}
@@ -592,6 +572,7 @@ class Dashboard extends React.Component {
                   color: '#000000',
                   fontSize: 14,
                 },
+                showTitle: false,
                 maxBodyHeight: '500px',
                 search: true,
                 emptyRowsWhenPaging: false,
@@ -608,7 +589,7 @@ class Dashboard extends React.Component {
                   icon: () => { return <Edit /> },
                   tooltip: "Chỉnh sửa",
                   onClick: (e, rowData) => {
-                    this.handleRowSelection(e, rowData);   
+                    this.handleRowSelection(e, rowData);
                   }
                 },
                 {

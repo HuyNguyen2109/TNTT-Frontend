@@ -58,6 +58,7 @@ class BasicInformation extends React.Component {
       newDayOfBaptism: moment("1990-01-01").format(),
       newDayofEucharist: moment("1990-01-01").format(),
       newDayofConfirmation: moment("1990-01-01").format(),
+      defaultDate: moment("1990-01-01").format(),
 
       dioceses: ['Giuse', 'Nữ Vương Mân Côi', 'Anna', 'Phêrô'],
       genders: ['Nam', 'Nữ'],
@@ -71,16 +72,29 @@ class BasicInformation extends React.Component {
 
   componentDidUpdate = (prevProps) => {
     if (this.props.type === 'edit' && JSON.stringify(prevProps.selectedData.name) !== JSON.stringify(this.props.selectedData.name)) {
-      const data = this.props.selectedData
-      this.setState({
-        newName: data.name,
-        newFatherName: data.father_name,
-        newMotherName: data.mother_name,
-
-        newGender: (data.male === 'x') ? "Nam" : "Nữ",
-        newContact: data.contact,
-
-      })
+      const name = this.props.selectedData.name
+      
+      return axios
+        .get(`/backend/children/by-name/${name}`)
+        .then(result => {
+          const data = result.data.data[0]
+          this.setState({
+            newName: data.name,
+            newFatherName: data.father_name,
+            newMotherName: data.mother_name,
+            newBirthday: (data.birthday === '')? this.state.newBirthday : moment(data.birthday).format(),
+            newDayOfBaptism: (data.day_of_baptism === '')? this.state.newDayOfBaptism : moment(data.day_of_baptism).format(),
+            newDayofEucharist: (data.day_of_eucharist === '')? this.state.newDayofEucharist : moment(data.day_of_eucharist).format(),
+            newDayofConfirmation: (data.day_of_confirmation === '')? this.state.newDayofConfirmation : moment(data.day_of_confirmation).format(),
+            newAddress: data.address,
+            newGender: (data.male === 'x') ? "Nam" : "Nữ",
+            newContact: data.contact,
+            newClass: data.class
+          });
+        })
+        .catch(err => {
+          console.log(err)
+        })
     }
   }
 

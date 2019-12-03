@@ -406,7 +406,7 @@ class Dashboard extends React.Component {
     this.setState({
       isExpansionButton: true,
       floatingFormType: 'edit',
-      selectedRecord: JSON.stringify(rowData)
+      selectedRecord: rowData
     })
   }
 
@@ -503,29 +503,6 @@ class Dashboard extends React.Component {
     file.value = '';
   }
 
-  handleDeleteRow = (e, rowData) => {
-    let r = window.confirm('Bạn có chắc muốn xóa em Thiếu nhi này?');
-    if (r === true) {
-      this.setState({
-        isLoadingData: true
-      });
-      return axios
-        .delete('/backend/children/delete/by-name', {
-          params: {
-            name: rowData.name
-          }
-        })
-        .then(res => {
-          if (res.data.code === "I001") {
-            this.reloadData()
-          }
-        })
-        .catch(err => {
-          alert(err);
-        })
-    }
-  }
-
   handleRowClick = (e, rowData) => {
     let joined;
     if (this.state.selectedRows.includes(rowData) === true) {
@@ -565,11 +542,14 @@ class Dashboard extends React.Component {
 
     return (
       <div className={(this.state.windowsWidth < 500) ? { padding: 0, width: '100%' } : classes.root}>
+        <Typography variant="h5">
+          {(this.props.location.pathname.split("/")[2] === 'all') ? "Danh sách chung" : `Danh sách lớp ${this.state.currentClass}`}
+        </Typography>
         <Paper className={classes.root}>
           <div className={classes.inner}>
             {/* Table */}
             <MaterialTable
-              title={(this.props.location.pathname.split("/")[2] === 'all') ? "Danh sách chung" : `Danh sách lớp ${this.state.currentClass}`}
+              title={<Button onClick={() => alert("Clicked!!!")}>Click me!</Button>}
               icons={tableIcons}
               columns={this.state.materialColumn}
               data={this.state.records}
@@ -628,14 +608,7 @@ class Dashboard extends React.Component {
                   icon: () => { return <Edit /> },
                   tooltip: "Chỉnh sửa",
                   onClick: (e, rowData) => {
-                    this.handleRowSelection(e, rowData);
-                  }
-                },
-                {
-                  icon: () => { return <Delete /> },
-                  tooltip: "Xóa",
-                  onClick: (e, rowData) => {
-                    this.handleDeleteRow(e, rowData);
+                    this.handleRowSelection(e, rowData);   
                   }
                 },
                 {

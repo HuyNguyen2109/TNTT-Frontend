@@ -1,11 +1,11 @@
 import React from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 import clsx from 'clsx';
-import { AppBar, Toolbar, Badge, Hidden, IconButton } from '@material-ui/core';
+import { AppBar, Toolbar, Badge, Hidden, IconButton, Typography } from '@material-ui/core';
 import MenuIcon from '@material-ui/icons/Menu';
 import NotificationsIcon from '@material-ui/icons/NotificationsOutlined';
 import InputIcon from '@material-ui/icons/Input';
-import logo from './logo.jpg'
+import logo from './logo.png'
 import { withStyles } from '@material-ui/styles';
 import Promise from 'bluebird';
 
@@ -47,13 +47,14 @@ class Topbar extends React.Component {
         className={clsx(classes.root, className)}
       >
         <Toolbar>
-          <RouterLink to="/dashboard">
+          <RouterLink to="/dashboard/all">
             <img
               alt="Logo"
               src={logo}
               width="40px"
             />
           </RouterLink>
+          <Typography variant="h6" style={{marginLeft: '1em'}}>Xứ đoàn Annê Lê Thị Thành</Typography>
           <div className={classes.flexGrow} />
           <Hidden mdDown>
             <IconButton color="inherit">

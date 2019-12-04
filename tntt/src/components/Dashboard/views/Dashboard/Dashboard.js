@@ -754,6 +754,7 @@ class Dashboard extends React.Component {
           className={this.state.snackbarType}
           callback={this.callbackSnackerBarHanlder}
           open={this.state.snackerBarStatus}
+          type={this.state.floatingFormType}
         />
       </div>
     );

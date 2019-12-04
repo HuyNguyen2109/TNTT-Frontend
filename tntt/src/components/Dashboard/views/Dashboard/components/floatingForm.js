@@ -33,7 +33,7 @@ class FloatingForm extends React.Component {
   }
 
   componentDidUpdate = (prevProps) => {
-    if(this.props.type === 'edit' && this.props.selectedData.name !== prevProps.selectedData.name) {
+    if(this.props.type === 'edit' && this.props.selectedData !== prevProps.selectedData) {
       this.setState({
         selectedData: this.props.selectedData
       })
@@ -62,7 +62,7 @@ class FloatingForm extends React.Component {
           <Tab label="Thông tin chung" {...this.a11yProps(0)} />
           <Tab label="Điểm" {...this.a11yProps(1)} disabled={(type === 'edit')? false : true}/>
         </Tabs>
-        <BasicInformation value={this.state.value} index={0} callback={this.props.callback} type={this.props.type} selectedData={this.state.selectedData}/>
+        <BasicInformation value={this.state.value} index={0} callback={this.props.callback} type={this.props.type} selectedData={this.state.selectedData} updateStatus={this.props.updateStatus} resetSelectedRow={this.props.resetSelectedRow}/>
       </Collapse>
     )
   }

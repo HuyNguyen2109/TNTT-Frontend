@@ -86,6 +86,11 @@ class Signin extends React.Component {
     if(localStorage.getItem('username')!==null && localStorage.getItem('isRememberMe') === 'true') {
       this.props.history.push('/dashboard/all')
     }
+    document.body.addEventListener('keyup', (e)=> {
+      if(e.keyCode === 13) {
+        document.getElementById('loginButton').click();
+      }
+    })
   }
 
   toggleShow = () => {
@@ -394,6 +399,7 @@ class Signin extends React.Component {
                   />
                   <Button
                   // type="submit"
+                  id="loginButton"
                   disabled={(this.state.username !=="" && this.state.password !== "" && !this.state.isLoginClicked)? false : true}
                   fullWidth
                   variant="contained"

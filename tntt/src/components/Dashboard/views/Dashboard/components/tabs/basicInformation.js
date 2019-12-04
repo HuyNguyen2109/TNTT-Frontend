@@ -26,6 +26,7 @@ import {
 } from '@material-ui/core';
 import axios from 'axios';
 
+
 const useStyles = theme => ({
   root: {
     flexGrow: 1,
@@ -71,9 +72,9 @@ class BasicInformation extends React.Component {
   }
 
   componentDidUpdate = (prevProps) => {
-    if (this.props.type === 'edit' && JSON.stringify(prevProps.selectedData.name) !== JSON.stringify(this.props.selectedData.name)) {
+    if (this.props.type === 'edit' && JSON.stringify(prevProps.selectedData) !== JSON.stringify(this.props.selectedData)) {
       const name = this.props.selectedData.name
-      
+
       return axios
         .get(`/backend/children/by-name/${name}`)
         .then(result => {
@@ -82,14 +83,15 @@ class BasicInformation extends React.Component {
             newName: data.name,
             newFatherName: data.father_name,
             newMotherName: data.mother_name,
-            newBirthday: (data.birthday === '')? this.state.newBirthday : moment(data.birthday).format(),
-            newDayOfBaptism: (data.day_of_baptism === '')? this.state.newDayOfBaptism : moment(data.day_of_baptism).format(),
-            newDayofEucharist: (data.day_of_eucharist === '')? this.state.newDayofEucharist : moment(data.day_of_eucharist).format(),
-            newDayofConfirmation: (data.day_of_confirmation === '')? this.state.newDayofConfirmation : moment(data.day_of_confirmation).format(),
+            newBirthday: (data.birthday === '') ? this.state.newBirthday : moment(data.birthday).format(),
+            newDayOfBaptism: (data.day_of_baptism === '') ? this.state.newDayOfBaptism : moment(data.day_of_baptism).format(),
+            newDayofEucharist: (data.day_of_eucharist === '') ? this.state.newDayofEucharist : moment(data.day_of_eucharist).format(),
+            newDayofConfirmation: (data.day_of_confirmation === '') ? this.state.newDayofConfirmation : moment(data.day_of_confirmation).format(),
             newAddress: data.address,
             newGender: (data.male === 'x') ? "Nam" : "Nữ",
             newContact: data.contact,
-            newClass: data.class
+            newClass: data.class,
+            newDiocese: data.diocese
           });
         })
         .catch(err => {
@@ -110,7 +112,70 @@ class BasicInformation extends React.Component {
       })
   }
 
-  handleCloseFloatingForm = (e) => {
+  updateData = () => {
+    const state = this.state;
+    const updatedData = {
+      'name': state.newName,
+      'father_name': state.newFatherName,
+      'mother_name': state.newMotherName,
+      'diocese': state.newDiocese,
+      'male': (state.newGender === 'Nam') ? 'x' : '',
+      'female': (state.newGender === 'Nữ') ? 'x' : '',
+      'class': state.newClass,
+      'birthday': (state.newBirthday === state.defaultDate) ? '' : moment(state.newBirthday).format('YYYY-MM-DD'),
+      'day_of_baptism': (state.newDayOfBaptism === state.defaultDate) ? '' : moment(state.newDayOfBaptism).format('YYYY-MM-DD'),
+      'day_of_eucharist': (state.newDayofEucharist === state.defaultDate) ? '' : moment(state.newDayofEucharist).format('YYYY-MM-DD'),
+      'day_of_confirmation': (state.newDayofConfirmation === state.defaultDate) ? '' : moment(state.newDayofConfirmation).format('YYYY-MM-DD'),
+      'address': state.newAddress,
+      'contact': state.newContact
+    }
+    
+    return axios
+      .post(`/backend/children/update/by-name/${state.newName}`, updatedData)
+      .then(result => {
+        if(result.data.code === 'I001') {
+          this.props.updateStatus('successfully')
+        }
+        this.handleCloseFloatingForm();
+      })
+      .catch(err => {
+        console.log(err);
+        this.props.updateStatus('failed')
+      })
+  }
+
+  createNewChildren = () => {
+    const state = this.state;
+    const newData = {
+      'name': state.newName,
+      'father_name': state.newFatherName,
+      'mother_name': state.newMotherName,
+      'diocese': state.newDiocese,
+      'male': (state.newGender === 'Nam') ? 'x' : '',
+      'female': (state.newGender === 'Nữ') ? 'x' : '',
+      'class': state.newClass,
+      'birthday': (state.newBirthday === state.defaultDate) ? '' : moment(state.newBirthday).format('YYYY-MM-DD'),
+      'day_of_baptism': (state.newDayOfBaptism === state.defaultDate) ? '' : moment(state.newDayOfBaptism).format('YYYY-MM-DD'),
+      'day_of_eucharist': (state.newDayofEucharist === state.defaultDate) ? '' : moment(state.newDayofEucharist).format('YYYY-MM-DD'),
+      'day_of_confirmation': (state.newDayofConfirmation === state.defaultDate) ? '' : moment(state.newDayofConfirmation).format('YYYY-MM-DD'),
+      'address': state.newAddress,
+      'contact': state.newContact
+    }
+    return axios
+      .post('/backend/children/create', newData)
+      .then(result => {
+        if(result.data.code === 'I001') {
+          this.props.updateStatus('successfully')
+        }
+        this.handleCloseFloatingForm();
+      })
+      .catch(err => {
+        console.log(err);
+        this.props.updateStatus('failed')
+      })
+  }
+
+  handleCloseFloatingForm = () => {
     this.setState({
       newAddress: '',
       newName: '',
@@ -126,6 +191,24 @@ class BasicInformation extends React.Component {
       newDayofConfirmation: moment("1990-01-01").format(),
     })
     this.props.callback(false);
+    this.props.resetSelectedRow('');
+  }
+
+  handleResetForm = () => {
+    this.setState({
+      newAddress: '',
+      newName: '',
+      newFatherName: '',
+      newMotherName: '',
+      newDiocese: 'Giuse',
+      newGender: 'Nam',
+      newContact: '',
+      newClass: '',
+      newBirthday: moment("1990-01-01").format(),
+      newDayOfBaptism: moment("1990-01-01").format(),
+      newDayofEucharist: moment("1990-01-01").format(),
+      newDayofConfirmation: moment("1990-01-01").format(),
+    })
   }
 
   handleFormChange = (e, type) => {
@@ -156,6 +239,7 @@ class BasicInformation extends React.Component {
           <Grid item xs={12}>
             <TextField
               required
+              disabled={(this.props.type === 'edit')? true : false}
               autoFocus
               label="Tên Thiếu nhi"
               name="name"
@@ -372,23 +456,27 @@ class BasicInformation extends React.Component {
               size="small"
               className={classes.formButton}
               style={{ marginRight: '1em' }}
-            ><Update className={classes.iconInButton} fontSize="small"/>Cập nhật</Button>
+              onClick={this.updateData}
+            ><Update className={classes.iconInButton} fontSize="small" />Cập nhật</Button>
             :
             <div>
               <Button
                 variant="contained"
+                disabled={(this.state.newName === '' || this.state.newFatherName === '' || this.state.newMotherName === '')? true : false}
                 color="primary"
                 size="small"
                 className={classes.formButton}
                 style={{ marginRight: '1em' }}
-              ><Check className={classes.iconInButton} fontSize="small"/>Xác nhận</Button>
+                onClick={this.createNewChildren}
+              ><Check className={classes.iconInButton} fontSize="small" />Xác nhận</Button>
               <Button
                 variant="contained"
                 color="secondary"
                 size="small"
                 className={classes.formButton}
                 style={{ marginRight: '1em' }}
-              ><Backspace className={classes.iconInButton} fontSize="small"/>Xóa</Button>
+                onClick={this.handleResetForm}
+              ><Backspace className={classes.iconInButton} fontSize="small" />Xóa</Button>
             </div>
           }
           <Button
@@ -396,8 +484,8 @@ class BasicInformation extends React.Component {
             color="primary"
             size="small"
             className={classes.formButton}
-            onClick={e => this.handleCloseFloatingForm(e)}>
-            <Cancel className={classes.iconInButton} fontSize="small"/>Hủy bỏ</Button>
+            onClick={this.handleCloseFloatingForm}>
+            <Cancel className={classes.iconInButton} fontSize="small" />Hủy bỏ</Button>
         </Grid>
       </div>
     )

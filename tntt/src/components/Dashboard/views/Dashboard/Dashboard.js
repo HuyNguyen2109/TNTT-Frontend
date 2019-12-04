@@ -8,7 +8,6 @@ import axios from 'axios';
 import moment from 'moment';
 import {
   PersonAdd,
-  Edit,
   Cached,
   Backup,
   Restore,
@@ -31,6 +30,7 @@ import MaterialTable from 'material-table';
 
 import FloatingForm from './components/floatingForm';
 import tableIcons from './components/tableIcon';
+import SnackDialog from '../../../SnackerBar';
 
 const useStyles = theme => ({
   root: {
@@ -171,6 +171,11 @@ class Dashboard extends React.Component {
       restoreFile: '',
 
       selectedRows: [],
+
+      updateStatus: '',
+      snackerBarStatus: false,
+      snackbarMessage: "",
+      snackbarType: "success",
     };
 
     this.updateWindowDimensions = this.updateWindowDimensions.bind(this);
@@ -233,6 +238,11 @@ class Dashboard extends React.Component {
         })
         .catch(err => {
           console.log(err);
+          this.setState({
+            snackbarType: 'error',
+            snackerBarStatus: true,
+            snackbarMessage: 'Đã có lỗi trong quá trình nhận dữ liệu từ máy chủ'
+          })
         })
     }
     else {
@@ -249,6 +259,11 @@ class Dashboard extends React.Component {
         })
         .catch(err => {
           console.log(err);
+          this.setState({
+            snackbarType: 'error',
+            snackerBarStatus: true,
+            snackbarMessage: 'Đã có lỗi trong quá trình nhận dữ liệu từ máy chủ'
+          })
         })
     }
   }
@@ -273,9 +288,6 @@ class Dashboard extends React.Component {
       .then(result => {
         let modifiedData = result.data.data;
         modifiedData.forEach(row => {
-          // row.firstname = row.firstname + ' ' + row.lastname;
-          // delete row.lastname;
-
           row.birthday = (row.birthday === '' ? row.birthday : moment(row.birthday).format('DD/MM/YYYY'))
           row.day_of_baptism = (row.day_of_baptism === '' ? row.day_of_baptism : moment(row.day_of_baptism).format('DD/MM/YYYY'))
           row.day_of_eucharist = (row.day_of_eucharist === '' ? row.day_of_eucharist : moment(row.day_of_eucharist).format('DD/MM/YYYY'))
@@ -288,6 +300,11 @@ class Dashboard extends React.Component {
       })
       .catch(err => {
         console.log(err);
+        this.setState({
+          snackbarType: 'error',
+          snackerBarStatus: true,
+          snackbarMessage: 'Đã có lỗi trong quá trình nhận dữ liệu từ máy chủ'
+        })
       })
   }
 
@@ -315,10 +332,20 @@ class Dashboard extends React.Component {
         if (res.data.code === "I001") {
           this.reloadData();
           this.handleCloseRestoreFile();
+          this.setState({
+            snackbarType: 'success',
+            snackerBarStatus: true,
+            snackbarMessage: 'Phục hồi dữ liệu thành công'
+          })
         }
       })
       .catch(err => {
         console.log(err)
+        this.setState({
+          snackbarType: 'error',
+          snackerBarStatus: true,
+          snackbarMessage: 'Đã có lỗi trong quá trình phục hồi dữ liệu'
+        })
       })
   }
 
@@ -340,10 +367,20 @@ class Dashboard extends React.Component {
           this.setState({
             selectedRows: []
           })
+          this.setState({
+            snackbarType: 'success',
+            snackerBarStatus: true,
+            snackbarMessage: 'Xóa thành công'
+          })
         }
       })
       .catch(err => {
         console.log(err)
+        this.setState({
+          snackbarType: 'error',
+          snackerBarStatus: true,
+          snackbarMessage: 'Đã có lỗi trong quá trình xóa'
+        })
       })
   }
 
@@ -380,6 +417,37 @@ class Dashboard extends React.Component {
     this.setState({
       isExpansionButton: callback
     })
+  }
+
+  handleResetSelectedRow = (callback) => {
+    this.setState({
+      selectedRecord: callback
+    })
+  }
+
+  handleStatusFromFloatingForm = (callback) => {
+    if (callback === 'successfully') {
+      this.setState({
+        snackerBarStatus: true,
+        snackbarMessage: "Cập nhật/tạo mới thành công",
+        snackbarType: "success",
+      })
+      this.reloadData();
+    }
+    else {
+      this.setState({
+        snackerBarStatus: true,
+        snackbarMessage: "Đã có lỗi xảy ra trong quá trình cập nhật/tạo mới",
+        snackbarType: "error",
+      })
+    }
+    this.setState({
+      updateStatus: callback
+    })
+  }
+
+  callbackSnackerBarHanlder = (callback) => {
+    this.setState({ snackerBarStatus: callback });
   }
 
   handleRowSelection = (e, rowData) => {
@@ -448,7 +516,6 @@ class Dashboard extends React.Component {
     axios
       .get('/backend/children/export')
       .then(result => {
-        console.log(result);
         let data = new Blob([result.data.data], { type: 'text/csv;charset=utf-8;' });
         let csvURL = window.URL.createObjectURL(data);
         let link = document.createElement('a');
@@ -458,6 +525,11 @@ class Dashboard extends React.Component {
       })
       .catch(err => {
         console.log(err);
+        this.setState({
+          snackbarType: 'error',
+          snackerBarStatus: true,
+          snackbarMessage: 'Đã có lỗi trong quá trình sao lưu'
+        })
       })
   }
 
@@ -498,6 +570,7 @@ class Dashboard extends React.Component {
   }
 
   handleSelectAll = () => {
+    this.scrollToRef();
     this.setState({
       selectedRows: this.state.records
     })
@@ -536,7 +609,7 @@ class Dashboard extends React.Component {
               onChangePage={(page) => this.handleChangePage(page)}
               onChangeRowsPerPage={pageSize => this.handleChangeRowsPerPage(pageSize)}
               onSearchChange={(text) => this.handleSearchChange(text)}
-              onRowClick={(e, rowData) => this.handleRowClick(e, rowData)}
+              onRowClick={(e, rowData) => this.handleRowSelection(e, rowData)}
               totalCount={this.state.numberOfRecord}
               isLoading={this.state.isLoadingData}
               page={this.state.tablePage}
@@ -586,13 +659,6 @@ class Dashboard extends React.Component {
               }}
               actions={[
                 {
-                  icon: () => { return <Edit /> },
-                  tooltip: "Chỉnh sửa",
-                  onClick: (e, rowData) => {
-                    this.handleRowSelection(e, rowData);
-                  }
-                },
-                {
                   icon: () => { return <PersonAdd /> },
                   tooltip: "Đăng ký thiếu nhi mới",
                   isFreeAction: true,
@@ -621,7 +687,12 @@ class Dashboard extends React.Component {
                   tooltip: "Chọn toàn bộ trang này",
                   isFreeAction: true,
                   onClick: () => this.handleSelectAll(),
-                }
+                },
+                {
+                  icon: () => { return <Delete />},
+                  tooltip: 'Chọn xóa',
+                  onClick: (e, rowData) => this.handleRowClick(e, rowData),
+                },
               ]}
             />
           </div>
@@ -671,10 +742,19 @@ class Dashboard extends React.Component {
             open={this.state.isExpansionButton}
             callback={this.handleCallBackFloatingform}
             type={this.state.floatingFormType}
-            selectedData={this.state.selectedRecord} />
+            selectedData={this.state.selectedRecord}
+            updateStatus={this.handleStatusFromFloatingForm} 
+            resetSelectedRow={this.handleResetSelectedRow}/>
           <input id="filePicker" type="file" onChange={e => this.handleFileChange(e)} accept=".csv" style={{ 'display': 'none' }} />
         </Paper>
         <div ref={this.myRef} />
+        <SnackDialog
+          variant={this.state.snackbarType}
+          message={this.state.snackbarMessage}
+          className={this.state.snackbarType}
+          callback={this.callbackSnackerBarHanlder}
+          open={this.state.snackerBarStatus}
+        />
       </div>
     );
   }

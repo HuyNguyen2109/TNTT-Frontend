@@ -435,7 +435,7 @@ class Dashboard extends React.Component {
       this.reloadData();
     }
     else {
-      this.setState({
+      this.setState({ 
         snackerBarStatus: true,
         snackbarMessage: "Đã có lỗi xảy ra trong quá trình cập nhật/tạo mới",
         snackbarType: "error",

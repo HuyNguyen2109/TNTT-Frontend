@@ -60,7 +60,7 @@ class FloatingForm extends React.Component {
       <Collapse in={open} className={classes.root}>
         <Tabs value={this.state.value} onChange={(e, value) => this.handleChangeTab(e, value)}>
           <Tab label="Thông tin chung" {...this.a11yProps(0)} />
-          <Tab label="Điểm" {...this.a11yProps(1)} disabled={(type === 'edit')? false : true}/>
+          <Tab label="Điểm & Điểm danh" {...this.a11yProps(1)} disabled={(type === 'edit')? false : true}/>
         </Tabs>
         <BasicInformation 
           value={this.state.value} 

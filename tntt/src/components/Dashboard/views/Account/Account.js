@@ -3,7 +3,7 @@ import { withStyles } from '@material-ui/styles';
 import { Grid } from '@material-ui/core';
 import axios from 'axios';
 
-import { AccountProfile, AccountDetails, Password } from './components';
+import { AccountProfile, AccountDetails, Password, Feedback } from './components';
 
 const useStyles = theme => ({
   root: {
@@ -34,7 +34,7 @@ class Account extends React.Component {
             xs={12}
           >
             <AccountProfile userdata={this.getUser()}/>
-            <Password style={{marginTop: 2+'em'}}/>
+            <Password style={{marginTop: '2em'}}/>
           </Grid>
           <Grid
             item
@@ -44,6 +44,7 @@ class Account extends React.Component {
             xs={12}
           >
             <AccountDetails userdata={this.getUser()}/>
+            <Feedback style={{marginTop: '2em'}} userdata={this.getUser()}/>
           </Grid>
         </Grid>
       </div>

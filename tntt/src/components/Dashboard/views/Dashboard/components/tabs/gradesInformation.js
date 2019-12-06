@@ -9,17 +9,20 @@ import {
   Grid,
   Button,
   IconButton,
-  Paper,
   TextField,
   MenuItem,
   Collapse,
+  InputAdornment,
 } from '@material-ui/core';
 import {
   Add,
   Check,
+  Send,
   Delete,
   Cancel,
-  Update,
+  ClosedCaption,
+  Grade,
+  ViewList,
 } from '@material-ui/icons/';
 
 import tableIcons from '../tableIcon';
@@ -42,6 +45,9 @@ const useStyles = (theme) => ({
     marginTop: theme.spacing(1),
     maxHeight: 500
   },
+  menu: {
+    width: 200
+  }
 })
 
 class GradesInformation extends React.Component {
@@ -51,9 +57,14 @@ class GradesInformation extends React.Component {
     this.state = {
       grades: [],
       //for TableData
+      gradeType: ['Điểm thường', 'Điểm kiểm tra', 'Điểm thi'],
       gradeColumn: [
         {
-          title: 'Lọai điểm',
+          title: "Loại điểm",
+          field: 'type'
+        },
+        {
+          title: 'Nội dung',
           field: 'title'
         },
         {
@@ -62,7 +73,10 @@ class GradesInformation extends React.Component {
         }
       ],
       isAddGradeClicked: false,
+      isLoadingData: true,
+      textFieldStatus: 'add',
       //form
+      newGradeType: '',
       newGradeTitle: '',
       newGrade: 0,
       newKey: '',
@@ -70,7 +84,7 @@ class GradesInformation extends React.Component {
   };
 
   componentDidUpdate = (prevProps, prevState) => {
-    if (this.props.type === 'edit' && JSON.stringify(prevProps.selectedData) !== JSON.stringify(this.props.selectedData)) {
+    if (this.props.type === 'edit' && JSON.stringify(prevProps.selectedData) !== JSON.stringify(this.props.selectedData) && this.props.selectedData.name !== undefined) {
       const name = this.props.selectedData.name
       return axios
         .get(`/backend/children/grade/by-name/${name}`)
@@ -79,12 +93,14 @@ class GradesInformation extends React.Component {
           if(gradesArr[0].hasOwnProperty('title') === false) {
             this.setState({
               grades: [],
-              isAddGradeClicked: false
+              isAddGradeClicked: false,
+              isLoadingData: false
           })
           } else {
             this.setState({
               grades: gradesArr,
-              isAddGradeClicked: false
+              isAddGradeClicked: false,
+              isLoadingData: false
           })
           }
         })
@@ -94,17 +110,80 @@ class GradesInformation extends React.Component {
     }
   }
 
+  reloadData = () => {
+    const name = this.props.selectedData.name
+    return axios
+      .get(`/backend/children/grade/by-name/${name}`)
+      .then(result => {
+        const gradesArr = result.data.data;
+        if(gradesArr[0].hasOwnProperty('title') === false) {
+          this.setState({
+            grades: [],
+            isAddGradeClicked: false,
+            isLoadingData: false
+        })
+        } else {
+          this.setState({
+            grades: gradesArr,
+            isAddGradeClicked: false,
+            isLoadingData: false
+        })
+        }
+      })
+      .catch(err => {
+        console.log(err)
+      })
+  }
+
   addNewItem = () => {
     const data = {
       'key': (this.state.newKey === '')? uuid.v4() : this.state.newKey,
+      'type': this.state.newGradeType,
       'title': this.state.newGradeTitle,
       'point': parseInt(this.state.newGrade),
     }
-    console.log(data);
     return axios
       .post(`/backend/children/grade/new/by-name/${this.props.selectedData.name}`, data)
       .then(res => {
-        console.log(res)
+        this.reloadData()
+        this.props.updateStatus('successfully')
+      })
+      .catch(err => {
+        console.log(err)
+      })
+  }
+
+  updateItem = () => {
+    const updatedData = {
+      'key': this.state.newKey,
+      'title': this.state.newGradeTitle,
+      'point': this.state.newGrade,
+      'type': this.state.newGradeType
+    }
+    return axios
+      .post(`/backend/children/grade/update/by-name/${this.props.selectedData.name}`, updatedData)
+      .then(res => {
+        this.reloadData()
+        this.props.updateStatus('successfully')
+      })
+      .catch(err => {
+        console.log(err)
+      })
+  }
+
+  deleteItem = (e, rowData) => {
+    console.log(rowData);
+    const deleteData = {
+      'key': rowData.key,
+      'title': rowData.title,
+      'point': rowData.point,
+      'type': rowData.type
+    }
+    return axios
+      .post(`/backend/children/grade/delete/by-name/${this.props.selectedData.name}`, deleteData)
+      .then(res => {
+        this.reloadData()
+        this.props.updateStatus('successfully')
       })
       .catch(err => {
         console.log(err)
@@ -121,8 +200,10 @@ class GradesInformation extends React.Component {
   handleCloseFloatingForm = () => {
     this.setState({
       newGradeTitle: '',
+      newGradeType: '',
       newGrade: 0,
-      newKey: ''
+      newKey: '',
+      textFieldStatus: 'add',
     })
     this.props.callback(false);
     this.props.resetSelectedRow('');
@@ -145,12 +226,15 @@ class GradesInformation extends React.Component {
               icons={tableIcons}
               columns={this.state.gradeColumn}
               data={this.state.grades}
+              isLoading={this.state.isLoadingData}
               onRowClick={(e, rowData) => {
                 this.setState({
                   newKey: rowData.key,
                   newGradeTitle: rowData.title,
+                  newGradeType: rowData.type,
                   newGrade: rowData.point,
-                  isAddGradeClicked: true
+                  isAddGradeClicked: true,
+                  textFieldStatus: 'edit'
               })}}
               options={{
                 showFirstLastPageButtons: false,
@@ -170,7 +254,7 @@ class GradesInformation extends React.Component {
                   emptyDataSourceMessage: 'Không có dữ liệu!'
                 },
                 header: {
-                  actions: 'Xóa'
+                  actions: ''
                 },
               }}
               actions={[
@@ -180,41 +264,94 @@ class GradesInformation extends React.Component {
                   onClick: () => { this.setState({
                       newGradeTitle: '',
                       newGrade: 0,
-                      isAddGradeClicked: true
+                      newKey: '',
+                      newGradeType: '',
+                      isAddGradeClicked: true,
+                      textFieldStatus: 'add'
                     }) 
                   }
                 },
                 {
                   icon: () => { return <Delete /> },
-                  onClick: (e, rowData) => {
-                    console.log(rowData);
-                  }
+                  onClick: (e, rowData) => this.deleteItem(e, rowData)
                 }
               ]}
             />
             <Collapse in={this.state.isAddGradeClicked}>
               <Grid container spacing={2}>
-                <Grid item xs={12} sm={5}>
+                <Grid item xs={12} sm={3}>
+                  <TextField
+                    required
+                    style={{marginTop: '1em'}}
+                    select
+                    label="Loại điểm"
+                    name="gradeType"
+                    id="gradeType"
+                    value={this.state.newGradeType}
+                    onChange={e => this.handleChange(e, "newGradeType")}
+                    fullWidth
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <ViewList />
+                        </InputAdornment>
+                      )
+                    }}
+                    SelectProps={{
+                      MenuProps: {
+                        className: classes.menu
+                      }
+                    }}
+                  >
+                    {this.state.gradeType.map(type => (
+                      <MenuItem key={type} value={type}>
+                        {type}
+                      </MenuItem>
+                    ))}
+                  </TextField>
+                </Grid>
+                <Grid item xs={12} sm={3}>
                   <TextField 
                     fullWidth
+                    required
                     style={{marginTop: '1em'}}
-                    label="Loại điểm"
+                    label="Nội dung"
                     value={this.state.newGradeTitle}
-                    onChange={e => this.handleChange(e, "newGradeTitle")}/>
+                    onChange={e => this.handleChange(e, "newGradeTitle")}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <ClosedCaption />
+                        </InputAdornment>
+                      )
+                    }}/>
                 </Grid>
-                <Grid item xs={12} sm={5}>
+                <Grid item xs={12} sm={3}>
                   <TextField
                     fullWidth
                     style={{marginTop: '1em'}} 
                     label="Điểm"
                     value={this.state.newGrade}
-                    onChange={e => this.handleChange(e, "newGrade")}/>
+                    onChange={e => this.handleChange(e, "newGrade")}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <Grade />
+                        </InputAdornment>
+                      )
+                    }}/>
                 </Grid>
-                <Grid item xs={12} sm={2}>
+                <Grid item xs={12} sm={3}>
+                  {(this.state.textFieldStatus === 'add')? 
                   <IconButton 
                     style={{marginTop: '1em'}}
                     onClick={this.addNewItem}
-                  ><Check fontSize="small" /></IconButton>
+                    disabled={(this.state.newGradeTitle !== '' && this.state.newGradeType !== '')? false : true}
+                  ><Send fontSize="small" /></IconButton> : 
+                  <IconButton 
+                    style={{marginTop: '1em'}}
+                    onClick={this.updateItem}
+                  ><Check fontSize="small" /></IconButton>}
                   <IconButton 
                     style={{marginTop: '1em'}}
                     onClick={() => {

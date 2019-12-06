@@ -72,7 +72,7 @@ class BasicInformation extends React.Component {
   }
 
   componentDidUpdate = (prevProps) => {
-    if (this.props.type === 'edit' && JSON.stringify(prevProps.selectedData) !== JSON.stringify(this.props.selectedData)) {
+    if (this.props.type === 'edit' && JSON.stringify(prevProps.selectedData) !== JSON.stringify(this.props.selectedData) && this.props.selectedData.name !== undefined) {
       const name = this.props.selectedData.name
 
       return axios

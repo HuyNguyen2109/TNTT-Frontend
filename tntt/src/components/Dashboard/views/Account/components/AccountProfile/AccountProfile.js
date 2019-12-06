@@ -10,12 +10,18 @@ import {
   Avatar,
   Typography,
   Divider,
-  Button
+  Button,
+  Grid,
 } from '@material-ui/core';
 import logo from '../AccountProfile/default-user.png';
 
 const useStyles = theme => ({
   root: {},
+  avatar: {
+    width: 153,
+    height: 153,
+    margin: theme.spacing(1)
+  },
 });
 
 class AccountProfile extends React.Component {
@@ -91,10 +97,9 @@ class AccountProfile extends React.Component {
                 {this.state.currentTime} (+7)
               </Typography>
             </div>
-            <Avatar
-              className={classes.avatar}
-              src={logo}
-            />
+            <Grid container alignItems="flex-start" justify="flex-end" direction="row" spacing={2}>
+              <Avatar className={classes.avatar} src={logo}/>
+            </Grid>
           </div>
         </CardContent>
         <Divider />

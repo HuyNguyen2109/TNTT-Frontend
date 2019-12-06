@@ -38,8 +38,7 @@ class Password extends React.Component {
     this.setState({snackerBarStatus: callback});
   }
 
-  updatePassword = (e) => {
-    e.preventDefault();
+  updatePassword = () => {
     if(this.state.newPassword !== this.state.confirmPassword) {
       this.setState({
         snackbarType: "error",
@@ -100,6 +99,14 @@ class Password extends React.Component {
         });
     }
   };
+
+  cancelUpdate = () => {
+    this.setState({
+      currentPassword: '',
+      newPassword: '',
+      confirmPassword: '',
+    })
+  }
 
   handleChange = (e, type) => {
     let data;
@@ -164,11 +171,18 @@ class Password extends React.Component {
           <CardActions>
             <Button
               color="primary"
-              variant="outlined"
-              onClick={event => this.updatePassword(event)}
+              variant="contained"
+              onClick={this.updatePassword}
             >
               Thay đổi mật khẩu
-          </Button>
+            </Button>
+            <Button
+              color="primary"
+              variant="outlined"
+              onClick={this.cancelUpdate}
+            >
+              Hủy
+            </Button>
           </CardActions>
         </form>
         <SnackDialog 

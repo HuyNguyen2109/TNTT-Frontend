@@ -429,7 +429,7 @@ class Dashboard extends React.Component {
     if (callback === 'successfully') {
       this.setState({
         snackerBarStatus: true,
-        snackbarMessage: "Cập nhật/tạo mới thành công",
+        snackbarMessage: "Thay đổi thành công",
         snackbarType: "success",
       })
       this.reloadData();
@@ -437,7 +437,7 @@ class Dashboard extends React.Component {
     else {
       this.setState({ 
         snackerBarStatus: true,
-        snackbarMessage: "Đã có lỗi xảy ra trong quá trình cập nhật/tạo mới",
+        snackbarMessage: "Đã có lỗi xảy ra trong quá trình thay đổi",
         snackbarType: "error",
       })
     }

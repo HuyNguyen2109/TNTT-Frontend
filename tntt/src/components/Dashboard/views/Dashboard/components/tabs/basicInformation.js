@@ -129,7 +129,7 @@ class BasicInformation extends React.Component {
       'address': state.newAddress,
       'contact': state.newContact
     }
-    
+
     return axios
       .post(`/backend/children/update/by-name/${state.newName}`, updatedData)
       .then(result => {
@@ -159,7 +159,9 @@ class BasicInformation extends React.Component {
       'day_of_eucharist': (state.newDayofEucharist === state.defaultDate) ? '' : moment(state.newDayofEucharist).format('YYYY-MM-DD'),
       'day_of_confirmation': (state.newDayofConfirmation === state.defaultDate) ? '' : moment(state.newDayofConfirmation).format('YYYY-MM-DD'),
       'address': state.newAddress,
-      'contact': state.newContact
+      'contact': state.newContact,
+      'grades': [],
+      'absents': []
     }
     return axios
       .post('/backend/children/create', newData)

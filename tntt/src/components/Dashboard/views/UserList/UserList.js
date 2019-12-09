@@ -1,31 +1,62 @@
-import React, { useState } from 'react';
-import { makeStyles } from '@material-ui/styles';
+import React from 'react';
+import { withStyles } from '@material-ui/styles';
+import {
+  Paper,
+  Grid,
 
-import { UsersToolbar, UsersTable } from './components';
-import mockData from './data';
+} from '@material-ui/core'
 
-const useStyles = makeStyles(theme => ({
+const useStyles = (theme) => ({
   root: {
-    padding: theme.spacing(3)
+    padding: theme.spacing(4),
+    width: '100%'
   },
   content: {
-    marginTop: theme.spacing(2)
+    marginTop: theme.spacing(1),
+    overflow: 'auto',
+    maxHeight: 750
   }
-}));
+});
 
-const UserList = () => {
-  const classes = useStyles();
+class UserList extends React.Component {
+  constructor(props) {
+    super(props)
 
-  const [users] = useState(mockData);
+    this.state = {
+      windowHeight: 0,
+      windowWidth: 0,
+    };
+  }
 
-  return (
-    <div className={classes.root}>
-      <UsersToolbar />
-      <div className={classes.content}>
-        <UsersTable users={users} />
+  componentDidMount = () => {
+    this.updateWindowDimensions();
+    window.addEventListener('resize',this.updateWindowDimensions.bind(this));
+  }
+
+  componentWillUnmount = () => {
+    window.removeEventListener("resize", this.updateWindowDimensions.bind(this));
+  }
+
+  updateWindowDimensions = () => {
+    this.setState({
+      windowHeight: window.innerHeight,
+      windowWidth: window.innerWidth
+    })
+  }
+
+  render = () => {
+    const { classes } = this.props;
+
+    return (
+      <div className={(this.state.windowWidth < 500)? {padding: 0, width: '100%'} : classes.root}>
+        <Paper className={classes.root}>
+          <div className={classes.content}>
+            aaa
+          </div>
+        </Paper>
       </div>
-    </div>
-  );
-};
+    )
+  }
+}
 
-export default UserList;
+export default withStyles(useStyles)(UserList);

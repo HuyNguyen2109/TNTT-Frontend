@@ -55,7 +55,7 @@ const useStyles = theme => ({
     width: 200,
   },
   formButton: {
-    marginTop: theme.spacing(2),
+    marginTop: theme.spacing(1),
   },
   exportDialog: {
     padding: theme.spacing(4),

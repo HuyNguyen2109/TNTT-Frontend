@@ -15,6 +15,7 @@ import {
 import MaterialTable from 'material-table';
 import tableIcons from '../Dashboard/components/tableIcon';
 import SnackDialog from '../../../SnackerBar';
+import UserForm from './UserForm';
 
 const useStyles = (theme) => ({
   root: {
@@ -110,6 +111,9 @@ class UserList extends React.Component {
       ],
       usersData: [],
       selectedRows: [],
+      //for User form
+      isOpeningUserFrom: false,
+      typeOfForm: 'add',
     };
   }
 
@@ -222,6 +226,12 @@ class UserList extends React.Component {
     this.setState({ snackerBarStatus: callback });
   }
 
+  handleUserForm = (callback) => {
+    this.setState({
+      isOpeningUserFrom: callback
+    })
+  }
+
   render = () => {
     const { classes } = this.props;
 
@@ -282,6 +292,17 @@ class UserList extends React.Component {
                   onClick: () => this.reloadData(),
                 },
                 {
+                  icon: () => { return <PersonAdd /> },
+                  isFreeAction: true,
+                  onClick: () => {
+                    this.setState({
+                      isOpeningUserFrom: true,
+                      typeOfForm: 'add',
+                    })
+                  },
+                  tooltip: 'Tạo tài khoản mới'
+                },
+                {
                   icon: () => { return <Delete />},
                   tooltip: 'Chọn xóa',
                   onClick: (e, rowData) => this.handleRowClick(e, rowData),
@@ -317,6 +338,7 @@ class UserList extends React.Component {
                 }),
               }} />
           </div>
+          <UserForm open={this.state.isOpeningUserFrom} callback={this.handleUserForm}/>
           <Collapse in={(this.state.selectedRows.length > 0) ? true : false}>
             <Toolbar className={classes.chipsContainer}>
             <Typography variant="subtitle1">Đã chọn: {this.state.selectedRows.length}</Typography>

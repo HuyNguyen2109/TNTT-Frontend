@@ -36,11 +36,12 @@ class UserForm extends React.Component {
       holyName: '',
       fullname: '',
       phone: '',
-      enail: '',
+      email: '',
       birthday: moment('1990-01-01').format(),
       holyBirthday: moment('1990-01-01').format(),
       class: '',
       type: '',
+      defaultDate: moment('1990-01-01').format(),
       // for text field list
       classes: [],
       types: [
@@ -52,6 +53,24 @@ class UserForm extends React.Component {
         }
       ],
     };
+  }
+
+  removeVietnameseLetter = (str) => {
+    str = str.replace(/à|á|ạ|ả|ã|â|ầ|ấ|ậ|ẩ|ẫ|ă|ằ|ắ|ặ|ẳ|ẵ/g, "a");
+    str = str.replace(/è|é|ẹ|ẻ|ẽ|ê|ề|ế|ệ|ể|ễ/g, "e");
+    str = str.replace(/ì|í|ị|ỉ|ĩ/g, "i");
+    str = str.replace(/ò|ó|ọ|ỏ|õ|ô|ồ|ố|ộ|ổ|ỗ|ơ|ờ|ớ|ợ|ở|ỡ/g, "o");
+    str = str.replace(/ù|ú|ụ|ủ|ũ|ư|ừ|ứ|ự|ử|ữ/g, "u");
+    str = str.replace(/ỳ|ý|ỵ|ỷ|ỹ/g, "y");
+    str = str.replace(/đ/g, "d");
+    str = str.replace(/À|Á|Ạ|Ả|Ã|Â|Ầ|Ấ|Ậ|Ẩ|Ẫ|Ă|Ằ|Ắ|Ặ|Ẳ|Ẵ/g, "A");
+    str = str.replace(/È|É|Ẹ|Ẻ|Ẽ|Ê|Ề|Ế|Ệ|Ể|Ễ/g, "E");
+    str = str.replace(/Ì|Í|Ị|Ỉ|Ĩ/g, "I");
+    str = str.replace(/Ò|Ó|Ọ|Ỏ|Õ|Ô|Ồ|Ố|Ộ|Ổ|Ỗ|Ơ|Ờ|Ớ|Ợ|Ở|Ỡ/g, "O");
+    str = str.replace(/Ù|Ú|Ụ|Ủ|Ũ|Ư|Ừ|Ứ|Ự|Ử|Ữ/g, "U");
+    str = str.replace(/Ỳ|Ý|Ỵ|Ỷ|Ỹ/g, "Y");
+    str = str.replace(/Đ/g, "D");
+    return str;
   }
 
   getClass = () => {
@@ -70,15 +89,48 @@ class UserForm extends React.Component {
     return this.getClass();
   }
 
+  componentDidUpdate = (prevProps) => {
+    if(this.props.type === 'edit' && prevProps.selectedData !== this.props.selectedData && this.props.selectedData.username !== undefined) {
+      const username = this.props.selectedData.username;
+
+      return axios
+        .get(`/backend/user/get-user/${username}`)
+        .then(result => {
+          const data = result.data.data;
+          this.setState({
+            username: data.username,
+            holyName: data.holyname,
+            fullname: data.fullname,
+            phone: data.phone_number,
+            email: data.email,
+            birthday: (data.birthday === '') ? this.state.birthday : moment(data.birthday).format(),
+            holyBirthday: (data.holy_birthday === '') ? this.state.holyBirthday : moment(data.holy_birthday).format(),
+            class: data.class,
+            type: data.type,
+          });
+        })
+        .catch(err => {
+          console.log(err)
+        });
+    }
+  }
+
   createNewUser = () => {
+    let arr = this.state.fullname.split(' ');
+    let first = this.removeVietnameseLetter(arr[arr.length -1].toLowerCase());
+    let last = '';
+    for(let i = 0; i < arr.length - 1; i++) {
+      last += arr[i].charAt(0).toLowerCase();
+    }
+    let birthday = moment(this.state.birthday).format('YYYY-MM-DD');
     const newUser = {
-      'username': this.state.username,
+      'username': first+last+birthday.split('-')[2]+birthday.split('-')[1]+birthday.split('-')[0],
       'email': this.state.email,
       'holyname': this.state.holyName,
       'fullname': this.state.fullname,
       'phone_number': this.state.phone,
-      'birthday': this.state.birthday,
-      'holy_birthday': this.state.holyBirthday,
+      'birthday': (this.state.birthday !== this.state.defaultDate)? moment(this.state.birthday).format('YYYY-MM-DD') : '',
+      'holy_birthday': (this.state.holyBirthday !== this.state.defaultDate)? moment(this.state.holyBirthday).format('YYYY-MM-DD') : '',
       'type': this.state.type,
       'class': this.state.class
     };
@@ -86,12 +138,12 @@ class UserForm extends React.Component {
     return axios.post('/backend/user/register', newUser)
       .then(res => {
         if (res.data.code === 'I001') {
-          this.reloadData();
-
+          this.props.status('successfully')
         }
+        this.handleCloseFloatingForm();
       })
       .catch(err => {
-        console.log(err);
+        this.props.status('failed')
       })
   }
 
@@ -114,13 +166,28 @@ class UserForm extends React.Component {
       holyName: '',
       fullname: '',
       phone: '',
-      enail: '',
+      email: '',
       birthday: moment('1990-01-01').format(),
       holyBirthday: moment('1990-01-01').format(),
       class: '',
       type: '',
     })
     this.props.callback(false);
+    this.props.resetSelectedRow('')
+  }
+
+  handleResetForm = () => {
+    this.setState({
+      username: '',
+      holyName: '',
+      fullname: '',
+      phone: '',
+      email: '',
+      birthday: moment('1990-01-01').format(),
+      holyBirthday: moment('1990-01-01').format(),
+      class: '',
+      type: '',
+    })
   }
 
   render = () => {
@@ -135,9 +202,10 @@ class UserForm extends React.Component {
           <Grid item xs={12} sm={4}>
             <TextField
               fullWidth
+              disabled
               value={this.state.username}
               label="Tên tài khoản"
-              onChange={e => this.handleChange(e, 'username')}
+              onChange={e => this.handleFormChange(e, 'username')}
               InputProps={{
                 endAdornment: (
                   <InputAdornment position="end">
@@ -152,7 +220,7 @@ class UserForm extends React.Component {
               fullWidth
               value={this.state.holyName}
               label="Tên thánh"
-              onChange={e => this.handleChange(e, 'holyName')}
+              onChange={e => this.handleFormChange(e, 'holyName')}
               InputProps={{
                 endAdornment: (
                   <InputAdornment position="end">
@@ -167,7 +235,7 @@ class UserForm extends React.Component {
               fullWidth
               value={this.state.fullname}
               label="Họ và tên"
-              onChange={e => this.handleChange(e, 'fullname')}
+              onChange={e => this.handleFormChange(e, 'fullname')}
               InputProps={{
                 endAdornment: (
                   <InputAdornment position="end">
@@ -182,7 +250,7 @@ class UserForm extends React.Component {
               fullWidth
               value={this.state.email}
               label="Email"
-              onChange={e => this.handleChange(e, 'email')}
+              onChange={e => this.handleFormChange(e, 'email')}
               InputProps={{
                 endAdornment: (
                   <InputAdornment position="end">
@@ -197,7 +265,7 @@ class UserForm extends React.Component {
               fullWidth
               value={this.state.phone}
               label="Số điện thoại"
-              onChange={e => this.handleChange(e, 'phone')}
+              onChange={e => this.handleFormChange(e, 'phone')}
               InputProps={{
                 endAdornment: (
                   <InputAdornment position="end">
@@ -288,7 +356,6 @@ class UserForm extends React.Component {
             <div>
               <Button
                 variant="contained"
-                disabled={(this.state.newName === '' || this.state.newFatherName === '' || this.state.newMotherName === '') ? true : false}
                 color="primary"
                 size="small"
                 className={classes.formButton}

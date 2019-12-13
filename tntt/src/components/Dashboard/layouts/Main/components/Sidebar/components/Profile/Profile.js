@@ -26,6 +26,8 @@ class Profile extends React.Component {
   constructor(props) {
     super(props)
 
+    this._isMounted = false;
+
     this.state = {
       fullname: '',
       type:'',
@@ -33,17 +35,24 @@ class Profile extends React.Component {
   }
 
   componentDidMount = () => {
+    this._isMounted = true
     this.getUser();
+  }
+
+  componentWillUnmount = () => {
+    this._isMounted = false
   }
 
   getUser = () => {
     axios
       .get(`/backend/user/get-user/${localStorage.getItem('username')}`)
       .then(result => {
-        this.setState({
+        if(this._isMounted) {
+          this.setState({
           fullname: result.data.data.fullname,
           type: result.data.data.type
         })
+        }
       })
       .catch(err => {
         console.log(err)

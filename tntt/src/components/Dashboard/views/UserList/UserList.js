@@ -111,6 +111,7 @@ class UserList extends React.Component {
       ],
       usersData: [],
       selectedRows: [],
+      selectedRecord: {},
       //for User form
       isOpeningUserFrom: false,
       typeOfForm: 'add',
@@ -119,8 +120,8 @@ class UserList extends React.Component {
 
   componentDidMount = () => {
     this.updateWindowDimensions();
-    this.getUsers();
     window.addEventListener('resize', this.updateWindowDimensions.bind(this));
+    return this.getUsers();
   }
 
   componentWillUnmount = () => {
@@ -141,11 +142,10 @@ class UserList extends React.Component {
         let users = result.data.data;
         const currentUser = localStorage.getItem('username');
         users.forEach(user => {
-          user.birthday = moment(user.birthday).format('DD/MM/YYYY');
-          user.holy_birthday = moment(user.holy_birthday).format('DD/MM/YYYY');
+          user.birthday = (user.birthday === '')? '': moment(user.birthday).format('DD/MM/YYYY');
+          user.holy_birthday = (user.holy_birthday === '')? '' : moment(user.holy_birthday).format('DD/MM/YYYY');
         })
         users = users.filter(user => user.username !== currentUser);
-        console.log(users)
         this.setState({
           usersData: users,
           isLoadingData: false
@@ -165,7 +165,7 @@ class UserList extends React.Component {
     this.setState({
       isLoadingData: true
     })
-    this.getUsers();
+    return this.getUsers();
   }
 
   multipleDelete = () => {
@@ -226,9 +226,44 @@ class UserList extends React.Component {
     this.setState({ snackerBarStatus: callback });
   }
 
+  handleStatusUserForm = (callback) => {
+    if(callback === 'successfully') {
+      this.setState({
+        snackerBarStatus: true,
+        snackbarMessage: "Thay đổi thành công",
+        snackbarType: "success",
+      })
+      this.reloadData();
+    }
+    else {
+      this.setState({ 
+        snackerBarStatus: true,
+        snackbarMessage: "Đã có lỗi xảy ra trong quá trình thay đổi",
+        snackbarType: "error",
+      })
+    }
+    this.setState({
+      updateStatus: callback
+    })
+  }
+
   handleUserForm = (callback) => {
     this.setState({
       isOpeningUserFrom: callback
+    })
+  }
+
+  handleRowSelection = (e, rowData) => {
+    this.setState({
+      isOpeningUserFrom: true,
+      typeOfForm: 'edit',
+      selectedRecord: rowData
+    })
+  }
+
+  handleResetSelectedRow = (callback) => {
+    this.setState({
+      selectedRecord: callback
     })
   }
 
@@ -245,6 +280,7 @@ class UserList extends React.Component {
               data={this.state.usersData}
               columns={this.state.tableColumns}
               isLoading={this.state.isLoadingData}
+              onRowClick={(e, rowData) => this.handleRowSelection(e, rowData)}
               options={{
                 paging: false,
                 sorting: false,
@@ -308,37 +344,15 @@ class UserList extends React.Component {
                   onClick: (e, rowData) => this.handleRowClick(e, rowData),
                 },
               ]}
-              editable={{
-                onRowAdd: newData => new Promise((resolve, reject) => {
-                  resolve();
-                  const newUser = {
-                    'username': newData.username,
-                    'email': newData.email,
-                    'holyname': newData.holyname,
-                    'fullname': newData.fullname,
-                    'phone_number': newData.phoneNumber,
-                    'birthday': newData.birthday,
-                    'holy_birthday': newData.holyBirthday,
-                    'type': newData.type,
-                    'class': newData.class
-                  };
-                  this.setState({
-                    isLoadingData: true
-                  });
-                  axios.post('/backend/user/register', newUser)
-                  .then(res => {
-                    if(res.data.code === 'I001') {
-                      this.reloadData();
-                      
-                    }
-                  })
-                  .catch(err => {
-                    console.log(err);
-                  })
-                }),
-              }} />
+              />
           </div>
-          <UserForm open={this.state.isOpeningUserFrom} callback={this.handleUserForm}/>
+          <UserForm 
+            open={this.state.isOpeningUserFrom}
+            type={this.state.typeOfForm}
+            callback={this.handleUserForm} 
+            status={this.handleStatusUserForm}
+            selectedData={this.state.selectedRecord}
+            resetSelectedRow={this.handleResetSelectedRow}/>
           <Collapse in={(this.state.selectedRows.length > 0) ? true : false}>
             <Toolbar className={classes.chipsContainer}>
             <Typography variant="subtitle1">Đã chọn: {this.state.selectedRows.length}</Typography>

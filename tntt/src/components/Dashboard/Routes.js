@@ -12,7 +12,6 @@ import {
 } from './views';
 
 const Routes = () => {
-  
 
   return (
     <Switch>

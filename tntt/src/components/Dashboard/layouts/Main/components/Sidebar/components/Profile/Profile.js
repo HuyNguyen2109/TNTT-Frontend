@@ -49,10 +49,11 @@ class Profile extends React.Component {
       .then(result => {
         if(this._isMounted) {
           this.setState({
-          fullname: result.data.data.fullname,
-          type: result.data.data.type
-        })
+            fullname: result.data.data.fullname,
+            type: result.data.data.type
+          })
         }
+        localStorage.setItem('type', result.data.data.type);
       })
       .catch(err => {
         console.log(err)

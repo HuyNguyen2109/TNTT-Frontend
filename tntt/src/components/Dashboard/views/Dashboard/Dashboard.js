@@ -37,6 +37,9 @@ const useStyles = theme => ({
     padding: theme.spacing(4),
     width: '100%',
   },
+  header: {
+    marginBottom: theme.spacing(2)
+  },
   content: {
     padding: 0
   },
@@ -596,7 +599,7 @@ class Dashboard extends React.Component {
 
     return (
       <div className={(this.state.windowsWidth < 500) ? { padding: 0, width: '100%' } : classes.root}>
-        <Typography variant="h5">
+        <Typography variant="h5" className={classes.header}>
           {(this.props.location.pathname.split("/")[2] === 'all') ? "Danh sách chung" : `Danh sách lớp ${this.state.currentClass}`}
         </Typography>
         <Paper className={classes.root}>

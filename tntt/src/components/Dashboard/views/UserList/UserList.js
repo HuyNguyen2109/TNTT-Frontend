@@ -3,7 +3,7 @@ import { withStyles, MuiThemeProvider, createMuiTheme } from '@material-ui/core/
 import axios from 'axios';
 import moment from 'moment';
 import {
-  Paper, Collapse, Toolbar, Typography, Button, Chip
+  Paper, Collapse, Toolbar, Typography, Button, Chip, TextField, Grid
 } from '@material-ui/core';
 
 import {
@@ -21,6 +21,9 @@ const useStyles = (theme) => ({
   root: {
     padding: theme.spacing(4),
     width: '100%'
+  },
+  header: {
+    marginBottom: theme.spacing(2)
   },
   content: {
     marginTop: theme.spacing(1),
@@ -92,7 +95,8 @@ class UserList extends React.Component {
           title: 'Email',
           field: 'email',
           editable: 'onAdd',
-          cellStyle: {minWidth: 200}
+          cellStyle: {minWidth: 200},
+          searchable: false
         },
         {
           title: 'Sinh nhật',
@@ -254,11 +258,13 @@ class UserList extends React.Component {
   }
 
   handleRowSelection = (e, rowData) => {
-    this.setState({
-      isOpeningUserFrom: true,
-      typeOfForm: 'edit',
-      selectedRecord: rowData
-    })
+    if(localStorage.getItem('type') === 'Admin') {
+      this.setState({
+        isOpeningUserFrom: true,
+        typeOfForm: 'edit',
+        selectedRecord: rowData
+      })
+    }
   }
 
   handleResetSelectedRow = (callback) => {
@@ -267,20 +273,28 @@ class UserList extends React.Component {
     })
   }
 
+  handleSearchTextChange = (text) => {
+    console.log(text);
+  }
+
   render = () => {
     const { classes } = this.props;
 
     return (
       <div className={(this.state.windowWidth < 500) ? { padding: 0, width: '100%' } : classes.root}>
+        <Typography variant="h5" className={classes.header}>
+          Danh sách Huynh trưởng/Dự trưởng/Trợ tá/Trợ úy
+        </Typography>
         <Paper className={classes.root}>
           <div className={classes.content}>
             <MaterialTable
-              title="Danh sách Huynh trưởng/Dự trưởng"
+              title="Danh sách Huynh trưởng/Dự trưởng/Trợ tá/Trợ úy"
               icons={tableIcons}
               data={this.state.usersData}
               columns={this.state.tableColumns}
               isLoading={this.state.isLoadingData}
-              onRowClick={(e, rowData) => this.handleRowSelection(e, rowData)}
+              onRowClick={this.handleRowSelection}
+              onSearchChange={this.handleSearchTextChange}
               options={{
                 paging: false,
                 sorting: false,
@@ -293,7 +307,7 @@ class UserList extends React.Component {
                 },
                 search: true,
                 maxBodyHeight: '500px',
-                debounceInterval: 1500,
+                debounceInterval: 500,
                 rowStyle: rowData => {
                   if (this.state.selectedRows.indexOf(rowData) !== -1) {
                     return { 
@@ -336,16 +350,26 @@ class UserList extends React.Component {
                       typeOfForm: 'add',
                     })
                   },
-                  tooltip: 'Tạo tài khoản mới'
+                  tooltip: 'Tạo tài khoản mới',
+                  disabled: (localStorage.getItem('type') === 'Admin')? false : true
                 },
                 {
                   icon: () => { return <Delete />},
                   tooltip: 'Chọn xóa',
                   onClick: (e, rowData) => this.handleRowClick(e, rowData),
+                  hidden: (localStorage.getItem('type') === 'Admin')? false : true
                 },
               ]}
               />
           </div>
+          <Grid container spacing={2} alignItems="flex-end">
+            <Grid item xs={12} sm={3}>
+              <Typography variant="subtitle1">Sinh nhật và bổn mạng</Typography>
+            </Grid>
+            <Grid item xs={12} sm={9}>
+              <TextField fullWidth />
+            </Grid>
+          </Grid>
           <UserForm 
             open={this.state.isOpeningUserFrom}
             type={this.state.typeOfForm}

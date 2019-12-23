@@ -147,6 +147,28 @@ class UserForm extends React.Component {
       })
   }
 
+  updateData = () => {
+    const updateUser = {
+      'username': this.state.username,
+      'content': {
+        'type': this.state.type,
+        'class': this.state.class
+      }
+    }
+
+    return axios
+      .post('/backend/user/update', updateUser)
+      .then(res => {
+        if (res.data.code === 'I001') {
+          this.props.status('successfully')
+        }
+        this.handleCloseFloatingForm();
+      })
+      .catch(err => {
+        this.props.status('failed')
+      })
+  }
+
   handleFormChange = (e, type) => {
     const result = {};
     let data;
@@ -218,6 +240,8 @@ class UserForm extends React.Component {
           <Grid item xs={12} sm={4}>
             <TextField
               fullWidth
+              required
+              disabled={(this.props.type==='edit')? true: false}
               value={this.state.holyName}
               label="Tên thánh"
               onChange={e => this.handleFormChange(e, 'holyName')}
@@ -233,6 +257,7 @@ class UserForm extends React.Component {
           <Grid item xs={12} sm={4}>
             <TextField
               fullWidth
+              disabled={(this.props.type==='edit')? true: false}
               value={this.state.fullname}
               label="Họ và tên"
               onChange={e => this.handleFormChange(e, 'fullname')}
@@ -248,6 +273,8 @@ class UserForm extends React.Component {
           <Grid item xs={12} sm={6}>
             <TextField
               fullWidth
+              required
+              disabled={(this.props.type==='edit')? true: false}
               value={this.state.email}
               label="Email"
               onChange={e => this.handleFormChange(e, 'email')}
@@ -263,6 +290,8 @@ class UserForm extends React.Component {
           <Grid item xs={12} sm={6}>
             <TextField
               fullWidth
+              required
+              disabled={(this.props.type==='edit')? true: false}
               value={this.state.phone}
               label="Số điện thoại"
               onChange={e => this.handleFormChange(e, 'phone')}
@@ -279,6 +308,8 @@ class UserForm extends React.Component {
             <Grid item xs={12} sm={3}>
               <KeyboardDatePicker
                 fullWidth
+                required
+                disabled={(this.props.type==='edit')? true: false}
                 format="dd/MM/yyyy"
                 label="Ngày sinh"
                 value={this.state.birthday}
@@ -290,6 +321,8 @@ class UserForm extends React.Component {
             <Grid item xs={12} sm={3}>
               <KeyboardDatePicker
                 fullWidth
+                required
+                disabled={(this.props.type==='edit')? true: false}
                 format="dd/MM/yyyy"
                 label="Bổn mạng"
                 value={this.state.holyBirthday}
@@ -301,7 +334,6 @@ class UserForm extends React.Component {
           </MuiPickersUtilsProvider>
           <Grid item xs={12} sm={3}>
             <TextField
-              required
               select
               label="Chức vụ"
               value={this.state.type}
@@ -322,7 +354,6 @@ class UserForm extends React.Component {
           </Grid>
           <Grid item xs={12} sm={3}>
             <TextField
-              required
               select
               label="Lớp"
               value={this.state.class}
@@ -356,6 +387,13 @@ class UserForm extends React.Component {
             <div>
               <Button
                 variant="contained"
+                disabled={
+                  (this.state.holyname === '' || 
+                  this.state.fullname === '' || 
+                  this.state.email === '' ||
+                  this.state.phone === '' || 
+                  this.state.birthday === this.state.defaultDate || 
+                  this.state.holyBirthday === this.state.defaultDate)? true : false}
                 color="primary"
                 size="small"
                 className={classes.formButton}

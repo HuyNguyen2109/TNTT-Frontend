@@ -108,7 +108,6 @@ class Dashboard extends React.Component {
       tablePage: 0,
       selectedRecord: {},
       numberOfRecord: 0,
-      currentClass: '',
       isExpansionButton: false,
       floatingFormType: '',
       search: '',
@@ -224,9 +223,7 @@ class Dashboard extends React.Component {
         })
         .then(result => {
           const classID = result.data.data[0].ID;
-          this.setState({
-            currentClass: result.data.data[0].Value
-          })
+          localStorage.setItem('title', `Danh sách lớp ${result.data.data[0].Value}`)
           return axios
             .get('/backend/children/count', {
               params: {
@@ -259,6 +256,7 @@ class Dashboard extends React.Component {
           this.setState({
             numberOfRecord: result.data.data
           })
+          localStorage.setItem('title', 'Danh sách chung')
         })
         .catch(err => {
           console.log(err);
@@ -599,9 +597,6 @@ class Dashboard extends React.Component {
 
     return (
       <div className={(this.state.windowsWidth < 500) ? { padding: 0, width: '100%' } : classes.root}>
-        <Typography variant="h5" className={classes.header}>
-          {(this.props.location.pathname.split("/")[2] === 'all') ? "Danh sách chung" : `Danh sách lớp ${this.state.currentClass}`}
-        </Typography>
         <Paper className={classes.root}>
           <div className={classes.inner}>
             {/* Table */}
@@ -694,7 +689,7 @@ class Dashboard extends React.Component {
                 {
                   icon: () => { return <Delete />},
                   tooltip: 'Chọn xóa',
-                  onClick: (e, rowData) => this.handleRowClick(e, rowData),
+                  onClick: (e, rowData) => this.handleRowClick(e, rowData)
                 },
               ]}
             />

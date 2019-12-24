@@ -33,10 +33,11 @@ const useStyles = theme => ({
     marginRight: theme.spacing(1)
   },
   active: {
-    color: theme.palette.primary.main,
+    variant: 'contained',
+    color: theme.palette.white,
     fontWeight: theme.typography.fontWeightMedium,
     '& $icon': {
-      color: theme.palette.primary.main
+      color: theme.palette.white
     }
   },
   nested: {

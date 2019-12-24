@@ -5,7 +5,6 @@ import { makeStyles, useTheme } from '@material-ui/styles';
 import { useMediaQuery } from '@material-ui/core';
 
 import { Sidebar, Topbar, Footer } from './components';
-import backgroundImage from '../../../../img/99840.jpg'
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -19,15 +18,7 @@ const useStyles = makeStyles(theme => ({
     paddingLeft: 240
   },
   content: {
-    height: '100%'
-  },
-  image: {
-    backgroundImage: `url(${backgroundImage})`,
-    backgroundRepeat: 'no-repeat',
-    backgroundSize: 'cover',
-    backgroundPosition: 'center',
     height: '100%',
-    width: '100%'
   }
 }));
 
@@ -59,18 +50,16 @@ const Main = props => {
         [classes.shiftContent]: isDesktop
       })}
     >
-      <div className={classes.image}>
-        <Topbar onSidebarOpen={handleSidebarOpen} />
-        <Sidebar
-          onClose={handleSidebarClose}
-          open={shouldOpenSidebar}
-          variant={isDesktop ? 'persistent' : 'temporary'}
-        />
-        <main className={classes.content}>
-          {children}
-          <Footer />
-        </main>
-      </div>
+      <Topbar onSidebarOpen={handleSidebarOpen} />
+      <Sidebar
+        onClose={handleSidebarClose}
+        open={shouldOpenSidebar}
+        variant={isDesktop ? 'persistent' : 'temporary'}
+      />
+      <main className={classes.content}>
+        {children}
+        <Footer />
+      </main>
     </div>
   );
 };

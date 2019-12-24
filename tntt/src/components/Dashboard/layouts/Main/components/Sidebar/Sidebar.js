@@ -8,21 +8,44 @@ import PeopleIcon from '@material-ui/icons/People';
 import AccountBoxIcon from '@material-ui/icons/AccountBox';
 import { Profile, SidebarNav } from './components';
 import axios from 'axios';
+import backgroundImage from '../../../../../../img/December.jpg';
 
 const useStyles = theme => ({
   drawer: {
     width: 240,
-    [theme.breakpoints.up('lg')]: {
-      marginTop: 64,
-      height: 'calc(100% - 64px)'
-    }
+    [theme.breakpoints.up('sm')]: {
+      width: 240,
+      flexShrink: 0,
+    },
   },
   root: {
-    backgroundColor: theme.palette.white,
     display: 'flex',
     flexDirection: 'column',
     height: '100%',
-    padding: theme.spacing(2)
+    padding: theme.spacing(2),
+    marginTop: 64,
+    zIndex: "4",
+  },
+  background: {
+    position: "absolute",
+    zIndex: "1",
+    height: "100%",
+    width: "100%",
+    display: "block",
+    top: "0",
+    left: "0",
+    backgroundSize: "cover",
+    backgroundPosition: "center center",
+    "&:after": {
+      position: "absolute",
+      zIndex: "3",
+      width: "100%",
+      height: "100%",
+      content: '""',
+      display: "block",
+      background: '#000000',
+      opacity: ".8"
+    }
   },
   divider: {
     margin: theme.spacing(2, 0)
@@ -101,6 +124,7 @@ class Sidebar extends React.Component {
             pages={pages}
           />
         </div>
+        <div className={classes.background} style={{ backgroundImage: "url(" + backgroundImage + ")" }} />
       </Drawer>
     );
   }

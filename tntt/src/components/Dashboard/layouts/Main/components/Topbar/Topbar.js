@@ -1,23 +1,33 @@
 import React from 'react';
-import { Link as RouterLink } from 'react-router-dom';
 import clsx from 'clsx';
 import { AppBar, Toolbar, Badge, Hidden, IconButton, Typography } from '@material-ui/core';
 import MenuIcon from '@material-ui/icons/Menu';
 import NotificationsIcon from '@material-ui/icons/NotificationsOutlined';
 import InputIcon from '@material-ui/icons/Input';
-import logo from './logo.png'
 import { withStyles } from '@material-ui/styles';
 import Promise from 'bluebird';
 
 const useStyles = theme => ({
   root: {
-    boxShadow: 'none'
+    backgroundColor: theme.palette.white,
+    boxShadow: 'none',
+    [theme.breakpoints.up('sm')]: {
+      width: `calc(100% - 240px)`,
+      marginLeft: 240,
+    },
   },
   flexGrow: {
     flexGrow: 1
   },
   signOutButton: {
-    marginLeft: theme.spacing(1)
+    marginLeft: theme.spacing(1),
+    color: theme.palette.icon
+  },
+  icon: {
+    color: theme.palette.icon
+  },
+  title: {
+    color: "black"
   }
 });
 
@@ -47,20 +57,10 @@ class Topbar extends React.Component {
         className={clsx(classes.root, className)}
       >
         <Toolbar>
-          <RouterLink to="/dashboard/all">
-            <img
-              alt="Logo"
-              src={logo}
-              width="40px"
-            />
-          </RouterLink>
-          <div>
-            <Typography variant="h6" style={{ marginLeft: '1em' }}>Xứ đoàn Annê Lê Thị Thành</Typography>
-            <Typography variant="subtitle1" style={{ marginLeft: '1em' }}>Giáo xứ Cao Thái</Typography>
-          </div>
+          <Typography variant="h6" className={classes.title}>{localStorage.getItem('title')}</Typography>
           <div className={classes.flexGrow} />
           <Hidden mdDown>
-            <IconButton color="inherit">
+            <IconButton className={classes.icon}>
               <Badge
                 badgeContent={this.state.notifications.length}
                 color="primary"
@@ -71,7 +71,6 @@ class Topbar extends React.Component {
             </IconButton>
             <IconButton
               className={classes.signOutButton}
-              color="inherit"
               onClick={event => this.logOut(event)}
             >
               <InputIcon />
@@ -79,8 +78,8 @@ class Topbar extends React.Component {
           </Hidden>
           <Hidden lgUp>
             <IconButton
-              color="inherit"
               onClick={onSidebarOpen}
+              className={classes.icon}
             >
               <MenuIcon />
             </IconButton>

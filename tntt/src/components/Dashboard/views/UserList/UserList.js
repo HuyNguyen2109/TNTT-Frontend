@@ -3,7 +3,7 @@ import { withStyles, MuiThemeProvider, createMuiTheme } from '@material-ui/core/
 import axios from 'axios';
 import moment from 'moment';
 import {
-  Paper, Collapse, Toolbar, Typography, Button, Chip, TextField, Grid
+  Paper, Collapse, Toolbar, Typography, Button, Chip, TextField, Grid, MenuItem
 } from '@material-ui/core';
 
 import {
@@ -28,7 +28,7 @@ const useStyles = (theme) => ({
   content: {
     marginTop: theme.spacing(1),
     overflow: 'auto',
-    maxHeight: 600
+    maxHeight: 750
   },
   chipsContainer: {
     backgroundColor: '#ff8a80',
@@ -42,6 +42,9 @@ const useStyles = (theme) => ({
   },
   flexGrow: {
     flexGrow: 1
+  },
+  menu: {
+    width: '100%'
   },
 });
 
@@ -119,6 +122,62 @@ class UserList extends React.Component {
       //for User form
       isOpeningUserFrom: false,
       typeOfForm: 'add',
+      //for month filter
+      selectedMonth: '',
+      months: [
+        {
+          title: '(không chọn)',
+          value: ''
+        },
+        {
+          title: 'Tháng 1',
+          value: '01'
+        },
+        {
+          title: 'Tháng 2',
+          value: '02'
+        },
+        {
+          title: 'Tháng 3',
+          value: '03'
+        },
+        {
+          title: 'Tháng 4',
+          value: '04'
+        },
+        {
+          title: 'Tháng 5',
+          value: '05'
+        },
+        {
+          title: 'Tháng 6',
+          value: '06'
+        },
+        {
+          title: 'Tháng 7',
+          value: '07'
+        },
+        {
+          title: 'Tháng 8',
+          value: '08'
+        },
+        {
+          title: 'Tháng 9',
+          value: '09'
+        },
+        {
+          title: 'Tháng 10',
+          value: '10'
+        },
+        {
+          title: 'Tháng 11',
+          value: '11'
+        },
+        {
+          title: 'Tháng 12',
+          value: '12'
+        },
+      ]
     };
   }
 
@@ -273,8 +332,35 @@ class UserList extends React.Component {
     })
   }
 
-  handleSearchTextChange = (text) => {
-    console.log(text);
+  handleMonthChange = (e, type) => {
+    const result = {};
+    result[type] = e.target.value;
+    this.setState(result);
+    this.setState({
+      isLoadingData: true
+    })
+    if(e.target.value !== '') {
+      return axios
+        .get('/backend/user/all')
+        .then(result => {
+          let users = result.data.data;
+          const currentUser = localStorage.getItem('username');
+          users.forEach(user => {
+            user.birthday = (user.birthday === '')? '': moment(user.birthday).format('DD/MM/YYYY');
+            user.holy_birthday = (user.holy_birthday === '')? '' : moment(user.holy_birthday).format('DD/MM/YYYY');
+          })
+          users = users.filter(user => user.username !== currentUser);
+          console.log(users);
+          users = users.filter(user => user.birthday.split('/')[1] === e.target.value || user.holy_birthday.split('/')[1] === e.target.value);
+          this.setState({
+            usersData: users,
+            isLoadingData: false
+          })
+      })
+    }
+    else {
+      return this.getUsers();
+    }
   }
 
   render = () => {
@@ -288,13 +374,37 @@ class UserList extends React.Component {
         <Paper className={classes.root}>
           <div className={classes.content}>
             <MaterialTable
-              title="Danh sách Huynh trưởng/Dự trưởng/Trợ tá/Trợ úy"
+              title={
+                <Grid container spacing={1} alignItems="flex-end">
+                  <Grid item>
+                    <Typography variant="subtitle1">Sinh nhật và bổn mạng:</Typography>
+                  </Grid>
+                  <Grid item>
+                    <TextField
+                      select
+                      value={this.state.selectedMonth}
+                      onChange={e => this.handleMonthChange(e, "selectedMonth")}
+                      fullWidth
+                      SelectProps={{
+                        MenuProps: {
+                          className: classes.menu
+                        }
+                      }}
+                    >
+                      {this.state.months.map(month => (
+                        <MenuItem key={month.title} value={month.value}>
+                          {month.title}
+                        </MenuItem>
+                      ))}
+                    </TextField>
+                  </Grid>
+                </Grid>
+              }
               icons={tableIcons}
               data={this.state.usersData}
               columns={this.state.tableColumns}
               isLoading={this.state.isLoadingData}
               onRowClick={this.handleRowSelection}
-              onSearchChange={this.handleSearchTextChange}
               options={{
                 paging: false,
                 sorting: false,
@@ -362,14 +472,6 @@ class UserList extends React.Component {
               ]}
               />
           </div>
-          <Grid container spacing={2} alignItems="flex-end">
-            <Grid item xs={12} sm={3}>
-              <Typography variant="subtitle1">Sinh nhật và bổn mạng</Typography>
-            </Grid>
-            <Grid item xs={12} sm={9}>
-              <TextField fullWidth />
-            </Grid>
-          </Grid>
           <UserForm 
             open={this.state.isOpeningUserFrom}
             type={this.state.typeOfForm}

@@ -22,13 +22,10 @@ const useStyles = (theme) => ({
     padding: theme.spacing(4),
     width: '100%'
   },
-  header: {
-    marginBottom: theme.spacing(2)
-  },
   content: {
     marginTop: theme.spacing(1),
     overflow: 'auto',
-    maxHeight: 750
+    maxHeight: 500
   },
   chipsContainer: {
     backgroundColor: '#ff8a80',
@@ -74,11 +71,6 @@ class UserList extends React.Component {
       isLoadingData: true,
       tableColumns: [
         {
-          title: 'Tài khoản',
-          field: 'username',
-          editable: 'onAdd'
-        },
-        {
           title: 'Tên thánh',
           field: 'holyname',
           editable: 'onAdd'
@@ -93,13 +85,6 @@ class UserList extends React.Component {
           title: 'Số điện thoại',
           field: 'phone_number',
           editable: 'onAdd'
-        },
-        {
-          title: 'Email',
-          field: 'email',
-          editable: 'onAdd',
-          cellStyle: {minWidth: 200},
-          searchable: false
         },
         {
           title: 'Sinh nhật',
@@ -368,9 +353,6 @@ class UserList extends React.Component {
 
     return (
       <div className={(this.state.windowWidth < 500) ? { padding: 0, width: '100%' } : classes.root}>
-        <Typography variant="h5" className={classes.header}>
-          Danh sách Huynh trưởng/Dự trưởng/Trợ tá/Trợ úy
-        </Typography>
         <Paper className={classes.root}>
           <div className={classes.content}>
             <MaterialTable
@@ -411,12 +393,11 @@ class UserList extends React.Component {
                 headerStyle: {
                   position: 'sticky',
                   top: 0,
-                  backgroundColor: '#ffa000',
-                  color: '#000000',
-                  fontSize: 14
+                  color: '#009688',
+                  fontSize: 15
                 },
                 search: true,
-                maxBodyHeight: '500px',
+                maxBodyHeight: '300px',
                 debounceInterval: 500,
                 rowStyle: rowData => {
                   if (this.state.selectedRows.indexOf(rowData) !== -1) {

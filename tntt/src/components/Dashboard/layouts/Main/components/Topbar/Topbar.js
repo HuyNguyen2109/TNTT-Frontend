@@ -9,7 +9,9 @@ import Promise from 'bluebird';
 
 const useStyles = theme => ({
   root: {
-    backgroundColor: theme.palette.white,
+    backgroundColor: theme.palette.default,
+    position: 'absolute',
+    background: 'transparent',
     boxShadow: 'none',
     [theme.breakpoints.up('sm')]: {
       width: `calc(100% - 240px)`,
@@ -24,7 +26,8 @@ const useStyles = theme => ({
     color: theme.palette.icon
   },
   icon: {
-    color: theme.palette.icon
+    color: theme.palette.icon,
+    fontSize: 'small'
   },
   title: {
     color: "black"
@@ -36,8 +39,12 @@ class Topbar extends React.Component {
     super(props)
 
     this.state = {
-      notifications: []
+      notifications: [],
+      title: ''
     }
+  }
+  componentDidMount = () => {
+    console.log(this.props)
   }
 
   logOut = (event) => {
@@ -57,7 +64,6 @@ class Topbar extends React.Component {
         className={clsx(classes.root, className)}
       >
         <Toolbar>
-          <Typography variant="h6" className={classes.title}>{localStorage.getItem('title')}</Typography>
           <div className={classes.flexGrow} />
           <Hidden mdDown>
             <IconButton className={classes.icon}>

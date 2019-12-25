@@ -84,7 +84,7 @@ class Signin extends React.Component {
   }
   componentDidMount = () => {
     if(localStorage.getItem('username')!==null && localStorage.getItem('isRememberMe') === 'true') {
-      this.props.history.push('/dashboard/all')
+      this.props.history.push('/general')
     }
     document.body.addEventListener('keyup', (e)=> {
       if(e.keyCode === 13) {
@@ -147,7 +147,7 @@ class Signin extends React.Component {
               localStorage.setItem('username', this.state.username);
               localStorage.setItem('isRememberMe', this.state.isRememberMeChecked);
               localStorage.setItem('token', result.data.data.token);
-              this.props.history.push('/dashboard/all');
+              this.props.history.push('/general');
             })
         }
       })

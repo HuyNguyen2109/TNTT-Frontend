@@ -25,6 +25,9 @@ import {
   Toolbar,
   Chip,
   Collapse,
+  Grid,
+  TextField,
+  MenuItem,
 } from '@material-ui/core';
 import MaterialTable from 'material-table';
 
@@ -37,16 +40,13 @@ const useStyles = theme => ({
     padding: theme.spacing(4),
     width: '100%',
   },
-  header: {
-    marginBottom: theme.spacing(2)
-  },
   content: {
     padding: 0
   },
   inner: {
     overflow: 'auto',
     marginTop: theme.spacing(1),
-    maxHeight: 750
+    maxHeight: 500
   },
   nameContainer: {
     padding: theme.spacing(2)
@@ -55,7 +55,7 @@ const useStyles = theme => ({
     justifyContent: 'flex-end'
   },
   menu: {
-    width: 200,
+    width: '100%'
   },
   formButton: {
     marginTop: theme.spacing(1),
@@ -104,6 +104,8 @@ class Dashboard extends React.Component {
       address: '',
       contact: '',
       records: [],
+      classes: [],
+      selectedClass: 'all',
       itemPerPage: 10,
       tablePage: 0,
       selectedRecord: {},
@@ -118,15 +120,8 @@ class Dashboard extends React.Component {
       materialColumn: [
         {
           title: 'Tên Thiếu nhi',
-          field: 'name'
-        },
-        {
-          title: 'Họ tên Cha',
-          field: 'father_name'
-        },
-        {
-          title: 'Họ tên Mẹ',
-          field: 'mother_name'
+          field: 'name',
+          cellStyle: {minWidth: 200}
         },
         {
           title: 'Giáo khu',
@@ -139,30 +134,6 @@ class Dashboard extends React.Component {
         {
           title: 'Ngày sinh',
           field: 'birthday'
-        },
-        {
-          title: 'Ngày Rửa tội',
-          field: 'day_of_baptism'
-        },
-        {
-          title: 'Ngày Rước lễ',
-          field: 'day_of_eucharist'
-        },
-        {
-          title: 'Ngày Thêm sức',
-          field: 'day_of_confirmation'
-        },
-        {
-          title: 'Địa chỉ',
-          field: 'address'
-        },
-        {
-          title: 'Liên lạc',
-          field: 'contact'
-        },
-        {
-          title: 'Lớp',
-          field: 'class'
         }
       ],
       isLoadingData: true,
@@ -186,20 +157,11 @@ class Dashboard extends React.Component {
 
   scrollToRef = () => this.myRef.current.scrollIntoView({ behavior: 'smooth' });
 
-  componentDidUpdate = (prevProps) => {
-    if (this.props.location.pathname.split("/")[2] !== prevProps.location.pathname.split("/")[2]) {
-      this.setState({
-        tablePage: 0,
-      });
-      this.getData(0, this.state.itemPerPage, null);
-      this.getNumberOfRecord()
-    }
-  }
-
   componentDidMount = () => {
     this.updateWindowDimensions();
     window.addEventListener("resize", this.updateWindowDimensions.bind(this));
-    return this.getData(this.state.tablePage, this.state.itemPerPage, null) && this.getNumberOfRecord();
+    localStorage.setItem('title', 'Danh sách Thiếu Nhi');
+    return this.getData('all', this.state.tablePage, this.state.itemPerPage, null) && this.getNumberOfRecord('all') && this.getClasses();
   }
 
   componentWillUnmount = () => {
@@ -213,37 +175,46 @@ class Dashboard extends React.Component {
     });
   }
 
-  getNumberOfRecord = () => {
-    if (this.props.location.pathname !== '/dashboard/all') {
+  getClasses = () => {
+    return axios
+      .get('/backend/class/all')
+      .then(result => {
+        let classArr = [];
+        result.data.data.forEach(res => {
+          classArr.push({
+            'title': res.Value,
+            'ID': res.ID
+          })
+        })
+        this.setState({
+          classes: classArr
+        });
+      });
+  }
+
+  getNumberOfRecord = (className) => {
+    if (className !== 'all') {
+      const classID = className;
       return axios
-        .get('/backend/class/by-path', {
+        .get('/backend/children/count', {
           params: {
-            path: this.props.location.pathname
+            condition: classID
           }
         })
-        .then(result => {
-          const classID = result.data.data[0].ID;
-          localStorage.setItem('title', `Danh sách lớp ${result.data.data[0].Value}`)
-          return axios
-            .get('/backend/children/count', {
-              params: {
-                condition: classID
-              }
-            })
+
+      .then(result => {
+        this.setState({
+          numberOfRecord: result.data.data
         })
-        .then(result => {
-          this.setState({
-            numberOfRecord: result.data.data
-          })
+      })
+      .catch(err => {
+        console.log(err);
+        this.setState({
+          snackbarType: 'error',
+          snackerBarStatus: true,
+          snackbarMessage: 'Đã có lỗi trong quá trình nhận dữ liệu từ máy chủ'
         })
-        .catch(err => {
-          console.log(err);
-          this.setState({
-            snackbarType: 'error',
-            snackerBarStatus: true,
-            snackbarMessage: 'Đã có lỗi trong quá trình nhận dữ liệu từ máy chủ'
-          })
-        })
+      })
     }
     else {
       return axios
@@ -256,7 +227,6 @@ class Dashboard extends React.Component {
           this.setState({
             numberOfRecord: result.data.data
           })
-          localStorage.setItem('title', 'Danh sách chung')
         })
         .catch(err => {
           console.log(err);
@@ -269,44 +239,36 @@ class Dashboard extends React.Component {
     }
   }
 
-  getData = (page, itemPerPage, search) => {
-    return axios
-      .get('/backend/class/by-path', {
+  getData = (classID, page, itemPerPage, search) => {
+    const className = classID;
+    return axios.get(`/backend/children/all/${page}`, {
         params: {
-          path: this.props.location.pathname
+          itemPerPage: itemPerPage,
+          class: className,
+          search: search
         }
       })
-      .then(result => {
-        const className = result.data.data[0].ID;
-        return axios.get(`/backend/children/all/${page}`, {
-          params: {
-            itemPerPage: itemPerPage,
-            class: className,
-            search: search
-          }
-        })
+    .then(result => {
+      let modifiedData = result.data.data;
+      modifiedData.forEach(row => {
+        row.birthday = (row.birthday === '' ? row.birthday : moment(row.birthday).format('DD/MM/YYYY'))
+        row.day_of_baptism = (row.day_of_baptism === '' ? row.day_of_baptism : moment(row.day_of_baptism).format('DD/MM/YYYY'))
+        row.day_of_eucharist = (row.day_of_eucharist === '' ? row.day_of_eucharist : moment(row.day_of_eucharist).format('DD/MM/YYYY'))
+        row.day_of_confirmation = (row.day_of_confirmation === '' ? row.day_of_confirmation : moment(row.day_of_confirmation).format('DD/MM/YYYY'));
       })
-      .then(result => {
-        let modifiedData = result.data.data;
-        modifiedData.forEach(row => {
-          row.birthday = (row.birthday === '' ? row.birthday : moment(row.birthday).format('DD/MM/YYYY'))
-          row.day_of_baptism = (row.day_of_baptism === '' ? row.day_of_baptism : moment(row.day_of_baptism).format('DD/MM/YYYY'))
-          row.day_of_eucharist = (row.day_of_eucharist === '' ? row.day_of_eucharist : moment(row.day_of_eucharist).format('DD/MM/YYYY'))
-          row.day_of_confirmation = (row.day_of_confirmation === '' ? row.day_of_confirmation : moment(row.day_of_confirmation).format('DD/MM/YYYY'));
-        })
-        this.setState({
-          records: modifiedData,
-          isLoadingData: false,
-        })
+      this.setState({
+        records: modifiedData,
+        isLoadingData: false,
       })
-      .catch(err => {
-        console.log(err);
-        this.setState({
-          snackbarType: 'error',
-          snackerBarStatus: true,
-          snackbarMessage: 'Đã có lỗi trong quá trình nhận dữ liệu từ máy chủ'
-        })
+    })
+    .catch(err => {
+      console.log(err);
+      this.setState({
+        snackbarType: 'error',
+        snackerBarStatus: true,
+        snackbarMessage: 'Đã có lỗi trong quá trình nhận dữ liệu từ máy chủ'
       })
+    })
   }
 
   reloadData = () => {
@@ -318,7 +280,7 @@ class Dashboard extends React.Component {
       search: ''
     });
 
-    return this.getData(0, 10, null) && this.getNumberOfRecord();
+    return this.getData(this.state.selectedClass, 0, 10, null) && this.getNumberOfRecord(this.state.selectedClass);
   }
 
   postRestoreFile = () => {
@@ -390,7 +352,7 @@ class Dashboard extends React.Component {
       itemPerPage: size,
       isLoadingData: true
     })
-    return (this.state.action === 'search') ? this.getData(this.state.tablePage, size, this.state.search) : this.getData(this.state.tablePage, size);
+    return (this.state.action === 'search') ? this.getData(this.state.selectedClass, this.state.tablePage, size, this.state.search) : this.getData(this.state.tablePage, size);
   }
 
   handleChangePage = (page) => {
@@ -402,7 +364,7 @@ class Dashboard extends React.Component {
           tablePage: page,
           isLoadingData: true,
         })
-        return (this.state.action === 'search') ? this.getData(page, this.state.itemPerPage, this.state.search) : this.getData(page, this.state.itemPerPage);
+        return (this.state.action === 'search') ? this.getData(this.state.selectedClass, page, this.state.itemPerPage, this.state.search) : this.getData(this.state.selectedClass, page, this.state.itemPerPage);
       }
     }
     else {
@@ -410,7 +372,7 @@ class Dashboard extends React.Component {
         tablePage: page,
         isLoadingData: true,
       })
-      return (this.state.action === 'search') ? this.getData(page, this.state.itemPerPage, this.state.search) : this.getData(page, this.state.itemPerPage);
+      return (this.state.action === 'search') ? this.getData(this.state.selectedClass, page, this.state.itemPerPage, this.state.search) : this.getData(this.state.selectedClass, page, this.state.itemPerPage);
     }
   }
 
@@ -471,22 +433,14 @@ class Dashboard extends React.Component {
       action: 'search'
     })
     if (text !== '') {
-      return axios
-        .get('/backend/class/by-path', {
-          params: {
-            path: this.props.location.pathname
-          }
-        })
-        .then(result => {
-          const className = result.data.data[0].ID;
-          return axios.get(`/backend/children/all/${this.state.tablePage}`, {
-            params: {
-              itemPerPage: this.state.tablePage,
-              class: className,
-              search: text
-            }
-          })
-        })
+      const className = this.state.selectedClass;
+      return axios.get(`/backend/children/all/${this.state.tablePage}`, {
+        params: {
+          itemPerPage: this.state.tablePage,
+          class: className,
+          search: text
+        }
+      })
         .then(result => {
           let modifiedData = result.data.data;
           modifiedData.forEach(row => {
@@ -509,7 +463,7 @@ class Dashboard extends React.Component {
       this.setState({
         action: 'view'
       })
-      return this.getData(0, this.state.itemPerPage) && this.getNumberOfRecord()
+      return this.getData(this.state.selectedClass, 0, this.state.itemPerPage) && this.getNumberOfRecord(this.state.selectedClass)
     }
   }
 
@@ -583,6 +537,19 @@ class Dashboard extends React.Component {
     })
   }
 
+  handleClassChange = (e, type) => {
+    const result = {};
+    result[type] = e.target.value;
+    this.setState(result);
+    this.setState({
+      isLoadingData: true,
+      tablePage: 0,
+    })
+    this.getData(e.target.value, 0, this.state.itemPerPage, null);
+    this.getNumberOfRecord(e.target.value)
+  }
+
+
   toggleExpansionForm = () => {
     this.setState({
       isExpansionButton: !this.state.isExpansionButton,
@@ -601,6 +568,32 @@ class Dashboard extends React.Component {
           <div className={classes.inner}>
             {/* Table */}
             <MaterialTable
+              title={
+                <Grid container spacing={1} alignItems="flex-end">
+                  <Grid item>
+                    <Typography variant="subtitle1">Lớp:</Typography>
+                  </Grid>
+                  <Grid item>
+                    <TextField
+                      select
+                      value={this.state.selectedClass}
+                      onChange={e => this.handleClassChange(e, "selectedClass")}
+                      fullWidth
+                      SelectProps={{
+                        MenuProps: {
+                          className: classes.menu
+                        }
+                      }}
+                    >
+                      {this.state.classes.map(classEl => (
+                        <MenuItem key={classEl.ID} value={classEl.ID}>
+                          {classEl.title}
+                        </MenuItem>
+                      ))}
+                    </TextField>
+                  </Grid>
+                </Grid>
+              }
               icons={tableIcons}
               columns={this.state.materialColumn}
               data={this.state.records}
@@ -639,12 +632,11 @@ class Dashboard extends React.Component {
                 headerStyle: {
                   position: 'sticky',
                   top: 0,
-                  backgroundColor: '#ffa000',
-                  color: '#000000',
-                  fontSize: 14,
+                  color: '#9c27b0',
+                  fontSize: 15,
                 },
-                showTitle: false,
-                maxBodyHeight: '500px',
+                showTitle: true,
+                maxBodyHeight: '300px',
                 search: true,
                 emptyRowsWhenPaging: false,
                 debounceInterval: 1500,

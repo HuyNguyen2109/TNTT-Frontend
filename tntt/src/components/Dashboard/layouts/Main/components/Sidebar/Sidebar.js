@@ -6,6 +6,9 @@ import { Divider, Drawer } from '@material-ui/core';
 import DashboardIcon from '@material-ui/icons/Dashboard';
 import PeopleIcon from '@material-ui/icons/People';
 import AccountBoxIcon from '@material-ui/icons/AccountBox';
+import {
+  Face
+} from '@material-ui/icons'
 import { Profile, SidebarNav } from './components';
 import axios from 'axios';
 import backgroundImage from '../../../../../../img/December.jpg';
@@ -23,7 +26,7 @@ const useStyles = theme => ({
     flexDirection: 'column',
     height: '100%',
     padding: theme.spacing(2),
-    marginTop: 64,
+    marginTop: 0,
     zIndex: "4",
   },
   background: {
@@ -89,9 +92,14 @@ class Sidebar extends React.Component {
     const { classes, open, variant, onClose, className, ...rest} = this.props;
     const pages = [
       {
-        title: 'Thiếu Nhi',
+        title: 'Tổng hợp',
         icon: <DashboardIcon />,
-        children: this.state.classes
+        href: '/general',
+      },
+      {
+        title: 'Thiếu Nhi',
+        icon: <Face />,
+        href: '/children',
       },
       {
         title: 'Danh sách GLV',

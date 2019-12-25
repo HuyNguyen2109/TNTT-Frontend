@@ -11,7 +11,8 @@ const useStyles = theme => ({
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
-    minHeight: 'fit-content'
+    minHeight: 'fit-content',
+    color: theme.palette.white
   },
   avatar: {
     width: 100,

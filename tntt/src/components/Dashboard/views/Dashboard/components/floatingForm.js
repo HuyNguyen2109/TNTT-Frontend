@@ -6,6 +6,7 @@ import {
   Collapse,
   Tabs,
   Tab,
+  Dialog
 } from '@material-ui/core';
 
 import BasicInformation from './tabs/basicInformation';
@@ -21,6 +22,22 @@ const useStyles = theme => ({
   formButton: {
     marginTop: theme.spacing(2),
   },
+  tab: {
+    backgroundColor: '#9c27b0',
+  },
+  tabSelected: {
+    "&:hover": {
+      color: "#9c27b0",
+      opacity: 1
+    },
+    "&$selected": {
+      color: "#9c27b0",
+      fontWeight: theme.typography.fontWeightMedium
+    },
+    "&:focus": {
+      color: "#9c27b0"
+    }
+  }
 });
 
 class FloatingForm extends React.Component {
@@ -58,9 +75,9 @@ class FloatingForm extends React.Component {
     const { classes, open, type } = this.props;
     return (
       <Collapse in={open} className={classes.root}>
-        <Tabs value={this.state.value} onChange={(e, value) => this.handleChangeTab(e, value)}>
-          <Tab label="Thông tin chung" {...this.a11yProps(0)} />
-          <Tab label="Điểm & Điểm danh" {...this.a11yProps(1)} disabled={(type === 'edit')? false : true}/>
+        <Tabs value={this.state.value} onChange={(e, value) => this.handleChangeTab(e, value)} classes={{ indicator: classes.tab }}>
+          <Tab label="Thông tin chung" {...this.a11yProps(0)} className={classes.tabSelected}/>
+          <Tab label="Điểm & Điểm danh" {...this.a11yProps(1)} className={classes.tabSelected} disabled={(type === 'edit')? false : true}/>
         </Tabs>
         <BasicInformation 
           value={this.state.value} 

@@ -40,11 +40,11 @@ const useStyles = (theme) => ({
   gradeTypeMenu: {
     width: 200
   },
-  formButton: {
+  secondaryButton: {
     marginTop: theme.spacing(2),
-  },
-  iconInButton: {
-    margin: theme.spacing(1)
+    marginRight: '1em',
+    color: '#9c27b0',
+    backgroundColor: '#FFFFFF',
   },
   inner: {
     overflow: 'auto',
@@ -660,12 +660,11 @@ class GradesInformation extends React.Component {
         </Grid>
         <Grid container alignItems="flex-start" justify="flex-end" direction="row">
           <Button
-            variant="outlined"
-            color="primary"
-            size="small"
-            className={classes.formButton}
+            variant="contained"
+            size='small'
+            className={classes.secondaryButton}
             onClick={this.handleCloseFloatingForm}>
-            <Cancel className={classes.iconInButton} fontSize="small" />Đóng</Button>
+            Đóng</Button>
         </Grid>
       </div>
     )

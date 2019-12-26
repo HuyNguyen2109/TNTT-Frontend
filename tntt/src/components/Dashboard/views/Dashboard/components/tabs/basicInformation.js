@@ -3,13 +3,9 @@ import {
   withStyles,
 } from '@material-ui/core/styles';
 import {
-  Cancel,
-  Check,
   Person,
   LocationOn,
   Phone,
-  Update,
-  Backspace,
 } from '@material-ui/icons/';
 import {
   MuiPickersUtilsProvider,
@@ -34,12 +30,18 @@ const useStyles = theme => ({
   menu: {
     width: 200,
   },
-  formButton: {
+  primaryButton: {
     marginTop: theme.spacing(2),
+    marginRight: '1em',
+    color: '#FFFFFF',
+    backgroundColor: '#9c27b0',
   },
-  iconInButton: {
-    margin: theme.spacing(1)
-  }
+  secondaryButton: {
+    marginTop: theme.spacing(2),
+    marginRight: '1em',
+    color: '#9c27b0',
+    backgroundColor: '#FFFFFF',
+  },
 });
 
 class BasicInformation extends React.Component {
@@ -454,40 +456,34 @@ class BasicInformation extends React.Component {
           {(this.props.type === "edit") ?
             <Button
               variant="contained"
-              color="primary"
-              size="small"
-              className={classes.formButton}
-              style={{ marginRight: '1em' }}
-              onClick={this.updateData}
-            ><Update className={classes.iconInButton} fontSize="small" />Cập nhật</Button>
+              className={classes.primaryButton}
+              size='small'
+              onClick={this.updateData}>
+              Cập nhật
+            </Button>
             :
             <div>
               <Button
                 variant="contained"
+                size='small'
                 disabled={(this.state.newName === '' || this.state.newFatherName === '' || this.state.newMotherName === '')? true : false}
-                color="primary"
-                size="small"
-                className={classes.formButton}
-                style={{ marginRight: '1em' }}
+                className={classes.primaryButton}
                 onClick={this.createNewChildren}
-              ><Check className={classes.iconInButton} fontSize="small" />Xác nhận</Button>
+              >Tạo mới</Button>
               <Button
                 variant="contained"
-                color="secondary"
-                size="small"
-                className={classes.formButton}
-                style={{ marginRight: '1em' }}
+                size='small'
+                className={classes.primaryButton}
                 onClick={this.handleResetForm}
-              ><Backspace className={classes.iconInButton} fontSize="small" />Xóa</Button>
+              >Xóa</Button>
             </div>
           }
           <Button
-            variant="outlined"
-            color="primary"
-            size="small"
-            className={classes.formButton}
+            variant="contained"
+            size='small'
+            className={classes.secondaryButton}
             onClick={this.handleCloseFloatingForm}>
-            <Cancel className={classes.iconInButton} fontSize="small" />Hủy bỏ</Button>
+            Đóng</Button>
         </Grid>
       </div>
     )

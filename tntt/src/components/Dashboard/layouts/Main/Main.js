@@ -17,7 +17,7 @@ const useStyles = makeStyles(theme => ({
   },
   content: {
     height: '100%',
-  }
+  },
 }));
 
 const Main = props => {

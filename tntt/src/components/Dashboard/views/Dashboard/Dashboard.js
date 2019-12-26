@@ -34,19 +34,21 @@ import MaterialTable from 'material-table';
 import FloatingForm from './components/floatingForm';
 import tableIcons from './components/tableIcon';
 import SnackDialog from '../../../SnackerBar';
+import CustomHeader from '../../../Dashboard/components/CustomHeader/CustomHeader';
 
 const useStyles = theme => ({
   root: {
-    padding: theme.spacing(4),
+    padding: theme.spacing(3),
     width: '100%',
   },
   content: {
-    padding: 0
+    padding: theme.spacing(4),
+    width: '100%',
   },
   inner: {
     overflow: 'auto',
     marginTop: theme.spacing(1),
-    maxHeight: 500
+    maxHeight: 400
   },
   nameContainer: {
     padding: theme.spacing(2)
@@ -105,6 +107,7 @@ class Dashboard extends React.Component {
       contact: '',
       records: [],
       classes: [],
+      currentClass: 'Chung',
       selectedClass: 'all',
       itemPerPage: 10,
       tablePage: 0,
@@ -149,6 +152,8 @@ class Dashboard extends React.Component {
       snackerBarStatus: false,
       snackbarMessage: "",
       snackbarType: "success",
+
+      themeColor: '#9c27b0'
     };
 
     this.updateWindowDimensions = this.updateWindowDimensions.bind(this);
@@ -352,7 +357,7 @@ class Dashboard extends React.Component {
       itemPerPage: size,
       isLoadingData: true
     })
-    return (this.state.action === 'search') ? this.getData(this.state.selectedClass, this.state.tablePage, size, this.state.search) : this.getData(this.state.tablePage, size);
+    return (this.state.action === 'search') ? this.getData(this.state.selectedClass, this.state.tablePage, size, this.state.search) : this.getData(this.state.selectedClass, this.state.tablePage, size);
   }
 
   handleChangePage = (page) => {
@@ -418,7 +423,8 @@ class Dashboard extends React.Component {
     this.setState({
       isExpansionButton: true,
       floatingFormType: 'edit',
-      selectedRecord: rowData
+      selectedRecord: rowData,
+      selectedRows: []
     })
   }
 
@@ -547,6 +553,15 @@ class Dashboard extends React.Component {
     })
     this.getData(e.target.value, 0, this.state.itemPerPage, null);
     this.getNumberOfRecord(e.target.value)
+
+    return axios
+      .get(`/backend/class/by-id/${e.target.value}`)
+      .then(res => {
+        this.setState({
+          currentClass: res.data.data[0].Value
+        })
+        console.log(res.data.data[0])
+      })
   }
 
 
@@ -561,10 +576,12 @@ class Dashboard extends React.Component {
   render = () => {
     const { classes } = this.props;
 
-
     return (
       <div className={(this.state.windowsWidth < 500) ? { padding: 0, width: '100%' } : classes.root}>
-        <Paper className={classes.root}>
+        <CustomHeader style={{
+          backgroundColor: this.state.themeColor,
+        }} title={(this.state.currentClass !== 'Chung')? "Danh sách Thiếu Nhi - " + this.state.currentClass : "Danh sách Thiếu Nhi"} subtitle="Xem và chỉnh sửa dữ liệu cho từng Thiếu Nhi"/>
+        <Paper className={classes.content} elevation={3}>
           <div className={classes.inner}>
             {/* Table */}
             <MaterialTable
@@ -632,17 +649,17 @@ class Dashboard extends React.Component {
                 headerStyle: {
                   position: 'sticky',
                   top: 0,
-                  color: '#9c27b0',
+                  color: this.state.themeColor,
                   fontSize: 15,
                 },
                 showTitle: true,
-                maxBodyHeight: '300px',
+                maxBodyHeight: '250px',
                 search: true,
                 emptyRowsWhenPaging: false,
                 debounceInterval: 1500,
                 rowStyle: rowData => {
                   if (this.state.selectedRows.indexOf(rowData) !== -1) {
-                    return { backgroundColor: '#ffecb3' }
+                    return { backgroundColor: '#e1bee7' }
                   }
                   return {};
                 }

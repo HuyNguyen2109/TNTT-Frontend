@@ -18,6 +18,10 @@ import SnackDialog from '../../../SnackerBar';
 import UserForm from './UserForm';
 
 const useStyles = (theme) => ({
+  master: {
+    padding: theme.spacing(3),
+    width: '100%'
+  },
   root: {
     padding: theme.spacing(4),
     width: '100%'
@@ -352,8 +356,8 @@ class UserList extends React.Component {
     const { classes } = this.props;
 
     return (
-      <div className={(this.state.windowWidth < 500) ? { padding: 0, width: '100%' } : classes.root}>
-        <Paper className={classes.root}>
+      <div className={(this.state.windowWidth < 500) ? { padding: 0, width: '100%' } : classes.master}>
+        <Paper className={classes.root} elevation={3}>
           <div className={classes.content}>
             <MaterialTable
               title={

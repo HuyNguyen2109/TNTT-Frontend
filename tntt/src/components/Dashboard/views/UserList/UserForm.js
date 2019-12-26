@@ -10,19 +10,25 @@ import {
 } from '@material-ui/pickers';
 import DateFnsUtils from '@date-io/date-fns';
 import {
-  Grid, Button, TextField, InputAdornment, MenuItem, Collapse, Paper, Typography
+  Grid, Button, TextField, InputAdornment, MenuItem, Collapse, Typography
 } from '@material-ui/core'
 import {
-  AccountCircle, Update, Check, Backspace, Cancel
+  AccountCircle
 } from '@material-ui/icons';
 
 const useStyles = theme => ({
   root: {},
-  iconInButton: {
-    margin: theme.spacing(1)
-  },
-  formButton: {
+  primaryButton: {
     marginTop: theme.spacing(2),
+    marginRight: '1em',
+    color: '#FFFFFF',
+    backgroundColor: '#009688',
+  },
+  secondaryButton: {
+    marginTop: theme.spacing(2),
+    marginRight: '1em',
+    color: '#009688',
+    backgroundColor: '#FFFFFF',
   },
 })
 
@@ -377,12 +383,11 @@ class UserForm extends React.Component {
           {(this.props.type === "edit") ?
             <Button
               variant="contained"
-              color="primary"
-              size="small"
-              className={classes.formButton}
-              style={{ marginRight: '1em' }}
-              onClick={this.updateData}
-            ><Update className={classes.iconInButton} fontSize="small" />Cập nhật</Button>
+              className={classes.primaryButton}
+              size='small'
+              onClick={this.updateData}>
+              Cập nhật
+            </Button>
             :
             <div>
               <Button
@@ -394,29 +399,24 @@ class UserForm extends React.Component {
                   this.state.phone === '' || 
                   this.state.birthday === this.state.defaultDate || 
                   this.state.holyBirthday === this.state.defaultDate)? true : false}
-                color="primary"
                 size="small"
-                className={classes.formButton}
-                style={{ marginRight: '1em' }}
+                className={classes.primaryButton}
                 onClick={this.createNewUser}
-              ><Check className={classes.iconInButton} fontSize="small" />Xác nhận</Button>
+              >Tạo mới</Button>
               <Button
                 variant="contained"
-                color="secondary"
-                size="small"
-                className={classes.formButton}
-                style={{ marginRight: '1em' }}
+                size='small'
+                className={classes.primaryButton}
                 onClick={this.handleResetForm}
-              ><Backspace className={classes.iconInButton} fontSize="small" />Xóa</Button>
+              >Xóa</Button>
             </div>
           }
           <Button
-            variant="outlined"
-            color="primary"
-            size="small"
-            className={classes.formButton}
+            variant="contained"
+            size='small'
+            className={classes.secondaryButton}
             onClick={this.handleCloseFloatingForm}>
-            <Cancel className={classes.iconInButton} fontSize="small" />Hủy bỏ</Button>
+            Đóng</Button>
         </Grid>
       </Collapse>
     )

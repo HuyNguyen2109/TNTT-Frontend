@@ -1,9 +1,9 @@
 import React from 'react';
 import clsx from 'clsx';
-import { AppBar, Toolbar, Badge, Hidden, IconButton, Typography } from '@material-ui/core';
+import { AppBar, Toolbar, Badge, Hidden, IconButton, Tooltip } from '@material-ui/core';
 import MenuIcon from '@material-ui/icons/Menu';
-import NotificationsIcon from '@material-ui/icons/NotificationsOutlined';
-import InputIcon from '@material-ui/icons/Input';
+import NotificationsIcon from '@material-ui/icons/Notifications';
+import PowerSettingsNewIcon from '@material-ui/icons/PowerSettingsNew';
 import { withStyles } from '@material-ui/styles';
 import Promise from 'bluebird';
 
@@ -21,12 +21,8 @@ const useStyles = theme => ({
   flexGrow: {
     flexGrow: 1
   },
-  signOutButton: {
-    marginLeft: theme.spacing(1),
-    color: theme.palette.icon
-  },
   icon: {
-    color: theme.palette.icon,
+    color: theme.palette.dark,
     fontSize: 'small'
   },
   title: {
@@ -42,9 +38,6 @@ class Topbar extends React.Component {
       notifications: [],
       title: ''
     }
-  }
-  componentDidMount = () => {
-    console.log(this.props)
   }
 
   logOut = (event) => {
@@ -66,29 +59,35 @@ class Topbar extends React.Component {
         <Toolbar>
           <div className={classes.flexGrow} />
           <Hidden mdDown>
-            <IconButton className={classes.icon}>
-              <Badge
-                badgeContent={this.state.notifications.length}
-                color="primary"
-                variant="dot"
+            <Tooltip title="Thông báo">
+              <IconButton className={classes.icon} >
+                <Badge
+                  badgeContent={this.state.notifications.length}
+                  color="primary"
+                  variant="dot"
+                >
+                  <NotificationsIcon />
+                </Badge>
+              </IconButton>
+            </Tooltip>
+            <Tooltip title="Đăng xuất">
+              <IconButton
+                className={classes.icon}
+                onClick={event => this.logOut(event)}
               >
-                <NotificationsIcon />
-              </Badge>
-            </IconButton>
-            <IconButton
-              className={classes.signOutButton}
-              onClick={event => this.logOut(event)}
-            >
-              <InputIcon />
-            </IconButton>
+                <PowerSettingsNewIcon />
+              </IconButton>
+            </Tooltip>
           </Hidden>
           <Hidden lgUp>
-            <IconButton
-              onClick={onSidebarOpen}
-              className={classes.icon}
-            >
-              <MenuIcon />
+            <Tooltip title="Menu">
+              <IconButton
+                onClick={onSidebarOpen}
+                className={classes.icon}
+              >
+                <MenuIcon />
             </IconButton>
+            </Tooltip>
           </Hidden>
         </Toolbar>
       </AppBar>

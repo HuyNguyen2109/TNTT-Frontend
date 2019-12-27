@@ -29,6 +29,7 @@ const useStyles = theme => ({
     marginRight: '1em',
     color: '#009688',
     backgroundColor: '#FFFFFF',
+    borderColor: '#009688'
   },
 })
 
@@ -406,13 +407,13 @@ class UserForm extends React.Component {
               <Button
                 variant="contained"
                 size='small'
-                className={classes.primaryButton}
+                className={classes.secondaryButton}
                 onClick={this.handleResetForm}
               >Xóa</Button>
             </div>
           }
           <Button
-            variant="contained"
+            variant="outlined"
             size='small'
             className={classes.secondaryButton}
             onClick={this.handleCloseFloatingForm}>

@@ -16,6 +16,7 @@ import MaterialTable from 'material-table';
 import tableIcons from '../Dashboard/components/tableIcon';
 import SnackDialog from '../../../SnackerBar';
 import UserForm from './UserForm';
+import CustomHeader from '../../../Dashboard/components/CustomHeader/CustomHeader';
 
 const useStyles = (theme) => ({
   master: {
@@ -166,7 +167,9 @@ class UserList extends React.Component {
           title: 'Tháng 12',
           value: '12'
         },
-      ]
+      ],
+      //for theme color
+      themeColor: '#009688'
     };
   }
 
@@ -357,7 +360,11 @@ class UserList extends React.Component {
 
     return (
       <div className={(this.state.windowWidth < 500) ? { padding: 0, width: '100%' } : classes.master}>
-        <Paper className={classes.root} elevation={3}>
+        <CustomHeader style={{
+          backgroundColor: this.state.themeColor,
+        }} title="Danh sách thành viên" 
+          subtitle="Bảng chi tiết các anh/chị/quý tu sĩ đang hoạt động trong Xứ Đoàn"/>
+        <Paper className={classes.root} elevation={5}>
           <div className={classes.content}>
             <MaterialTable
               title={
@@ -397,7 +404,7 @@ class UserList extends React.Component {
                 headerStyle: {
                   position: 'sticky',
                   top: 0,
-                  color: '#009688',
+                  color: this.state.themeColor,
                   fontSize: 15
                 },
                 search: true,

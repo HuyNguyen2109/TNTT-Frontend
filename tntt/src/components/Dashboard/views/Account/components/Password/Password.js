@@ -6,7 +6,6 @@ import cryptoJS from 'crypto-js';
 import axios from 'axios';
 import {
   Card,
-  CardHeader,
   CardContent,
   CardActions,
   Divider,
@@ -15,9 +14,12 @@ import {
   Grid
 } from '@material-ui/core';
 import SnackDialog from '../../../../../SnackerBar';
+import CustomHeader from '../../../../../Dashboard/components/CustomHeader/CustomHeader';
 
-const useStyles = () => ({
-  root: {}
+const useStyles = (theme) => ({
+  root: {
+    paddingTop: theme.spacing(2)
+  }
 });
 
 class Password extends React.Component {
@@ -32,6 +34,8 @@ class Password extends React.Component {
       snackerBarStatus: false,
       snackbarMessage: "",
       snackbarType: "success",
+      //for Theme Color
+      themeColor: '#795548'
     }
   }
   callbackSnackerBarHanlder = (callback) => {
@@ -120,79 +124,85 @@ class Password extends React.Component {
     const { classes, className, ...rest } = this.props;
 
     return (
-      <Card
-        {...rest}
-        className={clsx(classes.root, className)}
-      >
-        <form>
-          <CardHeader
-            subheader="Thay đổi mật khẩu"
-            title="Mật khẩu"
+      <div className={clsx(classes.root, className)}>
+        <CustomHeader style={{
+          backgroundColor: this.state.themeColor,
+        }} title="Mật khẩu" 
+          subtitle="Thay đổi mật khẩu"/>
+        <Card
+          {...rest}
+          elevation={5}
+        >
+          <form style={{marginTop: '3em'}} autoComplete="off" noValidate>
+            <CardContent>
+              <Grid container spacing={3}>
+                <Grid item md={12} xs={12}>
+                  <TextField
+                    fullWidth
+                    margin="dense"
+                    label="Mật khẩu hiện tại"
+                    name="currentPassword"
+                    onChange={e => this.handleChange(e, "currentPassword")}
+                    type="password"
+                    value={this.state.currentPassword}
+                    variant="outlined"
+                  />
+                </Grid>
+                <Grid item md={12} xs={12}>
+                  <TextField
+                    fullWidth
+                    margin="dense"
+                    label="Mật khẩu mới"
+                    name="newPassword"
+                    onChange={e => this.handleChange(e, "newPassword")}
+                    type="password"
+                    value={this.state.newPassword}
+                    variant="outlined"
+                  />
+                </Grid>
+                <Grid item md={12} xs={12}>
+                  <TextField
+                    fullWidth
+                    margin="dense"
+                    label="Xác nhận lại mật khẩu mới "
+                    name="confirmPassword"
+                    onChange={e => this.handleChange(e, "confirmPassword")}
+                    type="password"
+                    value={this.state.confirmPassword}
+                    variant="outlined"
+                  />
+                </Grid>
+              </Grid>
+            </CardContent>
+            <Divider />
+            <CardActions>
+              <Button
+                color="primary"
+                variant="contained"
+                onClick={this.updatePassword}
+                style={{backgroundColor: this.state.themeColor}}
+              >
+                Thay đổi mật khẩu
+              </Button>
+              <Button
+                color="primary"
+                variant="outlined"
+                onClick={this.cancelUpdate}
+                style={{color: this.state.themeColor, borderColor: this.state.themeColor}}
+              >
+                Hủy
+              </Button>
+            </CardActions>
+          </form>
+          <SnackDialog 
+            variant={this.state.snackbarType}
+            message={this.state.snackbarMessage} 
+            className={this.state.snackbarType} 
+            callback={this.callbackSnackerBarHanlder} 
+            open={this.state.snackerBarStatus}
           />
-          <Divider />
-          <CardContent>
-            <Grid container spacing={3}>
-              <Grid item md={12} xs={12}>
-                <TextField
-                  fullWidth
-                  label="Mật khẩu hiện tại"
-                  name="currentPassword"
-                  onChange={e => this.handleChange(e, "currentPassword")}
-                  type="password"
-                  value={this.state.currentPassword}
-                  variant="outlined"
-                />
-              </Grid>
-              <Grid item md={12} xs={12}>
-                <TextField
-                  fullWidth
-                  label="Mật khẩu mới"
-                  name="newPassword"
-                  onChange={e => this.handleChange(e, "newPassword")}
-                  type="password"
-                  value={this.state.newPassword}
-                  variant="outlined"
-                />
-              </Grid>
-              <Grid item md={12} xs={12}>
-                <TextField
-                  fullWidth
-                  label="Xác nhận lại mật khẩu mới "
-                  name="confirmPassword"
-                  onChange={e => this.handleChange(e, "confirmPassword")}
-                  type="password"
-                  value={this.state.confirmPassword}
-                  variant="outlined"
-                />
-              </Grid>
-            </Grid>
-          </CardContent>
-          <Divider />
-          <CardActions>
-            <Button
-              color="primary"
-              variant="contained"
-              onClick={this.updatePassword}
-            >
-              Thay đổi mật khẩu
-            </Button>
-            <Button
-              color="primary"
-              variant="outlined"
-              onClick={this.cancelUpdate}
-            >
-              Hủy
-            </Button>
-          </CardActions>
-        </form>
-        <SnackDialog 
-                variant={this.state.snackbarType}
-                message={this.state.snackbarMessage} 
-                className={this.state.snackbarType} 
-                callback={this.callbackSnackerBarHanlder} 
-                open={this.state.snackerBarStatus}
-              />
-      </Card>
+        </Card>
+      </div>
     );
   }
 }

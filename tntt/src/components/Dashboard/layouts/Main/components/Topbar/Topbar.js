@@ -80,6 +80,14 @@ class Topbar extends React.Component {
             </Tooltip>
           </Hidden>
           <Hidden lgUp>
+            <Tooltip title="Đăng xuất">
+              <IconButton
+                className={classes.icon}
+                onClick={event => this.logOut(event)}
+              >
+                <PowerSettingsNewIcon />
+              </IconButton>
+            </Tooltip>
             <Tooltip title="Menu">
               <IconButton
                 onClick={onSidebarOpen}

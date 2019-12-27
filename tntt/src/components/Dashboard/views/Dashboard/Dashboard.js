@@ -580,8 +580,9 @@ class Dashboard extends React.Component {
       <div className={(this.state.windowsWidth < 500) ? { padding: 0, width: '100%' } : classes.root}>
         <CustomHeader style={{
           backgroundColor: this.state.themeColor,
-        }} title={(this.state.currentClass !== 'Chung')? "Danh sách Thiếu Nhi - " + this.state.currentClass : "Danh sách Thiếu Nhi"} subtitle="Xem và chỉnh sửa dữ liệu cho từng Thiếu Nhi"/>
-        <Paper className={classes.content} elevation={3}>
+        }} title={(this.state.currentClass !== 'Chung')? "Danh sách Thiếu Nhi - " + this.state.currentClass : "Danh sách Thiếu Nhi"} 
+          subtitle="Bảng chi tiết sơ yếu lí lịch, lớp, điểm và điểm danh cho từng em thiếu nhi"/>
+        <Paper className={classes.content} elevation={5}>
           <div className={classes.inner}>
             {/* Table */}
             <MaterialTable

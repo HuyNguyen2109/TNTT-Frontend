@@ -43,19 +43,21 @@ const useStyles = theme => ({
     },
   },
   container: {
-    backgroundColor: theme.palette.common.white,
+    backgroundColor: theme.palette.white,
+    height: '100vh',
   },
   menu: {
     width: 80,
   },
   paper: {
-    marginTop: theme.spacing(8),
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
+    marginTop: 'auto',
+    marginBottom: 'auto'
   },
   avatar: {
-    margin: theme.spacing(1),
+    margin: theme.spacing(3),
     backgroundColor: theme.palette.primary.main,
   },
   form: {
@@ -244,12 +246,13 @@ class Signup extends React.Component {
             Đăng ký tài khoản
         </Typography>
           <form className={classes.form} noValidate>
-            <Grid container spacing={2}>
+            <Grid container spacing={1}>
               <Grid item xs={12}>
                 <TextField
                   autoComplete="fname"
                   name="holyName"
                   variant="outlined"
+                  margin="dense"
                   required
                   fullWidth
                   id="holyName"
@@ -264,6 +267,7 @@ class Signup extends React.Component {
                   autoComplete="fname"
                   name="firstName"
                   variant="outlined"
+                  margin="dense"
                   required
                   fullWidth
                   id="firstName"
@@ -278,6 +282,7 @@ class Signup extends React.Component {
                   required
                   fullWidth
                   id="lastName"
+                  margin="dense"
                   label="Tên"
                   name="lastName"
                   autoComplete="lname"
@@ -292,6 +297,7 @@ class Signup extends React.Component {
                   fullWidth
                   id="email"
                   label="Email"
+                  margin="dense"
                   name="email"
                   autoComplete="email"
                   value={this.state.email}
@@ -305,6 +311,7 @@ class Signup extends React.Component {
                   select
                   fullWidth
                   id="email-provider"
+                  margin="dense"
                   label="Nhà cung cấp email"
                   name="email-provider"
                   autoComplete="email"
@@ -323,12 +330,13 @@ class Signup extends React.Component {
                   ))}
                 </TextField>
               </Grid>
-              <Grid item xs={12}>
+              <Grid item xs={12} sm={4}>
                 <TextField
                   variant="outlined"
                   required
                   fullWidth
                   id="phone"
+                  margin="dense"
                   label="Điện thoại"
                   name="phone"
                   value={this.state.phoneNumber}
@@ -336,12 +344,13 @@ class Signup extends React.Component {
                 />
               </Grid>
               <MuiPickersUtilsProvider utils={DateFnsUtils}>
-                <Grid item xs={12}>
+                <Grid item xs={12} sm={4}>
                   <KeyboardDatePicker
                     fullWidth
                     format="dd/MM/yyyy"
                     id="birthday"
                     label="Ngày sinh"
+                    margin="dense"
                     inputVariant="outlined"
                     value={this.state.selectedDate}
                     onChange={e => this.handleFormChange(e, "selectedDate")}
@@ -349,12 +358,13 @@ class Signup extends React.Component {
                       'aria-label': 'change date',
                     }} />
                 </Grid>
-                <Grid item xs={12}>
+                <Grid item xs={12} sm={4}>
                   <KeyboardDatePicker
                     fullWidth
                     inputVariant="outlined"
                     format="dd/MM/yyyy"
                     id="holy-birthday"
+                    margin="dense"
                     label="Bổn mạng"
                     value={this.state.selectedHolyDate}
                     onChange={e => this.handleFormChange(e, "selectedHolyDate")}
@@ -375,6 +385,7 @@ class Signup extends React.Component {
               fullWidth
               variant="contained"
               color="primary"
+              margin="dense"
               className={classes.submit}
               onClick={e => this.validateAndSend(e)}
             >

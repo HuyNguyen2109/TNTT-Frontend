@@ -26,7 +26,7 @@ class CustomHeader extends React.Component {
 		const { classes, style, title, subtitle } = this.props;
 
 		return (
-			<Paper style={style} className={classes.root} elevation={3}>
+			<Paper style={style} className={classes.root} elevation={5}>
 				<Typography variant="h6">{title}</Typography>
 				<Typography variant="subtitle2">{subtitle}</Typography>	
 			</Paper>

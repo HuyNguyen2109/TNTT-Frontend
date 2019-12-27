@@ -30,10 +30,6 @@ const useStyles = theme => ({
       color: "#9c27b0",
       opacity: 1
     },
-    "&$selected": {
-      color: "#9c27b0",
-      fontWeight: theme.typography.fontWeightMedium
-    },
     "&:focus": {
       color: "#9c27b0"
     }

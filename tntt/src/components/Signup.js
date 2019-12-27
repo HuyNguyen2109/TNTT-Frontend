@@ -44,7 +44,8 @@ const useStyles = theme => ({
   },
   container: {
     backgroundColor: theme.palette.white,
-    height: '100vh',
+    padding: theme.spacing(2),
+    marginTop: theme.spacing(4)
   },
   menu: {
     width: 80,
@@ -53,16 +54,13 @@ const useStyles = theme => ({
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
-    marginTop: 'auto',
-    marginBottom: 'auto'
   },
   avatar: {
-    margin: theme.spacing(3),
     backgroundColor: theme.palette.primary.main,
   },
   form: {
     width: '100%', // Fix IE 11 issue.
-    marginTop: theme.spacing(3),
+    marginTop: theme.spacing(2)
   },
   submit: {
     margin: theme.spacing(3, 0, 2),

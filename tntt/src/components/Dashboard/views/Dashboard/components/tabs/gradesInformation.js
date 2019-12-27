@@ -45,6 +45,7 @@ const useStyles = (theme) => ({
     marginRight: '1em',
     color: '#9c27b0',
     backgroundColor: '#FFFFFF',
+    borderColor: '#9c27b0',
   },
   inner: {
     overflow: 'auto',
@@ -660,7 +661,7 @@ class GradesInformation extends React.Component {
         </Grid>
         <Grid container alignItems="flex-start" justify="flex-end" direction="row">
           <Button
-            variant="contained"
+            variant="outlined"
             size='small'
             className={classes.secondaryButton}
             onClick={this.handleCloseFloatingForm}>

@@ -295,7 +295,6 @@ class Signin extends React.Component {
                 required
                 fullWidth
                 id="account"
-                margin="dense"
                 label="Tài khoản"
                 name="username"
                 autoComplete="username"
@@ -311,7 +310,6 @@ class Signin extends React.Component {
                   margin="normal"
                   required
                   fullWidth
-                  margin="dense"
                   name="new-password"
                   label="Mật khẩu mới"
                   type={this.state.isNewPasswordHidden ? "password": "text"}
@@ -339,7 +337,6 @@ class Signin extends React.Component {
                   required
                   fullWidth
                   name="confirm-password"
-                  margin="dense"
                   label="Xác nhận lại mật khẩu mới"
                   type={this.state.isConfirmPasswordHidden ? "password": "text"}
                   id="confirm-password"
@@ -380,7 +377,6 @@ class Signin extends React.Component {
                   required
                   fullWidth
                   name="password"
-                  margin="dense"
                   label="Mật khẩu"
                   type={this.state.isHidden ? "password": "text"}
                   id="password"

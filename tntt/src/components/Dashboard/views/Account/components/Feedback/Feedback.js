@@ -14,9 +14,12 @@ import {
 } from '@material-ui/core';
 import { Send } from '@material-ui/icons/';
 import SnackDialog from '../../../../../SnackerBar';
+import CustomHeader from '../../../../../Dashboard/components/CustomHeader/CustomHeader';
 
 const useStyle = (theme) => ({
-  root: {},
+  root: {
+    paddingTop: theme.spacing(2)
+  },
   iconInButton: {
     margin: theme.spacing(1)
   }
@@ -36,6 +39,8 @@ class Feedback extends React.Component {
 
       email: '',
       username: '',
+      //for Theme Color
+      themeColor: '#795548'
     }
   }
 
@@ -94,47 +99,48 @@ class Feedback extends React.Component {
     const { classes, className, ...rest } = this.props; 
 
     return (
-      <Card
-        {...rest}
-        className={clsx(classes.root, className)}>
-        <form>
-          <CardHeader
-            title="Ý kiến phản hồi"
-            subheader="Đóng góp ý kiến giúp trang web hoàn thiện hơn" />
-          <Divider />
-          <CardContent>
-            <TextField
-              variant="outlined" 
-              multiline
-              fullWidth
-              rows="2"
-              placeholder="Ý kiến của bạn"
-              margin="normal"
-              value={this.state.feedbackText}
-              onChange={e => this.handleChange(e, 'feedbackText')}/>
-          </CardContent>
-          <Divider />
-          <CardActions>
-            <Grid container alignItems="flex-start" justify="flex-end" direction="row" spacing={2}>
-              <Button 
-                color="primary"
-                variant="contained"
-                size='small'
-                disabled={(this.state.feedbackText !== '' && this.state.isButtonClicked === false)? false : true}
-                onClick={this.sendFeedback}
-                ><Send className={classes.iconInButton} fontSize="small" />Gửi</Button>
-            </Grid>
-          </CardActions>
-        </form>
-        <SnackDialog
-          variant={this.state.snackbarType}
-          message={this.state.snackbarMessage}
-          className={this.state.snackbarType}
-          callback={this.callbackSnackerBarHanlder}
-          open={this.state.snackerBarStatus}
-          type={this.state.floatingFormType}
-        />
-      </Card>
+      <div className={clsx(classes.root, className)}>
+        <CustomHeader style={{
+          backgroundColor: this.state.themeColor,
+        }} title="Ý kiến phản hồi" 
+          subtitle="Đóng góp ý kiến giúp trang web hoàn thiện hơn"/>
+        <Card
+          {...rest}
+          elevation={5}>
+          <form style={{paddingTop: '3em'}}>
+            <CardContent>
+              <TextField
+                variant="outlined" 
+                multiline
+                fullWidth
+                rows="2"
+                placeholder="Ý kiến của bạn"
+                margin="normal"
+                value={this.state.feedbackText}
+                onChange={e => this.handleChange(e, 'feedbackText')}/>
+            </CardContent>
+            <Divider />
+            <CardActions>
+              <Grid container alignItems="flex-start" justify="flex-end" direction="row" spacing={2}>
+                <Button 
+                  variant="contained"
+                  style={{backgroundColor: this.state.themeColor, color: '#FFFFFF'}}
+                  disabled={(this.state.feedbackText !== '' && this.state.isButtonClicked === false)? false : true}
+                  onClick={this.sendFeedback}
+                  ><Send className={classes.iconInButton} fontSize="small" />Gửi</Button>
+              </Grid>
+            </CardActions>
+          </form>
+          <SnackDialog
+            variant={this.state.snackbarType}
+            message={this.state.snackbarMessage}
+            className={this.state.snackbarType}
+            callback={this.callbackSnackerBarHanlder}
+            open={this.state.snackerBarStatus}
+            type={this.state.floatingFormType}
+          />
+        </Card>
+      </div>
     )
   }
 }

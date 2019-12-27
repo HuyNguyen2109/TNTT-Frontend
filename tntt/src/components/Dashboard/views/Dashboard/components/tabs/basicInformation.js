@@ -41,6 +41,7 @@ const useStyles = theme => ({
     marginRight: '1em',
     color: '#9c27b0',
     backgroundColor: '#FFFFFF',
+    borderColor: '#9c27b0',
   },
 });
 
@@ -473,13 +474,13 @@ class BasicInformation extends React.Component {
               <Button
                 variant="contained"
                 size='small'
-                className={classes.primaryButton}
+                className={classes.secondaryButton}
                 onClick={this.handleResetForm}
               >Xóa</Button>
             </div>
           }
           <Button
-            variant="contained"
+            variant="outlined"
             size='small'
             className={classes.secondaryButton}
             onClick={this.handleCloseFloatingForm}>

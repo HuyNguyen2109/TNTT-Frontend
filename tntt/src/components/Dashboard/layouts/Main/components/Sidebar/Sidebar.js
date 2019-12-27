@@ -10,7 +10,6 @@ import {
   Face
 } from '@material-ui/icons'
 import { Profile, SidebarNav } from './components';
-import axios from 'axios';
 import backgroundImage from '../../../../../../img/December.jpg';
 
 const useStyles = theme => ({
@@ -67,27 +66,6 @@ class Sidebar extends React.Component {
     };
   }
 
-  componentDidMount = () => {
-    return this.getClass();
-  }
-
-  getClass = () => {
-    return axios
-      .get('/backend/class/all')
-      .then(result => {
-        let classArr = [];
-        result.data.data.forEach(res => {
-          classArr.push({
-            'title': res.Value,
-            'href': res.path
-          })
-        })
-        this.setState({
-          classes: classArr
-        });
-      });
-  }
-
   render = () => {
     const { classes, open, variant, onClose, className, ...rest} = this.props;
     const pages = [
@@ -120,6 +98,7 @@ class Sidebar extends React.Component {
         onClose={onClose}
         open={open}
         variant={variant}
+        elevation={10}
       >
         <div
           {...rest}

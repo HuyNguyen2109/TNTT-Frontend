@@ -7,7 +7,7 @@ import { AccountProfile, AccountDetails, Password, Feedback } from './components
 
 const useStyles = theme => ({
   root: {
-    padding: theme.spacing(4)
+    padding: theme.spacing(3)
   }
 });
 
@@ -33,8 +33,7 @@ class Account extends React.Component {
             xl={4}
             xs={12}
           >
-            <AccountProfile userdata={this.getUser()}/>
-            <Password style={{marginTop: '2em'}}/>
+            <AccountProfile userdata={this.getUser()} />
           </Grid>
           <Grid
             item
@@ -44,7 +43,8 @@ class Account extends React.Component {
             xs={12}
           >
             <AccountDetails userdata={this.getUser()}/>
-            <Feedback style={{marginTop: '2em'}} userdata={this.getUser()}/>
+            <Password />
+            <Feedback userdata={this.getUser()}/>
           </Grid>
         </Grid>
       </div>

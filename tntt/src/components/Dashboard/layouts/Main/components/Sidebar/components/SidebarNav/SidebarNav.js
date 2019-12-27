@@ -8,7 +8,8 @@ import { withStyles } from '@material-ui/styles';
 import { List, ListItem, Button } from '@material-ui/core';
 
 const useStyles = theme => ({
-  root: {},
+  root: {
+  },
   item: {
     display: 'flex',
     paddingTop: 0,
@@ -32,15 +33,22 @@ const useStyles = theme => ({
     marginRight: theme.spacing(1)
   },
   active: {
-    color: theme.palette.primary.main,
+    color: theme.palette.primary.white,
+    backgroundColor: theme.palette.primary.main,
     fontWeight: theme.typography.fontWeightMedium,
     '& $icon': {
-      color: theme.palette.primary.main
-    }
+      color: theme.palette.primary.white
+    },
+    '&:hover': {
+      background: theme.palette.primary.main
+    },
   },
   nested: {
     paddingLeft: theme.spacing(4),
   },
+  list: {
+    
+  }
 });
 
 const CustomRouterLink = forwardRef((props, ref) => (
@@ -53,20 +61,6 @@ const CustomRouterLink = forwardRef((props, ref) => (
 ));
 
 class SidebarNav extends React.Component {
-  constructor(props) {
-    super(props)
-
-    this.state = {
-      open: false,
-    }
-  }
-
-  expandMenu = () => {
-    this.setState({
-      open: !this.state.open
-    })
-  }
-
   render = () => {
     const { classes, pages, className, ...rest } = this.props;
 

@@ -10,7 +10,6 @@ import { withStyles } from '@material-ui/styles';
 import axios from 'axios';
 import {
   Card,
-  CardHeader,
   CardContent,
   CardActions,
   Divider,
@@ -18,9 +17,11 @@ import {
   Button,
   TextField
 } from '@material-ui/core';
+import CustomHeader from '../../../../../Dashboard/components/CustomHeader/CustomHeader';
 
 const useStyles = (theme) => ({
-  root: {}
+  root: {
+  }
 });
 
 class AccountDetails extends React.Component {
@@ -36,6 +37,8 @@ class AccountDetails extends React.Component {
       phoneNumber: '',
       class: '',
       email: '',
+      //for Theme Color
+      themeColor: '#795548'
     };
   }
 
@@ -110,19 +113,20 @@ class AccountDetails extends React.Component {
     const { classes, userdata, className, ...rest } = this.props;
 
     return (
+      <div className={clsx(classes.root, className)}>
+        <CustomHeader style={{
+          backgroundColor: this.state.themeColor,
+        }} title="Thông tin cá nhân" 
+          subtitle="Chỉnh sửa những thông tin cần thiết"/>
       <Card
         {...rest}
-        className={clsx(classes.root, className)}
+        elevation={5}
       >
         <form
           autoComplete="off"
           noValidate
+          style={{marginTop: '3em'}}
         >
-          <CardHeader
-            subheader="Chỉnh sửa những thông tin cần thiết"
-            title="Thông tin cá nhân"
-          />
-          <Divider />
           <CardContent>
             <Grid
               container
@@ -260,6 +264,7 @@ class AccountDetails extends React.Component {
               color="primary"
               variant="contained"
               onClick={this.updateAccount}
+              style={{backgroundColor: this.state.themeColor}}
             >
               Cập nhật tài khoản
             </Button>
@@ -267,12 +272,14 @@ class AccountDetails extends React.Component {
               color="primary"
               variant="outlined"
               onClick={this.cancelUpdate}
+              style={{color: this.state.themeColor, borderColor: this.state.themeColor}}
             >
               Hủy
             </Button>
           </CardActions>
         </form>
       </Card>
+      </div>
     );
   };
 };

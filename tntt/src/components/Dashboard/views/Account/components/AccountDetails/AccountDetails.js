@@ -38,7 +38,8 @@ class AccountDetails extends React.Component {
       class: '',
       email: '',
       //for Theme Color
-      themeColor: '#795548'
+      themeColor: 'linear-gradient(to right bottom, #a1887f, #795548)',
+      outlinedThemeColor: '#795548'
     };
   }
 
@@ -115,7 +116,7 @@ class AccountDetails extends React.Component {
     return (
       <div className={clsx(classes.root, className)}>
         <CustomHeader style={{
-          backgroundColor: this.state.themeColor,
+          background: this.state.themeColor,
         }} title="Thông tin cá nhân" 
           subtitle="Chỉnh sửa những thông tin cần thiết"/>
       <Card
@@ -264,7 +265,7 @@ class AccountDetails extends React.Component {
               color="primary"
               variant="contained"
               onClick={this.updateAccount}
-              style={{backgroundColor: this.state.themeColor}}
+              style={{background: this.state.themeColor}}
             >
               Cập nhật tài khoản
             </Button>
@@ -272,7 +273,7 @@ class AccountDetails extends React.Component {
               color="primary"
               variant="outlined"
               onClick={this.cancelUpdate}
-              style={{color: this.state.themeColor, borderColor: this.state.themeColor}}
+              style={{color: this.state.outlinedThemeColor, borderColor: this.state.outlinedThemeColor}}
             >
               Hủy
             </Button>

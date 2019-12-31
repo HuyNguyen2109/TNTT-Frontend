@@ -169,7 +169,7 @@ class UserList extends React.Component {
         },
       ],
       //for theme color
-      themeColor: '#009688'
+      themeColor: 'linear-gradient(to right bottom, #4db6ac, #009688)'
     };
   }
 
@@ -361,7 +361,7 @@ class UserList extends React.Component {
     return (
       <div className={(this.state.windowWidth < 500) ? { padding: 0, width: '100%' } : classes.master}>
         <CustomHeader style={{
-          backgroundColor: this.state.themeColor,
+          background: this.state.themeColor,
         }} title="Danh sách thành viên" 
           subtitle="Bảng chi tiết các anh/chị/quý tu sĩ đang hoạt động trong Xứ Đoàn"/>
         <Paper className={classes.root} elevation={5}>
@@ -404,7 +404,7 @@ class UserList extends React.Component {
                 headerStyle: {
                   position: 'sticky',
                   top: 0,
-                  color: this.state.themeColor,
+                  color: '#009688',
                   fontSize: 15
                 },
                 search: true,

@@ -61,8 +61,13 @@ const CustomRouterLink = forwardRef((props, ref) => (
 ));
 
 class SidebarNav extends React.Component {
+
+  componentDidMount = () => {
+    this.props.callback('Xứ đoàn Annê Lê Thị Thành')
+  }
+
   render = () => {
-    const { classes, pages, className, ...rest } = this.props;
+    const { classes, pages, className, callback, ...rest } = this.props;
 
     return (
       <List
@@ -80,6 +85,7 @@ class SidebarNav extends React.Component {
                 className={classes.button}
                 component={CustomRouterLink}
                 to={page.href}
+                onClick={e => {callback(e.currentTarget.innerText)}}
               >
                 <div className={classes.icon}>{page.icon}</div>
                 {page.title}

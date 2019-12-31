@@ -2,8 +2,9 @@ import React from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 import clsx from 'clsx';
 import { withStyles } from '@material-ui/styles';
-import { Avatar, Typography } from '@material-ui/core';
+import { Avatar, Typography, Badge } from '@material-ui/core';
 import logo from './default-user.png';
+import masterLogo from './logo.png';
 import axios from 'axios';
 
 const useStyles = theme => ({
@@ -20,6 +21,9 @@ const useStyles = theme => ({
   },
   name: {
     marginTop: theme.spacing(1)
+  },
+  badge: {
+    marginBottom: '-2em'
   }
 });
 
@@ -69,13 +73,15 @@ class Profile extends React.Component {
         {...rest}
         className={clsx(classes.root, className)}
       >
-        <Avatar
+        <Badge badgeContent={<Avatar alt="Person" src={masterLogo} className={classes.badge}/>}>
+          <Avatar
           alt="Person"
           className={classes.avatar}
           component={RouterLink}
           src={logo}
           to="/account"
         />
+        </Badge>
         <Typography
           className={classes.name}
           variant="h5"

@@ -51,7 +51,7 @@ class AccountProfile extends React.Component {
       type: '',
       currentTime: '',
       //set default color
-      themeColor: '#795548'
+      themeColor: 'linear-gradient(to right bottom, #a1887f, #795548)'
     };
   };
 
@@ -114,7 +114,7 @@ class AccountProfile extends React.Component {
           <Divider />
           <Fab
             className={classes.uploadButton}
-            style={{backgroundColor: this.state.themeColor}}
+            style={{background: this.state.themeColor}}
             variant="extended"
           >
             Cập nhật ảnh đại diện

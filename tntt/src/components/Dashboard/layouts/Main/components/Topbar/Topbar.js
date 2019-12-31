@@ -1,6 +1,6 @@
 import React from 'react';
 import clsx from 'clsx';
-import { AppBar, Toolbar, Badge, Hidden, IconButton, Tooltip } from '@material-ui/core';
+import { AppBar, Toolbar, Badge, Hidden, IconButton, Tooltip, Typography } from '@material-ui/core';
 import MenuIcon from '@material-ui/icons/Menu';
 import NotificationsIcon from '@material-ui/icons/Notifications';
 import PowerSettingsNewIcon from '@material-ui/icons/PowerSettingsNew';
@@ -40,6 +40,14 @@ class Topbar extends React.Component {
     }
   }
 
+  componentDidUpdate = (prevProps) => {
+    if(this.props.title !== prevProps.title) {
+      this.setState({
+        title: this.props.title
+      });
+    }
+  }
+
   logOut = (event) => {
     return Promise.resolve()
       .then(() => {
@@ -57,6 +65,7 @@ class Topbar extends React.Component {
         className={clsx(classes.root, className)}
       >
         <Toolbar>
+          <Typography variant="h6" style={{color: '#000000'}}>{this.state.title}</Typography>
           <div className={classes.flexGrow} />
           <Hidden mdDown>
             <Tooltip title="Thông báo">

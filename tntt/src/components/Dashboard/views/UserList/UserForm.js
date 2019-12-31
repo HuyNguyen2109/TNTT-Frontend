@@ -22,7 +22,7 @@ const useStyles = theme => ({
     marginTop: theme.spacing(2),
     marginRight: '1em',
     color: '#FFFFFF',
-    backgroundColor: '#009688',
+    background: 'linear-gradient(to right bottom, #4db6ac, #009688)',
   },
   secondaryButton: {
     marginTop: theme.spacing(2),

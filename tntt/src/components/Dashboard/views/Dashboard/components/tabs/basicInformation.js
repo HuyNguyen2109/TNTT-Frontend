@@ -34,7 +34,7 @@ const useStyles = theme => ({
     marginTop: theme.spacing(2),
     marginRight: '1em',
     color: '#FFFFFF',
-    backgroundColor: '#9c27b0',
+    background: 'linear-gradient(to right bottom, #ba68c8, #9c27b0)',
   },
   secondaryButton: {
     marginTop: theme.spacing(2),
@@ -77,7 +77,7 @@ class BasicInformation extends React.Component {
   componentDidUpdate = (prevProps) => {
     if (this.props.type === 'edit' && JSON.stringify(prevProps.selectedData) !== JSON.stringify(this.props.selectedData) && this.props.selectedData.name !== undefined) {
       const name = this.props.selectedData.name
-
+  
       return axios
         .get(`/backend/children/by-name/${name}`)
         .then(result => {

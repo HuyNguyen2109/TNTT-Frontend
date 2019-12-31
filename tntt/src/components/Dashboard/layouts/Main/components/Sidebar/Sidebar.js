@@ -67,7 +67,7 @@ class Sidebar extends React.Component {
   }
 
   render = () => {
-    const { classes, open, variant, onClose, className, ...rest} = this.props;
+    const { classes, open, variant, onClose, className, callback, ...rest} = this.props;
     const pages = [
       {
         title: 'Tổng hợp',
@@ -80,7 +80,7 @@ class Sidebar extends React.Component {
         href: '/children',
       },
       {
-        title: 'Danh sách GLV',
+        title: 'Huynh trưởng/GLV',
         href: '/users',
         icon: <PeopleIcon />
       },
@@ -109,6 +109,7 @@ class Sidebar extends React.Component {
           <SidebarNav
             className={classes.nav}
             pages={pages}
+            callback={val => {callback(val)}}
           />
         </div>
         <div className={classes.background} style={{ backgroundImage: "url(" + backgroundImage + ")" }} />

@@ -29,6 +29,8 @@ const Main = props => {
     defaultMatches: true
   });
 
+  const [innerText, setInnerText] = useState('');
+
   const [openSidebar, setOpenSidebar] = useState(false);
 
   const handleSidebarOpen = () => {
@@ -48,11 +50,12 @@ const Main = props => {
         [classes.shiftContent]: isDesktop
       })}
     >
-      <Topbar onSidebarOpen={handleSidebarOpen} />
+      <Topbar onSidebarOpen={handleSidebarOpen} title={innerText}/>
       <Sidebar
         onClose={handleSidebarClose}
         open={shouldOpenSidebar}
         variant={isDesktop ? 'persistent' : 'temporary'}
+        callback={val => {setInnerText(val)}}
       />
       <main className={classes.content}>
         {children}

@@ -153,7 +153,7 @@ class Dashboard extends React.Component {
       snackbarMessage: "",
       snackbarType: "success",
 
-      themeColor: '#9c27b0'
+      themeColor: 'linear-gradient(to right bottom, #ba68c8, #9c27b0)',
     };
 
     this.updateWindowDimensions = this.updateWindowDimensions.bind(this);
@@ -579,7 +579,7 @@ class Dashboard extends React.Component {
     return (
       <div className={(this.state.windowsWidth < 500) ? { padding: 0, width: '100%' } : classes.root}>
         <CustomHeader style={{
-          backgroundColor: this.state.themeColor,
+          background: this.state.themeColor,
         }} title={(this.state.currentClass !== 'Chung')? "Danh sách Thiếu Nhi - " + this.state.currentClass : "Danh sách Thiếu Nhi"} 
           subtitle="Bảng chi tiết sơ yếu lí lịch, lớp, điểm và điểm danh cho từng em thiếu nhi"/>
         <Paper className={classes.content} elevation={5}>
@@ -650,7 +650,7 @@ class Dashboard extends React.Component {
                 headerStyle: {
                   position: 'sticky',
                   top: 0,
-                  color: this.state.themeColor,
+                  color: '#9c27b0',
                   fontSize: 15,
                 },
                 showTitle: true,

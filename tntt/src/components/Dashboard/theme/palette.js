@@ -9,7 +9,7 @@ export default {
   primary: {
     contrastText: white,
     dark: colors.cyan[700],
-    main: colors.cyan[200],
+    main: colors.cyan[600],
     light: colors.cyan[100]
   },
   secondary: {

@@ -4,7 +4,6 @@ import clsx from 'clsx';
 import axios from 'axios';
 import {
   Card,
-  CardHeader,
   CardContent,
   CardActions,
   Divider,
@@ -40,7 +39,8 @@ class Feedback extends React.Component {
       email: '',
       username: '',
       //for Theme Color
-      themeColor: '#795548'
+      themeColor: 'linear-gradient(to right bottom, #a1887f, #795548)',
+      outlinedThemeColor: '#795548'
     }
   }
 
@@ -101,7 +101,7 @@ class Feedback extends React.Component {
     return (
       <div className={clsx(classes.root, className)}>
         <CustomHeader style={{
-          backgroundColor: this.state.themeColor,
+          background: this.state.themeColor,
         }} title="Ý kiến phản hồi" 
           subtitle="Đóng góp ý kiến giúp trang web hoàn thiện hơn"/>
         <Card
@@ -124,7 +124,7 @@ class Feedback extends React.Component {
               <Grid container alignItems="flex-start" justify="flex-end" direction="row" spacing={2}>
                 <Button 
                   variant="contained"
-                  style={{backgroundColor: this.state.themeColor, color: '#FFFFFF'}}
+                  style={{background: this.state.themeColor, color: '#FFFFFF'}}
                   disabled={(this.state.feedbackText !== '' && this.state.isButtonClicked === false)? false : true}
                   onClick={this.sendFeedback}
                   ><Send className={classes.iconInButton} fontSize="small" />Gửi</Button>

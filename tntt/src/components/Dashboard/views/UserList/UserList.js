@@ -9,6 +9,7 @@ import {
 import {
   Cached,
   Cancel,
+  Clear,
   Delete,
   PersonAdd,
 } from '@material-ui/icons';
@@ -456,7 +457,7 @@ class UserList extends React.Component {
                   disabled: (localStorage.getItem('type') === 'Admin')? false : true
                 },
                 {
-                  icon: () => { return <Delete />},
+                  icon: () => { return <Clear style={{color: 'red'}} />},
                   tooltip: 'Chọn xóa',
                   onClick: (e, rowData) => this.handleRowClick(e, rowData),
                   hidden: (localStorage.getItem('type') === 'Admin')? false : true

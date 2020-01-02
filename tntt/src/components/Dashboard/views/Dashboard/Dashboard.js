@@ -697,7 +697,7 @@ class Dashboard extends React.Component {
                   onClick: () => this.handleSelectAll(),
                 },
                 {
-                  icon: () => { return <Delete />},
+                  icon: () => { return <Clear style={{color: 'red'}} />},
                   tooltip: 'Chọn xóa',
                   onClick: (e, rowData) => this.handleRowClick(e, rowData)
                 },

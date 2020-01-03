@@ -4,7 +4,7 @@ import axios from 'axios';
 import AnimatedNumber from 'animated-number-react';
 import Chart from 'chart.js';
 import {
-  Grid, Typography, TextField, Button
+  Grid, Typography
 } from '@material-ui/core';
 import { withStyles } from '@material-ui/core/styles';
 import { Face, Group, AttachMoney, Help, Add, Remove } from '@material-ui/icons';
@@ -13,6 +13,7 @@ import MaterialTable from 'material-table';
 import tableIcons from './components/tableIcon';
 import Report from './components/Report'
 import DialogForm from './components/Dialog';
+import SnackDialog from '../../../SnackerBar';
 
 const useStyle = theme => ({
   root: {},
@@ -48,7 +49,7 @@ class General extends React.Component {
           yAxes: [{
             ticks: {
               beginAtZero: true,
-              stepSize: 10
+              stepSize: 10,
             },
             gridLines: {
               drawBorder: false,
@@ -78,7 +79,7 @@ class General extends React.Component {
         },
         legend: {
           display: false
-        }
+        },
       },
       //for Class table
       classes: [],
@@ -94,9 +95,11 @@ class General extends React.Component {
       ],
       selectedClassRows: [],
       isOpenAddClassForm: false,
-      newClassName: '',
-      newClassID: '',
-      newClassPath: '',
+      isButtonDisabled: false,
+      // for snackBar
+      snackbarMessage: '',
+      snackbarType: 'success',
+      snackerBarStatus: false
     }
   }
 
@@ -105,6 +108,38 @@ class General extends React.Component {
   }
 
   formatValue = (value, type) => Number(value).toFixed(0) + ' ' + type;
+
+  capitalizeWord = (text) => {
+    var splitStr = text.toLowerCase().split(' ');
+    for (var i = 0; i < splitStr.length - 1; i++) {
+      // You do not need to check if i is larger than splitStr length, as your for does that for you
+      // Assign it back to the array
+      splitStr[i] = splitStr[i].charAt(0).toUpperCase() + splitStr[i].substring(1);
+    }
+
+
+    splitStr[splitStr.length - 1] = splitStr[splitStr.length - 1].toUpperCase();
+    // Directly return the joined string
+    return splitStr.join(' ');
+  }
+
+  removeVietnameseLetter = (str) => {
+    str = str.replace(/à|á|ạ|ả|ã|â|ầ|ấ|ậ|ẩ|ẫ|ă|ằ|ắ|ặ|ẳ|ẵ/g, "a");
+    str = str.replace(/è|é|ẹ|ẻ|ẽ|ê|ề|ế|ệ|ể|ễ/g, "e");
+    str = str.replace(/ì|í|ị|ỉ|ĩ/g, "i");
+    str = str.replace(/ò|ó|ọ|ỏ|õ|ô|ồ|ố|ộ|ổ|ỗ|ơ|ờ|ớ|ợ|ở|ỡ/g, "o");
+    str = str.replace(/ù|ú|ụ|ủ|ũ|ư|ừ|ứ|ự|ử|ữ/g, "u");
+    str = str.replace(/ỳ|ý|ỵ|ỷ|ỹ/g, "y");
+    str = str.replace(/đ/g, "d");
+    str = str.replace(/À|Á|Ạ|Ả|Ã|Â|Ầ|Ấ|Ậ|Ẩ|Ẫ|Ă|Ằ|Ắ|Ặ|Ẳ|Ẵ/g, "A");
+    str = str.replace(/È|É|Ẹ|Ẻ|Ẽ|Ê|Ề|Ế|Ệ|Ể|Ễ/g, "E");
+    str = str.replace(/Ì|Í|Ị|Ỉ|Ĩ/g, "I");
+    str = str.replace(/Ò|Ó|Ọ|Ỏ|Õ|Ô|Ồ|Ố|Ộ|Ổ|Ỗ|Ơ|Ờ|Ớ|Ợ|Ở|Ỡ/g, "O");
+    str = str.replace(/Ù|Ú|Ụ|Ủ|Ũ|Ư|Ừ|Ứ|Ự|Ử|Ữ/g, "U");
+    str = str.replace(/Ỳ|Ý|Ỵ|Ỷ|Ỹ/g, "Y");
+    str = str.replace(/Đ/g, "D");
+    return str;
+  }
 
   getData = () => {
     let classLabels = [];
@@ -154,10 +189,13 @@ class General extends React.Component {
         responseArr.forEach(res => {
           classData.push(res.data.data)
         })
+        let myChart;
         Chart.defaults.global.defaultFontColor = 'white'
         let ctx = document.getElementById('chart');
-        let myChart = new Chart(ctx, {
+        ctx.innerHTML = '';
+        myChart = new Chart(ctx, {
           type: 'bar',
+          responsive: true,
           data: {
             labels: classLabels,
             datasets: [{
@@ -165,11 +203,59 @@ class General extends React.Component {
                 data: classData,
                 backgroundColor: 'rgba(255,255,255,0.9)',
                 hoverBackgroundColor: 'rgba(255,255,255,0.9)',
-                maxBarThickness: 6
+                maxBarThickness: 8
             }]
           },
           options: this.state.barChartOptions
       });
+      })
+  }
+
+  createNewClass = (className) => {
+    this.setState({ isButtonDisabled: true })
+    let classID = '';
+    let classNameSplit = className.split(' ');
+    for(let i = 0; i < classNameSplit.length - 1; i++) {
+      classID += classNameSplit[i].charAt(0).toUpperCase();
+    };
+    classID += classNameSplit[classNameSplit.length - 1].toUpperCase();
+    const newClass = {
+      'ID': this.removeVietnameseLetter(classID),
+      'Value': this.capitalizeWord(className),
+      'path': `/dashboard/${classID}`
+    }
+
+    return axios.post('/backend/class/add', newClass)
+      .then(res => {
+        if(res.data.code === 'I001') {
+          this.setState({ 
+            isButtonDisabled: false,
+            isOpenAddClassForm: false,
+            childrenTotalCount: 0,
+            userTotalCount: 0,
+            childrenFundTotalCount: 0,
+            internalFundTotalCount: 0,
+          })
+          this.getData();
+        }
+      })
+      .catch(err => {
+        if(err.response.status === 409) {
+          this.setState({
+            snackerBarStatus: true,
+            snackbarType: 'error',
+            snackbarMessage: 'Lớp đã có sẵn trong CSDL',
+            isButtonDisabled: false
+          })
+        }
+        else {
+          this.setState({
+            snackerBarStatus: true,
+            snackbarType: 'error',
+            snackbarMessage: 'Đã có lỗi từ máy chủ',
+            isButtonDisabled: false
+          })
+        }
       })
   }
 
@@ -179,10 +265,8 @@ class General extends React.Component {
     })
   }
 
-  handleNewClassChange = (e) => {
-    this.setState=({
-      newClassName: e.target.value
-    })
+  callbackSnackerBarHanlder = (callback) => {
+    this.setState({ snackerBarStatus: callback });
   }
 
   render = () => {
@@ -336,7 +420,7 @@ class General extends React.Component {
                         fontSize: 15
                       },
                       search: false,
-                      maxBodyHeight: '200px',
+                      maxBodyHeight: '150px',
                     }}
                     localization={{
                       header: {
@@ -348,6 +432,7 @@ class General extends React.Component {
                         icon: () => { return <Add /> },
                         tooltip: 'Thêm lớp',
                         isFreeAction: true,
+                        hidden: (localStorage.type !== 'Admin')? true : false,
                         onClick: () => { this.setState({
                           isOpenAddClassForm: true
                         }) } 
@@ -355,7 +440,38 @@ class General extends React.Component {
                       {
                         icon: () => { return <Remove style={{color: 'red'}} />},
                         tooltip: 'Xóa',
-                        onClick: (e, rowData) => {console.log(rowData)}
+                        onClick: (e, rowData) => {
+                          return axios.delete(`/backend/class/delete/by-id/${rowData.ID}`)
+                            .then(res => {
+                              if(res.data.code === 'I001') {
+                                this.setState({
+                                  childrenTotalCount: 0,
+                                  userTotalCount: 0,
+                                  childrenFundTotalCount: 0,
+                                  internalFundTotalCount: 0,
+                                })
+                                this.getData();
+                              }
+                            })
+                            .catch(err => {
+                              if(err.response.status === 404) {
+                                this.setState({
+                                  snackerBarStatus: true,
+                                  snackbarType: 'error',
+                                  snackbarMessage: 'Lớp đã xóa hoặc không tồn tại trong CSDL',
+                                  isButtonDisabled: false
+                                })
+                              }
+                              else {
+                                this.setState({
+                                  snackerBarStatus: true,
+                                  snackbarType: 'error',
+                                  snackbarMessage: 'Đã có lỗi từ máy chủ',
+                                  isButtonDisabled: false
+                                })
+                              }
+                            })
+                        }
                       }
                     ]}
                   />
@@ -366,24 +482,23 @@ class General extends React.Component {
                   }}>{'Cập nhật: ' + this.state.currentTime}</Typography>
                   <DialogForm 
                     open={this.state.isOpenAddClassForm} 
-                    title="Test"
-                    children={
-                      <div>
-                        <TextField 
-                          fullWidth
-                          label="Tên lớp"
-                          value={this.state.newClassName}
-                          onChange={this.handleNewClassChange}
-                        />
-                        <Button variant="contained" style={{backgroundColor: '#2196f3', color: 'white'}}>Xác nhận</Button>
-                      </div>
-                    } 
-                    callback={this.callbackClassTable}/>
+                    title="Tạo lớp giáo lý mới"
+                    label="Tên lớp"
+                    callback={this.callbackClassTable}
+                    func={this.createNewClass}
+                    disabled={this.state.isButtonDisabled}/>
                 </div>
               }
             />
           </Grid>
         </Grid>
+        <SnackDialog
+          variant={this.state.snackbarType}
+          message={this.state.snackbarMessage}
+          className={this.state.snackbarType}
+          callback={this.callbackSnackerBarHanlder}
+          open={this.state.snackerBarStatus}
+        />
       </div>
     )
   }

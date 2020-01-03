@@ -8,7 +8,6 @@ import {
   Avatar,
   Typography,
   Divider,
-  Button,
   Fab,
 } from '@material-ui/core';
 import logo from '../AccountProfile/default-user.png';

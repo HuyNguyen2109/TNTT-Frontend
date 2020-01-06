@@ -31,6 +31,9 @@ const useStyles = theme => ({
     backgroundColor: '#FFFFFF',
     borderColor: '#009688'
   },
+  menu: {
+    width: 200
+  }
 })
 
 class UserForm extends React.Component {

@@ -9,6 +9,7 @@ import {
 import { withStyles } from '@material-ui/core/styles';
 import { Face, Group, AttachMoney, Help, Add, Remove } from '@material-ui/icons';
 import MaterialTable from 'material-table';
+import _ from 'lodash';
 
 import tableIcons from './components/tableIcon';
 import Report from './components/Report'
@@ -45,6 +46,7 @@ class General extends React.Component {
       internalFundTotalCount: 0,
       // option for Bar chart
       barChartOptions: {
+        responsive: true,
         scales: {
           yAxes: [{
             ticks: {
@@ -57,6 +59,12 @@ class General extends React.Component {
               zeroLineColor: 'rgba(255,255,255,0.5)',
               borderDash: [1, 2],
               zeroLineBorderDash: [1, 2], 
+            },
+            scaleLabel: {
+              display: true,
+              labelString: 'số lượng (em)',
+              padding: 1,
+              lineHeight: 1
             }
           }],
           xAxes: [{
@@ -64,11 +72,66 @@ class General extends React.Component {
               drawOnChartArea: false,
               display: false,
             },
+            scaleLabel: {
+              display: true,
+              labelString: 'lớp',
+              padding: 1,
+              lineHeight: 1
+            }
           }]
         },
         title: {
           display: true,
-          text: 'Số lượng thiếu nhi theo lớp',
+          text: 'Biểu đồ Số lượng thiếu nhi theo lớp',
+          position: 'bottom',
+          padding: 3,
+          fontStyle: 'normal',
+          fontFamily: 'Arial',
+        },
+        layout: {
+          padding: 2
+        },
+        legend: {
+          display: false
+        },
+      },
+      lineChartOptions: {
+        responsive: true,
+        scales: {
+          yAxes: [{
+            ticks: {
+              stepSize: 7500000,
+            },
+            // gridLines: {
+            //   drawBorder: false,
+            //   color: 'rgba(255,255,255,0.5)',
+            //   zeroLineColor: 'rgba(255,255,255,0.5)',
+            //   borderDash: [1, 2],
+            //   zeroLineBorderDash: [1, 2], 
+            // },
+            scaleLabel: {
+              display: true,
+              labelString: 'Quỹ (triệu)',
+              padding: 1,
+              lineHeight: 1
+            }
+          }],
+          xAxes: [{
+            // gridLines: {
+            //   drawOnChartArea: false,
+            //   display: false,
+            // },
+            scaleLabel: {
+              display: true,
+              labelString: 'Tháng',
+              padding: 1,
+              lineHeight: 1
+            }
+          }]
+        },
+        title: {
+          display: true,
+          text: 'Biểu đồ Số lượng thiếu nhi theo lớp',
           position: 'bottom',
           padding: 3,
           fontStyle: 'normal',
@@ -96,6 +159,29 @@ class General extends React.Component {
       selectedClassRows: [],
       isOpenAddClassForm: false,
       isButtonDisabled: false,
+      //for Children Fund Table
+      childrenFunds: [],
+      childrenFundColumns: [
+        {
+          title: 'Ngày',
+          field: 'date',
+          cellStyle: {minWidth: 20}
+        },
+        {
+          title: 'Nội dung',
+          field: 'title',
+          cellStyle: {minWidth: 400}
+        },
+        {
+          title: 'Số tiền',
+          field: 'price',
+          cellStyle: {minWidth: 50}
+        }
+      ],
+      isOpenAddFundForm: false,
+
+      // type of dialog
+      typeofDialog: '',
       // for snackBar
       snackbarMessage: '',
       snackbarType: 'success',
@@ -107,7 +193,14 @@ class General extends React.Component {
     return this.getData();
   }
 
-  formatValue = (value, type) => Number(value).toFixed(0) + ' ' + type;
+  formatValue = (value, type) => {
+    if (type === 'đ') {
+      return this.priceFormat(value) + ' ' + type;
+    }
+    else {
+      return Number(value).toFixed(0) + ' ' + type;
+    }
+  }
 
   capitalizeWord = (text) => {
     var splitStr = text.toLowerCase().split(' ');
@@ -139,6 +232,18 @@ class General extends React.Component {
     str = str.replace(/Ỳ|Ý|Ỵ|Ỷ|Ỹ/g, "Y");
     str = str.replace(/Đ/g, "D");
     return str;
+  }
+
+  priceFormat = (num) => {
+    if(Math.abs(num) > 999 && Math.abs(num) < 999999) {
+      return Math.sign(num)*((Math.abs(num)/1000).toFixed(1)) + 'ng';
+    }
+    else if (Math.abs(num) > 999999) {
+      return Math.sign(num)*((Math.abs(num)/1000000).toFixed(1)) + 'tr';
+    }
+    else {
+      return num
+    };
   }
 
   getData = () => {
@@ -189,13 +294,14 @@ class General extends React.Component {
         responseArr.forEach(res => {
           classData.push(res.data.data)
         })
-        let myChart;
+        //draw chart
+        if(window.ChildrenCountChart) {
+          window.ChildrenCountChart.destroy();
+        }
         Chart.defaults.global.defaultFontColor = 'white'
         let ctx = document.getElementById('chart');
-        ctx.innerHTML = '';
-        myChart = new Chart(ctx, {
+        window.ChildrenCountChart = new Chart(ctx, {
           type: 'bar',
-          responsive: true,
           data: {
             labels: classLabels,
             datasets: [{
@@ -207,8 +313,55 @@ class General extends React.Component {
             }]
           },
           options: this.state.barChartOptions
-      });
+        });
+
+        return axios.get('/backend/children-fund/all')
       })
+      .then(funds => {
+        let totalFunds = 0;
+        let allFunds = funds.data.data;
+        let monthLabels = [];
+        let fundData = [];
+        allFunds.forEach(fund => {
+          fund.date = (fund.date === '')? '' : moment(fund.date).format('DD/MM/YYYY');
+          totalFunds += fund.price;
+          fund.price = this.priceFormat(fund.price);
+        })
+        this.setState({
+          childrenFunds: allFunds,
+          childrenFundTotalCount: totalFunds
+        })
+        
+        //draw chart
+        const groupedFunds = _.groupBy(funds.data.data, fund => fund.date.split("/")[1])
+        Object.values(groupedFunds).forEach(keys => {
+          monthLabels.push(keys[0].date.split("/")[1] + '/' + keys[0].date.split("/")[2])
+        })
+        console.log(monthLabels)
+        if(window.ChildrenFundChart) {
+          window.ChildrenFundChart.destroy();
+        }
+        Chart.defaults.global.defaultFontColor = 'white'
+        let ctx = document.getElementById('childrenFund');
+        window.ChilrenFundChart = new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels: monthLabels,
+            datasets: [{
+              label: 'Quỹ',
+              data: [2000000, 4000000],
+              borderColor: 'rgba(255,255,255,0.9)',
+              hoverBackgroundColor: 'rgba(255,255,255,0.9)',
+              showLine: true,
+              fill: false,
+            }]
+          },
+          options: this.state.lineChartOptions
+        })
+      })
+      .catch(err => {
+        console.log(err)
+      });
   }
 
   createNewClass = (className) => {
@@ -259,9 +412,43 @@ class General extends React.Component {
       })
   }
 
+  createNewFund = (fund) => {
+    this.setState({ isButtonDisabled: true })
+    
+    return axios
+      .post('/backend/children-fund/new-fund', fund)
+      .then(res => {
+        if(res.data.code === 'I001') {
+          this.setState({ 
+            isButtonDisabled: false,
+            isOpenAddFundForm: false,
+            childrenTotalCount: 0,
+            userTotalCount: 0,
+            childrenFundTotalCount: 0,
+            internalFundTotalCount: 0,
+          })
+          this.getData();
+        }
+      })
+      .catch(err => {
+        this.setState({
+          snackerBarStatus: true,
+          snackbarType: 'error',
+          snackbarMessage: 'Đã có lỗi từ máy chủ',
+          isButtonDisabled: false
+        })
+      })
+  }
+
   callbackClassTable = (callback) => {
     this.setState({
       isOpenAddClassForm: callback
+    })
+  }
+
+  callbackFundTable = (callback) => {
+    this.setState({
+      isOpenAddFundForm: callback
     })
   }
 
@@ -420,12 +607,15 @@ class General extends React.Component {
                         fontSize: 15
                       },
                       search: false,
-                      maxBodyHeight: '150px',
+                      maxBodyHeight: '200px',
                     }}
                     localization={{
                       header: {
                         actions: ''
-                      }
+                      },
+                      body: {
+                        emptyDataSourceMessage: 'Không có dữ liệu!'
+                      },
                     }}
                     actions={[
                       {
@@ -434,7 +624,8 @@ class General extends React.Component {
                         isFreeAction: true,
                         hidden: (localStorage.type !== 'Admin')? true : false,
                         onClick: () => { this.setState({
-                          isOpenAddClassForm: true
+                          isOpenAddClassForm: true,
+                          typeofDialog: 'class'
                         }) } 
                       },
                       {
@@ -482,11 +673,74 @@ class General extends React.Component {
                   }}>{'Cập nhật: ' + this.state.currentTime}</Typography>
                   <DialogForm 
                     open={this.state.isOpenAddClassForm} 
-                    title="Tạo lớp giáo lý mới"
-                    label="Tên lớp"
+                    dialogType={this.state.typeofDialog}
                     callback={this.callbackClassTable}
                     func={this.createNewClass}
-                    disabled={this.state.isButtonDisabled}/>
+                    disabled={this.state.isButtonDisabled}
+                    style={{color: '#2196f3'}}/>
+                </div>
+              }
+            />
+          </Grid>
+          <Grid item xs={12} sm={8}>
+            <Report 
+              icon={<canvas id='childrenFund' />}
+              style={{
+                background: 'linear-gradient(to right bottom, #ffcc80, #ff9800)',
+                marginBottom: '-8em',
+                height: '10em',
+              }}
+              children={
+                <div style={{marginTop: '8em'}}>
+                  <MaterialTable 
+                    title='Bảng chi tiết thu/chi quỹ Thiếu Nhi'
+                    icons={tableIcons}
+                    columns={this.state.childrenFundColumns}
+                    data={this.state.childrenFunds}
+                    options={{
+                      paging: false,
+                      sorting: false,
+                      headerStyle: {
+                        position: 'sticky',
+                        top: 0,
+                        color: '#ff9800',
+                        fontSize: 15
+                      },
+                      search: false,
+                      maxBodyHeight: '200px',
+                    }}
+                    localization={{
+                      body: {
+                        emptyDataSourceMessage: 'Không có dữ liệu!'
+                      },
+                    }}
+                    actions={[
+                      {
+                        icon: () => { return <Add /> },
+                        tooltip: 'Thêm sự kiện',
+                        isFreeAction: true,
+                        hidden: (localStorage.type !== 'Admin')? true : false,
+                        onClick: () => { 
+                          this.setState({
+                            isOpenAddFundForm: true,
+                            typeofDialog: 'fund'
+                          })
+                        } 
+                      },
+                    ]}
+                  />
+                  <Typography variant='body2' style={{
+                    textAlign: 'left', 
+                    fontSize: '12px',
+                    paddingTop: '1em'
+                  }}>{'Cập nhật: ' + this.state.currentTime}</Typography>
+                  <DialogForm 
+                    open={this.state.isOpenAddFundForm} 
+                    dialogType={this.state.typeofDialog}
+                    callback={this.callbackFundTable}
+                    func={this.createNewFund}
+                    disabled={this.state.isButtonDisabled}
+                    style={{color: '#ff9800'}}/>
                 </div>
               }
             />

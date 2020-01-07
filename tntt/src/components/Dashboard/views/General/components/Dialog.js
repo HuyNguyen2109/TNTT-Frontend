@@ -41,7 +41,16 @@ class DialogFrom extends React.Component {
 					type: 'Chi'
 				}
 			],
+			event: ''
 		}
+	}
+
+	componentDidMount = () => {
+		document.body.addEventListener('keyup', (e)=> {
+			if(e.keyCode === 13) {
+			  document.getElementById('confirmButton').click();
+			}
+		})
 	}
 
 	handleFormChange = (e, type) => {
@@ -68,12 +77,20 @@ class DialogFrom extends React.Component {
   			'price': (this.state.chosenFundType === 'Chi')? this.state.price * -1 : this.state.price
   		}
   		this.props.func(fundInformation)
-  	}
+    }
+    else {
+      const eventInformation = {
+        'date': moment(this.state.date).format('YYYY-MM-DD'),
+        'content': this.state.event 
+      }
+      this.props.func(eventInformation)
+    }
   	this.setState({
 			value:'',
 			date: moment(),
 			title: '',
-			price: 0,
+      price: 0,
+      event: ''
 		})
   }
 
@@ -106,60 +123,84 @@ class DialogFrom extends React.Component {
 						</DialogContent>		
 					</div>
 			  : 
-					<div>
-						<DialogTitle>Tạo nội dung thu/chi quỹ mới</DialogTitle>
-						<DialogContent>
-							<MuiPickersUtilsProvider utils={DateFnsUtils}>
-							<KeyboardDatePicker
-                fullWidth
-                format="dd/MM/yyyy"
-                label="Ngày"
-                value={this.state.date}
-                onChange={e => this.handleFormChange(e, "date")}
-                KeyboardButtonProps={{
-                  'aria-label': 'change date',
-                }} />
-							</MuiPickersUtilsProvider>
-							<TextField 
-		            fullWidth
-		            autoFocus
-		            label='Nội dung'
-		            value={this.state.title}
-		            onChange={e => this.handleFormChange(e, 'title')}
-			         />
-			        <TextField
-	              select
-	              label="Loại chi tiêu"
-	              value={this.state.chosenFundType}
-	              onChange={e => this.handleFormChange(e, "chosenFundType")}
-	              fullWidth
-	              SelectProps={{
-	                MenuProps: {
-	                  className: classes.menu
-	                }
-	              }}
-	            >
-	              {this.state.fundTypes.map(fundType => (
-	                <MenuItem key={fundType.type} value={fundType.type}>
-	                  {fundType.type}
-	                </MenuItem>
-	              ))}
-	            </TextField>
-	            <TextField 
-		            fullWidth
-		            autoFocus
-		            label='Số tiền'
-		            value={this.state.price}
-		            onChange={e => this.handleFormChange(e, 'price')}
-			         />
-						</DialogContent>
-					</div>}
+          (dialogType === 'fund')?
+          <div>
+          <DialogTitle>Tạo nội dung thu/chi quỹ mới</DialogTitle>
+          <DialogContent>
+            <MuiPickersUtilsProvider utils={DateFnsUtils}>
+            <KeyboardDatePicker
+              fullWidth
+              format="dd/MM/yyyy"
+              label="Ngày"
+              value={this.state.date}
+              onChange={e => this.handleFormChange(e, "date")}
+              KeyboardButtonProps={{
+                'aria-label': 'change date',
+              }} />
+            </MuiPickersUtilsProvider>
+            <TextField 
+              fullWidth
+              autoFocus
+              label='Nội dung'
+              value={this.state.title}
+              onChange={e => this.handleFormChange(e, 'title')}
+             />
+            <TextField
+              select
+              label="Loại chi tiêu"
+              value={this.state.chosenFundType}
+              onChange={e => this.handleFormChange(e, "chosenFundType")}
+              fullWidth
+              SelectProps={{
+                MenuProps: {
+                  className: classes.menu
+                }
+              }}
+            >
+              {this.state.fundTypes.map(fundType => (
+                <MenuItem key={fundType.type} value={fundType.type}>
+                  {fundType.type}
+                </MenuItem>
+              ))}
+            </TextField>
+            <TextField 
+              fullWidth
+              autoFocus
+              label='Số tiền'
+              value={this.state.price}
+              onChange={e => this.handleFormChange(e, 'price')}
+             />
+          </DialogContent>
+        </div> : 
+        <div>
+          <DialogTitle>Tạo Thông báo/Sự kiện mới</DialogTitle>
+          <DialogContent>
+            <MuiPickersUtilsProvider utils={DateFnsUtils}>
+            <KeyboardDatePicker
+              fullWidth
+              format="dd/MM/yyyy"
+              label="Ngày"
+              value={this.state.date}
+              onChange={e => this.handleFormChange(e, "date")}
+              KeyboardButtonProps={{
+                'aria-label': 'change date',
+              }} />
+            </MuiPickersUtilsProvider>
+            <TextField 
+              fullWidth
+              autoFocus
+              label='Thông báo/Sự kiện'
+              value={this.state.event}
+              onChange={e => this.handleFormChange(e, 'event')}
+            />
+          </DialogContent>
+        </div>}
 			  <DialogActions>
 					<Tooltip title="Hủy bỏ">
             <IconButton disabled={this.props.disabled} onClick={this.handleClose}><Clear /></IconButton>
           </Tooltip>
           <Tooltip title="Xác nhận">
-            <IconButton disabled={this.props.disabled} onClick={this.createNew}><Check style={style}/></IconButton>
+            <IconButton disabled={this.props.disabled} onClick={this.createNew} id="confirmButton"><Check style={style}/></IconButton>
           </Tooltip> 
 				</DialogActions>
 			</Dialog>

@@ -7,7 +7,7 @@ import {
   Grid, Typography
 } from '@material-ui/core';
 import { withStyles } from '@material-ui/core/styles';
-import { Face, Group, AttachMoney, Help, Add, Remove } from '@material-ui/icons';
+import { Face, Group, AttachMoney, Add, Remove } from '@material-ui/icons';
 import MaterialTable from 'material-table';
 import _ from 'lodash';
 
@@ -189,7 +189,9 @@ class General extends React.Component {
         }
       ],
       isOpenAddFundForm: false,
-
+      // for Event Table
+      isOpenAddEventForm: false,
+      events: [],
       // type of dialog
       typeofDialog: '',
       // for snackBar
@@ -467,6 +469,13 @@ class General extends React.Component {
       })
   }
 
+  createNewEvent = (event) => {
+    console.log(event)
+    this.setState({
+      isOpenAddEventForm: false
+    })
+  }
+
   callbackClassTable = (callback) => {
     this.setState({
       isOpenAddClassForm: callback
@@ -476,6 +485,12 @@ class General extends React.Component {
   callbackFundTable = (callback) => {
     this.setState({
       isOpenAddFundForm: callback
+    })
+  }
+
+  callbackEventTable = (callback) => {
+    this.setState({
+      isOpenAddEventForm: callback
     })
   }
 
@@ -774,7 +789,7 @@ class General extends React.Component {
           </Grid>
           <Grid item xs={12} sm={12} lg={6}>
             <Report 
-              icon={<Typography variant="h6">Ô trống</Typography>}
+              icon='Thông báo/sự kiện từ Xứ Đoàn'
               style={{
                 background: 'linear-gradient(to right bottom, #ce93d8, #9c27b0)',
                 height: '6em',
@@ -782,7 +797,71 @@ class General extends React.Component {
               }}
               children={
                 <div style={{marginTop: '4em'}}>
-                  <Typography variant="subtitle1">Test</Typography>
+                  <MaterialTable 
+                    icons={tableIcons}
+                    data={this.state.events}
+                    columns={[
+                      {
+                        title: 'Đã thực hiện?',
+                        field: 'isChecked',
+                        render: rowData => <input type="checkbox" checked={rowData.isChecked}/>,
+                        cellStyle: {minWidth: 20}
+                      },
+                      {
+                        title: 'Ngày',
+                        field: 'date',
+                        cellStyle: {minWidth: 400}
+                      },
+                      {
+                        title: 'Nội dung',
+                        field: 'content'
+                      }
+                    ]}
+                    options={{
+                      paging: false,
+                      sorting: false,
+                      showTitle: false,
+                      headerStyle: {
+                        position: 'sticky',
+                        top: 0,
+                        color: '#9c27b0',
+                        fontSize: 15
+                      },
+                      search: false,
+                      maxBodyHeight: '300px',
+                    }}
+                    localization={{
+                      body: {
+                        emptyDataSourceMessage: 'Không có dữ liệu!'
+                      },
+                    }}
+                    actions={[
+                      {
+                        icon: () => { return <Add /> },
+                        tooltip: 'Thêm sự kiện',
+                        isFreeAction: true,
+                        hidden: (localStorage.type !== 'Admin')? true : false,
+                        onClick: () => { 
+                          this.setState({
+                            isOpenAddEventForm: true,
+                            typeofDialog: 'event'
+                          })
+                        } 
+                      },
+                    ]}
+                  />
+                  <Typography variant='body2' style={{
+                    textAlign: 'left', 
+                    fontSize: '12px',
+                    paddingTop: '1em'
+                  }}>{'Cập nhật: ' + this.state.currentTime}</Typography>
+                  <DialogForm 
+                    open={this.state.isOpenAddEventForm} 
+                    dialogType={this.state.typeofDialog}
+                    callback={this.callbackEventTable}
+                    func={this.createNewEvent}
+                    disabled={this.state.isButtonDisabled}
+                    style={{color: '#ff9800'}}/>
                 </div>
               }
             />

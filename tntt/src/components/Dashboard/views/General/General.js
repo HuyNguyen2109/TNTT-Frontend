@@ -38,7 +38,7 @@ class General extends React.Component {
     this.state = {
       currentTime: moment().format('DD/MM/YYYY hh:mm:ss'),
       username: localStorage.getItem('username'),
-      duration: 300,
+      duration: 200,
       // Report results
       childrenTotalCount: 0,
       userTotalCount: 0,
@@ -47,6 +47,10 @@ class General extends React.Component {
       // option for Bar chart
       barChartOptions: {
         responsive: true,
+        maintainAspectRatio: false,
+        animation: {
+          duration: 200
+        },
         scales: {
           yAxes: [{
             ticks: {
@@ -97,18 +101,24 @@ class General extends React.Component {
       },
       lineChartOptions: {
         responsive: true,
+        animation: {
+          duration: 200
+        },
+        maintainAspectRatio: false,
         scales: {
           yAxes: [{
             ticks: {
-              stepSize: 7500000,
+              stepSize: 20,
+              beginAtZero: true
             },
-            // gridLines: {
-            //   drawBorder: false,
-            //   color: 'rgba(255,255,255,0.5)',
-            //   zeroLineColor: 'rgba(255,255,255,0.5)',
-            //   borderDash: [1, 2],
-            //   zeroLineBorderDash: [1, 2], 
-            // },
+            gridLines: {
+              drawBorder: false,
+              display: true,
+              color: 'rgba(255,255,255,0.5)',
+              zeroLineColor: 'rgba(255,255,255,0.5)',
+              borderDash: [1, 2],
+              zeroLineBorderDash: [1, 2], 
+            },
             scaleLabel: {
               display: true,
               labelString: 'Quỹ (triệu)',
@@ -117,10 +127,10 @@ class General extends React.Component {
             }
           }],
           xAxes: [{
-            // gridLines: {
-            //   drawOnChartArea: false,
-            //   display: false,
-            // },
+            gridLines: {
+              drawOnChartArea: false,
+              display: false,
+            },
             scaleLabel: {
               display: true,
               labelString: 'Tháng',
@@ -131,7 +141,7 @@ class General extends React.Component {
         },
         title: {
           display: true,
-          text: 'Biểu đồ Số lượng thiếu nhi theo lớp',
+          text: 'Biểu đồ tổng quỹ Thiếu nhi theo tháng',
           position: 'bottom',
           padding: 3,
           fontStyle: 'normal',
@@ -322,6 +332,7 @@ class General extends React.Component {
         let allFunds = funds.data.data;
         let monthLabels = [];
         let fundData = [];
+        allFunds = _.sortBy(allFunds, fund => fund.date);
         allFunds.forEach(fund => {
           fund.date = (fund.date === '')? '' : moment(fund.date).format('DD/MM/YYYY');
           totalFunds += fund.price;
@@ -336,24 +347,40 @@ class General extends React.Component {
         const groupedFunds = _.groupBy(funds.data.data, fund => fund.date.split("/")[1])
         Object.values(groupedFunds).forEach(keys => {
           monthLabels.push(keys[0].date.split("/")[1] + '/' + keys[0].date.split("/")[2])
+          let priceDetail = 0;
+          keys.forEach(key => {
+            priceDetail += Number(key.price.replace('tr', ''))
+          })
+          fundData.push(priceDetail.toFixed(1));
         })
-        console.log(monthLabels)
+        let fundDataAfterCalculated = [];
+        for (let i = 0; i < fundData.length; i++) {
+          fundData[i] = Number(fundData[i]);
+          fundDataAfterCalculated.push(_.sum(fundData.slice(0, i+1)));
+        }
+        if(monthLabels.length > 6) {
+          monthLabels = monthLabels.slice(-6, monthLabels.length);
+          fundDataAfterCalculated = fundDataAfterCalculated.slice(-6, fundDataAfterCalculated.length);
+        }
         if(window.ChildrenFundChart) {
           window.ChildrenFundChart.destroy();
         }
         Chart.defaults.global.defaultFontColor = 'white'
         let ctx = document.getElementById('childrenFund');
-        window.ChilrenFundChart = new Chart(ctx, {
+        window.ChildrenFundChart = new Chart(ctx, {
           type: 'line',
           data: {
             labels: monthLabels,
             datasets: [{
-              label: 'Quỹ',
-              data: [2000000, 4000000],
+              label: 'Quỹ (triệu)',
+              data: fundDataAfterCalculated,
               borderColor: 'rgba(255,255,255,0.9)',
+              backgroundColor: 'rgba(255,255,255,0.9)',
               hoverBackgroundColor: 'rgba(255,255,255,0.9)',
+              pointRadius: 5,
               showLine: true,
               fill: false,
+              clip: 50
             }]
           },
           options: this.state.lineChartOptions
@@ -462,7 +489,7 @@ class General extends React.Component {
     return (
       <div>
         <Grid container className={classes.container} spacing={4}>
-          <Grid item xs={12} sm={3}>
+          <Grid item xs={12} sm={6} lg={3}>
             <Report 
               icon={<Face className={classes.icon}/>}
               children={
@@ -492,7 +519,7 @@ class General extends React.Component {
               }}
             />
           </Grid>
-          <Grid item xs={12} sm={3}>
+          <Grid item xs={12} sm={6} lg={3}>
             <Report 
               icon={<Group className={classes.icon}/>}
               children={
@@ -522,7 +549,7 @@ class General extends React.Component {
               }}
             />
           </Grid>
-          <Grid item xs={12} sm={3}>
+          <Grid item xs={12} sm={6} lg={3}>
             <Report 
               icon={<AttachMoney className={classes.icon}/>}
               children={
@@ -552,7 +579,7 @@ class General extends React.Component {
               }}
             />
           </Grid>
-          <Grid item xs={12} sm={3}>
+          <Grid item xs={12} sm={6} lg={3}>
             <Report 
               icon={<AttachMoney className={classes.icon}/>}
               children={
@@ -582,16 +609,16 @@ class General extends React.Component {
               }}
             />
           </Grid>
-          <Grid item xs={12} sm={4}>
+          <Grid item xs={12} sm={12} lg={4}>
             <Report 
               icon={<canvas id='chart'/>}
               style={{
                 background: 'linear-gradient(to right bottom, #64b5f6, #2196f3)',
-                marginBottom: '-8em',
-                height: '10em',
+                marginBottom: '-13em',
+                height: '15em',
               }}
               children={
-                <div style={{marginTop: '8em'}}>
+                <div style={{marginTop: '13em'}}>
                   <MaterialTable 
                     title="Danh sách lớp"
                     icons={tableIcons}
@@ -682,18 +709,18 @@ class General extends React.Component {
               }
             />
           </Grid>
-          <Grid item xs={12} sm={8}>
+          <Grid item xs={12} sm={12} lg={8}>
             <Report 
-              icon={<canvas id='childrenFund' />}
+              icon={<canvas id='childrenFund'/>}
               style={{
                 background: 'linear-gradient(to right bottom, #ffcc80, #ff9800)',
-                marginBottom: '-8em',
-                height: '10em',
+                marginBottom: '-13em',
+                height: '15em',
               }}
               children={
-                <div style={{marginTop: '8em'}}>
+                <div style={{marginTop: '13em'}}>
                   <MaterialTable 
-                    title='Bảng chi tiết thu/chi quỹ Thiếu Nhi'
+                    title='Chi tiết quỹ TN'
                     icons={tableIcons}
                     columns={this.state.childrenFundColumns}
                     data={this.state.childrenFunds}
@@ -741,6 +768,21 @@ class General extends React.Component {
                     func={this.createNewFund}
                     disabled={this.state.isButtonDisabled}
                     style={{color: '#ff9800'}}/>
+                </div>
+              }
+            />
+          </Grid>
+          <Grid item xs={12} sm={12} lg={6}>
+            <Report 
+              icon={<Typography variant="h6">Ô trống</Typography>}
+              style={{
+                background: 'linear-gradient(to right bottom, #ce93d8, #9c27b0)',
+                height: '6em',
+                marginBottom: '-4em',
+              }}
+              children={
+                <div style={{marginTop: '4em'}}>
+                  <Typography variant="subtitle1">Test</Typography>
                 </div>
               }
             />

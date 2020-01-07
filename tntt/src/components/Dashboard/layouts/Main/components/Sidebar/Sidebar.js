@@ -70,7 +70,7 @@ class Sidebar extends React.Component {
     const { classes, open, variant, onClose, className, callback, ...rest} = this.props;
     const pages = [
       {
-        title: 'Tổng hợp',
+        title: 'Số liệu chung',
         icon: <DashboardIcon />,
         href: '/general',
       },
@@ -110,6 +110,7 @@ class Sidebar extends React.Component {
             className={classes.nav}
             pages={pages}
             callback={val => {callback(val)}}
+            style={{'overflow': 'auto'}}
           />
         </div>
         <div className={classes.background} style={{ backgroundImage: "url(" + backgroundImage + ")" }} />

@@ -4,10 +4,10 @@ import axios from 'axios';
 import AnimatedNumber from 'animated-number-react';
 import Chart from 'chart.js';
 import {
-  Grid, Typography
+  Grid, Typography, Checkbox, IconButton, Tooltip
 } from '@material-ui/core';
 import { withStyles } from '@material-ui/core/styles';
-import { Face, Group, AttachMoney, Add, Remove } from '@material-ui/icons';
+import { Face, Group, AttachMoney, Add, Remove, Publish, Delete } from '@material-ui/icons';
 import MaterialTable from 'material-table';
 import _ from 'lodash';
 
@@ -192,6 +192,8 @@ class General extends React.Component {
       // for Event Table
       isOpenAddEventForm: false,
       events: [],
+      // for Documents Table
+      documents: [],
       // type of dialog
       typeofDialog: '',
       // for snackBar
@@ -387,6 +389,17 @@ class General extends React.Component {
           },
           options: this.state.lineChartOptions
         })
+
+        return axios.get('/backend/event/all')
+      })
+      .then(events => {
+        const listOfEvents = events.data.data;
+        listOfEvents.forEach(event => {
+          event.date = (event.date === '')? '' : moment(event.date).format('DD/MM/YYYY');
+        })
+        this.setState({
+          events: listOfEvents
+        })
       })
       .catch(err => {
         console.log(err)
@@ -470,10 +483,31 @@ class General extends React.Component {
   }
 
   createNewEvent = (event) => {
-    console.log(event)
-    this.setState({
-      isOpenAddEventForm: false
-    })
+    this.setState({ isButtonDisabled: true })
+
+    return axios
+      .post('/backend/event/new-event', event)
+      .then(res => {
+        if(res.data.code === 'I001') {
+          this.setState({
+            isButtonDisabled: false,
+            isOpenAddEventForm: false,
+            childrenTotalCount: 0,
+            userTotalCount: 0,
+            childrenFundTotalCount: 0,
+            internalFundTotalCount: 0,
+          })
+          this.getData();
+        }
+      })
+      .catch(err => {
+        this.setState({
+          snackerBarStatus: true,
+          snackbarType: 'error',
+          snackbarMessage: 'Đã có lỗi từ máy chủ',
+          isButtonDisabled: false
+        })
+      })
   }
 
   callbackClassTable = (callback) => {
@@ -792,35 +826,70 @@ class General extends React.Component {
               icon='Thông báo/sự kiện từ Xứ Đoàn'
               style={{
                 background: 'linear-gradient(to right bottom, #ce93d8, #9c27b0)',
-                height: '6em',
-                marginBottom: '-4em',
+                height: '3em',
+                marginBottom: '-1.5em',
               }}
               children={
-                <div style={{marginTop: '4em'}}>
+                <div style={{marginTop: '1.5em'}}>
                   <MaterialTable 
+                    title = {
+                      <div>
+                        <Tooltip title="Thêm sự kiện mới">
+                        <IconButton  
+                          disabled={(localStorage.type !== 'Admin')? true : false} 
+                          onClick={() => {
+                            this.setState({
+                              isOpenAddEventForm: true,
+                              typeofDialog: 'event'
+                            })
+                          }}>
+                            <Add /></IconButton>
+                      </Tooltip>
+                      <Tooltip title="Xóa các sự kiện đã hoàn thành">
+                        <IconButton 
+                          disabled={(localStorage.type !== 'Admin')? true : false}
+                          onClick={() => {
+                            return axios.delete('/backend/event/delete-checked')
+                              .then(res => {
+                              if(res.data.code === 'I001') {
+                                this.setState({
+                                  childrenTotalCount: 0,
+                                  userTotalCount: 0,
+                                  childrenFundTotalCount: 0,
+                                  internalFundTotalCount: 0,
+                                })
+                                this.getData();
+                              }
+                            })
+                            .catch(err => {
+                              this.setState({
+                                snackerBarStatus: true,
+                                snackbarType: 'error',
+                                snackbarMessage: 'Đã có lỗi từ máy chủ',
+                                isButtonDisabled: false
+                              })
+                            })
+                          }}>
+                            <Delete /></IconButton> 
+                      </Tooltip>
+                      </div>
+                    }
                     icons={tableIcons}
                     data={this.state.events}
                     columns={[
                       {
-                        title: 'Đã thực hiện?',
-                        field: 'isChecked',
-                        render: rowData => <input type="checkbox" checked={rowData.isChecked}/>,
-                        cellStyle: {minWidth: 20}
-                      },
-                      {
                         title: 'Ngày',
                         field: 'date',
-                        cellStyle: {minWidth: 400}
                       },
                       {
                         title: 'Nội dung',
-                        field: 'content'
+                        field: 'content',
+                        cellStyle: {minWidth: 220}
                       }
                     ]}
                     options={{
                       paging: false,
                       sorting: false,
-                      showTitle: false,
                       headerStyle: {
                         position: 'sticky',
                         top: 0,
@@ -834,21 +903,46 @@ class General extends React.Component {
                       body: {
                         emptyDataSourceMessage: 'Không có dữ liệu!'
                       },
+                      header: {
+                        actions: 'Hoàn thành'
+                      }
                     }}
                     actions={[
                       {
-                        icon: () => { return <Add /> },
-                        tooltip: 'Thêm sự kiện',
-                        isFreeAction: true,
-                        hidden: (localStorage.type !== 'Admin')? true : false,
-                        onClick: () => { 
-                          this.setState({
-                            isOpenAddEventForm: true,
-                            typeofDialog: 'event'
-                          })
+                        icon: '',
+                        tooltip: 'Hoàn thành',
+                        onClick: (e, rowData) => {  
+                          return axios.post(`/backend/event/update-by-id/${rowData._id}`)
+                            .then(res => {
+                              if(res.data.code === 'I001') {
+                                this.setState({
+                                  childrenTotalCount: 0,
+                                  userTotalCount: 0,
+                                  childrenFundTotalCount: 0,
+                                  internalFundTotalCount: 0,
+                                })
+                                this.getData();
+                              }
+                            })
+                            .catch(err => {
+                              this.setState({
+                                snackerBarStatus: true,
+                                snackbarType: 'error',
+                                snackbarMessage: 'Đã có lỗi từ máy chủ',
+                                isButtonDisabled: false
+                              })
+                            })
                         } 
                       },
                     ]}
+                    components={{
+                      Action: props => (
+                        <Checkbox 
+                          checked={props.data.isChecked}
+                          disabled={props.data.isChecked}
+                          onChange={(e) => props.action.onClick(e, props.data)}/>
+                      )
+                    }}
                   />
                   <Typography variant='body2' style={{
                     textAlign: 'left', 
@@ -861,7 +955,69 @@ class General extends React.Component {
                     callback={this.callbackEventTable}
                     func={this.createNewEvent}
                     disabled={this.state.isButtonDisabled}
-                    style={{color: '#ff9800'}}/>
+                    style={{color: '#9c27b0'}}/>
+                </div>
+              }
+            />
+          </Grid>
+          <Grid item xs={12} sm={12} lg={6}>
+            <Report 
+              icon="Tài liệu Xứ Đoàn"
+              style={{
+                background: 'linear-gradient(to right bottom, #f48fb1, #e91e63)',
+                height: '3em',
+                marginBottom: '-1.5em',
+              }}
+              children={
+                <div style={{marginTop: '1.5em'}}>
+                  <MaterialTable
+                    title={
+                      <Tooltip title="Tải lên">
+                        <IconButton 
+                          disabled={(localStorage.type !== 'Admin')? true : false}
+                          onClick={() => { alert('not implement yet!') }}
+                        ><Publish /></IconButton>
+                      </Tooltip>
+                    } 
+                    icons={tableIcons}
+                    data={this.state.documents}
+                    columns={[
+                      {
+                        title: 'Tên tài liệu',
+                        field: 'filename'
+                      },
+                      {
+                        title: 'Người đăng tải',
+                        field: 'username',
+                      },
+                      {
+                        title: 'Chỉnh sửa lần cuối',
+                        field: 'date'
+                      },
+                    ]}
+                    options={{
+                      paging: false,
+                      sorting: false,
+                      headerStyle: {
+                        position: 'sticky',
+                        top: 0,
+                        color: '#e91e63',
+                        fontSize: 15
+                      },
+                      search: false,
+                      maxBodyHeight: '300px',
+                    }}
+                    localization={{
+                      body: {
+                        emptyDataSourceMessage: 'Không có dữ liệu!'
+                      },
+                    }}
+                  />
+                  <Typography variant='body2' style={{
+                    textAlign: 'left', 
+                    fontSize: '12px',
+                    paddingTop: '1em'
+                  }}>{'Cập nhật: ' + this.state.currentTime}</Typography>
                 </div>
               }
             />

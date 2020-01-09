@@ -1078,7 +1078,7 @@ class General extends React.Component {
                     fontSize: '12px',
                     paddingTop: '1em'
                   }}>{'Cập nhật: ' + this.state.currentTime}</Typography>
-                  <input id="filePicker" type="file" onChange={e => this.createDocument(e)} accept=".doc, .docx, .xls, .xlsx, .ppt, .pptx, .image/*, .pdf" style={{ 'display': 'none' }} />
+                  <input id="filePicker" type="file" onChange={e => this.createDocument(e)} accept=".doc, .docx, .xls, .xlsx, .ppt, .pptx, image/*, .pdf" style={{ 'display': 'none' }} />
                 </div>
               }
             />

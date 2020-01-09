@@ -7,7 +7,7 @@ import {
   Grid, Typography, Checkbox, IconButton, Tooltip
 } from '@material-ui/core';
 import { withStyles } from '@material-ui/core/styles';
-import { Face, Group, AttachMoney, Add, Remove, Publish, Delete } from '@material-ui/icons';
+import { Face, Group, AttachMoney, Add, Remove, Publish, Delete, Clear } from '@material-ui/icons';
 import MaterialTable from 'material-table';
 import _ from 'lodash';
 
@@ -194,6 +194,7 @@ class General extends React.Component {
       events: [],
       // for Documents Table
       documents: [],
+      isLoadingDocumentTable: false,
       // type of dialog
       typeofDialog: '',
       // for snackBar
@@ -400,6 +401,17 @@ class General extends React.Component {
         this.setState({
           events: listOfEvents
         })
+
+        return axios.get('/backend/document/all')
+      })
+      .then(documents => {
+        const listOfDocuments = documents.data.data;
+        listOfDocuments.forEach(doc => {
+          doc.date = (doc.date === '')? '' : moment(doc.date).format('DD/MM/YYYY hh:mm:ss');
+        })
+        this.setState({
+          documents: listOfDocuments
+        })
       })
       .catch(err => {
         console.log(err)
@@ -510,6 +522,29 @@ class General extends React.Component {
       })
   }
 
+  createDocument = (e) => {
+    const data = new FormData();
+    data.append('date', moment().format('YYYY-MM-DD hh:mm:ss')) 
+    data.append('username', localStorage.getItem('username'))
+    data.append('file', e.target.files[0])
+
+    return axios.post('/backend/document/create', data)
+      .then(res => {
+        if (res.data.code === "I001") {
+          this.getData()
+        }
+      })
+      .catch(err => {
+        console.log(err)
+        this.setState({
+          snackerBarStatus: true,
+          snackbarType: 'error',
+          snackbarMessage: 'Đã có lỗi từ máy chủ',
+          isButtonDisabled: false
+        })
+      })
+  }
+
   callbackClassTable = (callback) => {
     this.setState({
       isOpenAddClassForm: callback
@@ -530,6 +565,10 @@ class General extends React.Component {
 
   callbackSnackerBarHanlder = (callback) => {
     this.setState({ snackerBarStatus: callback });
+  }
+
+  handleUploadClick = () => {
+    document.getElementById('filePicker').click();
   }
 
   render = () => {
@@ -975,12 +1014,13 @@ class General extends React.Component {
                       <Tooltip title="Tải lên">
                         <IconButton 
                           disabled={(localStorage.type !== 'Admin')? true : false}
-                          onClick={() => { alert('not implement yet!') }}
+                          onClick={this.handleUploadClick}
                         ><Publish /></IconButton>
                       </Tooltip>
                     } 
                     icons={tableIcons}
                     data={this.state.documents}
+                    isLoading={this.state.isLoadingDocumentTable}
                     columns={[
                       {
                         title: 'Tên tài liệu',
@@ -1011,13 +1051,34 @@ class General extends React.Component {
                       body: {
                         emptyDataSourceMessage: 'Không có dữ liệu!'
                       },
+                      header: {
+                        actions: ''
+                      }
                     }}
+                    actions={[
+                      {
+                        icon: () => { return <Clear style={{color: 'red'}} /> },
+                        tooltip: 'Xóa tài liệu',
+                        onClick: (e, rowData) => {
+                          return axios.delete(`/backend/document/delete-by-id/${rowData._id}`)
+                          .then(res => {
+                            if(res.data.code === 'I001') {
+                              this.getData();
+                            }
+                          })
+                          .catch(err => {
+                            console.log(err)
+                          })
+                        }
+                      }
+                    ]}
                   />
                   <Typography variant='body2' style={{
                     textAlign: 'left', 
                     fontSize: '12px',
                     paddingTop: '1em'
                   }}>{'Cập nhật: ' + this.state.currentTime}</Typography>
+                  <input id="filePicker" type="file" onChange={e => this.createDocument(e)} accept=".doc, .docx, .xls, .xlsx, .ppt, .pptx, .image/*, .pdf" style={{ 'display': 'none' }} />
                 </div>
               }
             />

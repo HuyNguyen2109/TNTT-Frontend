@@ -7,7 +7,7 @@ import {
   Grid, Typography, Checkbox, IconButton, Tooltip
 } from '@material-ui/core';
 import { withStyles } from '@material-ui/core/styles';
-import { Face, Group, AttachMoney, Add, Remove, Publish, Delete, Clear } from '@material-ui/icons';
+import { Face, Group, AttachMoney, Add, Remove, Publish, Delete, Clear, GetApp } from '@material-ui/icons';
 import MaterialTable from 'material-table';
 import _ from 'lodash';
 
@@ -194,7 +194,7 @@ class General extends React.Component {
       events: [],
       // for Documents Table
       documents: [],
-      isLoadingDocumentTable: false,
+      isLoadingDocumentTable: true,
       // type of dialog
       typeofDialog: '',
       // for snackBar
@@ -410,7 +410,8 @@ class General extends React.Component {
           doc.date = (doc.date === '')? '' : moment(doc.date).format('DD/MM/YYYY hh:mm:ss');
         })
         this.setState({
-          documents: listOfDocuments
+          documents: listOfDocuments,
+          isLoadingDocumentTable: false
         })
       })
       .catch(err => {
@@ -523,6 +524,9 @@ class General extends React.Component {
   }
 
   createDocument = (e) => {
+    this.setState({
+      isLoadingDocumentTable: true
+    })
     const data = new FormData();
     data.append('date', moment().format('YYYY-MM-DD hh:mm:ss')) 
     data.append('username', localStorage.getItem('username'))
@@ -532,6 +536,11 @@ class General extends React.Component {
       .then(res => {
         if (res.data.code === "I001") {
           this.getData()
+          this.setState({
+            snackerBarStatus: true,
+            snackbarType: 'success',
+            snackbarMessage: 'Tải lên thành công',
+          })
         }
       })
       .catch(err => {
@@ -1060,15 +1069,55 @@ class General extends React.Component {
                         icon: () => { return <Clear style={{color: 'red'}} /> },
                         tooltip: 'Xóa tài liệu',
                         onClick: (e, rowData) => {
+                          this.setState({ isLoadingDocumentTable: true })
+
                           return axios.delete(`/backend/document/delete-by-id/${rowData._id}`)
                           .then(res => {
                             if(res.data.code === 'I001') {
                               this.getData();
+                              this.setState({
+                                snackerBarStatus: true,
+                                snackbarType: 'success',
+                                snackbarMessage: 'Xóa tài liệu thành công',
+                              })
                             }
                           })
                           .catch(err => {
                             console.log(err)
+                            this.setState({
+                              snackerBarStatus: true,
+                              snackbarType: 'error',
+                              snackbarMessage: 'Đã có lỗi trong quá trình xóa tài liệu',
+                            })
                           })
+                        }
+                      },
+                      {
+                        icon: () => { return <GetApp /> },
+                        tooltip: 'Tải xuống',
+                        onClick: (e, rowData) => {
+                          return axios.get(`/backend/document/download/by-id/${rowData._id}`)
+                            .then(res => {
+                              let link = document.createElement('a');
+                              link.href = res.data.data;
+                              link.setAttribute('download', rowData.filename);
+                              link.click();
+                            })
+                            .then(() => {
+                              this.setState({
+                                snackerBarStatus: true,
+                                snackbarType: 'success',
+                                snackbarMessage: 'Tải xuống thành công',
+                              })
+                            })
+                            .catch(err => {
+                              console.log(err)
+                              this.setState({
+                                snackerBarStatus: true,
+                                snackbarType: 'error',
+                                snackbarMessage: 'Đã có lỗi trong quá trình tải xuống',
+                              })
+                            })
                         }
                       }
                     ]}

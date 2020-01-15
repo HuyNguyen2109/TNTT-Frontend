@@ -33,7 +33,7 @@ class Account extends React.Component {
             xl={4}
             xs={12}
           >
-            <AccountProfile userdata={this.getUser()} />
+            <AccountProfile userdata={this.getUser()}/>
           </Grid>
           <Grid
             item

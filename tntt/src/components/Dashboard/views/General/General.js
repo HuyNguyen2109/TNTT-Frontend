@@ -7,7 +7,7 @@ import {
   Grid, Typography, Checkbox, IconButton, Tooltip
 } from '@material-ui/core';
 import { withStyles } from '@material-ui/core/styles';
-import { Face, Group, AttachMoney, Add, Remove, Publish, Delete, Clear, GetApp } from '@material-ui/icons';
+import { Face, Group, AttachMoney, Add, Remove, Publish, Delete, Clear, GetApp, CallMerge } from '@material-ui/icons';
 import MaterialTable from 'material-table';
 import _ from 'lodash';
 
@@ -194,7 +194,6 @@ class General extends React.Component {
       events: [],
       // for Documents Table
       documents: [],
-      isLoadingDocumentTable: true,
       // type of dialog
       typeofDialog: '',
       // for snackBar
@@ -263,7 +262,13 @@ class General extends React.Component {
 
   getData = () => {
     let classLabels = [];
-    let classData = [];
+    let classData = []
+    this.setState({
+      classes: [],
+      events: [],
+      documents: [],
+      childrenFunds: [],
+    })
 
     return axios
       .get('/backend/children/count', {
@@ -411,7 +416,6 @@ class General extends React.Component {
         })
         this.setState({
           documents: listOfDocuments,
-          isLoadingDocumentTable: false
         })
       })
       .catch(err => {
@@ -524,9 +528,6 @@ class General extends React.Component {
   }
 
   createDocument = (e) => {
-    this.setState({
-      isLoadingDocumentTable: true
-    })
     const data = new FormData();
     data.append('date', moment().format('YYYY-MM-DD hh:mm:ss')) 
     data.append('username', localStorage.getItem('username'))
@@ -721,6 +722,7 @@ class General extends React.Component {
                     icons={tableIcons}
                     columns={this.state.classTableColumn}
                     data={this.state.classes}
+                    isLoading={(this.state.classes.length === 0)? true : false}
                     options={{
                       paging: false,
                       sorting: false,
@@ -821,6 +823,7 @@ class General extends React.Component {
                     icons={tableIcons}
                     columns={this.state.childrenFundColumns}
                     data={this.state.childrenFunds}
+                    isLoading={(this.state.childrenFunds.length === 0)? true : false}
                     options={{
                       paging: false,
                       sorting: false,
@@ -851,6 +854,28 @@ class General extends React.Component {
                           })
                         } 
                       },
+                      {
+                        icon: () => { return <CallMerge />},
+                        tooltip: 'Tổng kết quỹ đến hiện tại',
+                        isFreeAction: true,
+                        hidden: (localStorage.type !== 'Admin')? true : false,
+                        onClick: () => {
+                          return axios.post('/backend/children-fund/merge-fund')
+                            .then(res => {
+                              if(res.data.code === 'I001') {
+                                this.getData();
+                              }
+                            })
+                            .catch(err => {
+                              this.setState({
+                                snackerBarStatus: true,
+                                snackbarType: 'error',
+                                snackbarMessage: 'Đã có lỗi từ máy chủ',
+                                isButtonDisabled: false
+                              })
+                            })
+                        }
+                      }
                     ]}
                   />
                   <Typography variant='body2' style={{
@@ -923,6 +948,7 @@ class General extends React.Component {
                       </div>
                     }
                     icons={tableIcons}
+                    isLoading={(this.state.events.length === 0)? true : false}
                     data={this.state.events}
                     columns={[
                       {
@@ -1029,7 +1055,7 @@ class General extends React.Component {
                     } 
                     icons={tableIcons}
                     data={this.state.documents}
-                    isLoading={this.state.isLoadingDocumentTable}
+                    isLoading={(this.state.documents.length === 0)? true : false}
                     columns={[
                       {
                         title: 'Tên tài liệu',
@@ -1069,7 +1095,6 @@ class General extends React.Component {
                         icon: () => { return <Clear style={{color: 'red'}} /> },
                         tooltip: 'Xóa tài liệu',
                         onClick: (e, rowData) => {
-                          this.setState({ isLoadingDocumentTable: true })
 
                           return axios.delete(`/backend/document/delete-by-id/${rowData._id}`)
                           .then(res => {
@@ -1116,7 +1141,7 @@ class General extends React.Component {
                                 snackerBarStatus: true,
                                 snackbarType: 'error',
                                 snackbarMessage: 'Đã có lỗi trong quá trình tải xuống',
-                              })
+                              }) 
                             })
                         }
                       }
@@ -1127,7 +1152,7 @@ class General extends React.Component {
                     fontSize: '12px',
                     paddingTop: '1em'
                   }}>{'Cập nhật: ' + this.state.currentTime}</Typography>
-                  <input id="filePicker" type="file" onChange={e => this.createDocument(e)} accept=".doc, .docx, .xls, .xlsx, .ppt, .pptx, image/*, .pdf" style={{ 'display': 'none' }} />
+                  <input id="filePicker" type="file" onChange={e => this.createDocument(e)} accept=".doc, .docx, .xls, .xlsx, .ppt, .pptx, .pdf" style={{ 'display': 'none' }} />
                 </div>
               }
             />

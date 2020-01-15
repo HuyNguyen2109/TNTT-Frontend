@@ -2,8 +2,9 @@ import React from 'react';
 import clsx from 'clsx';
 import { AppBar, Toolbar, Badge, Hidden, IconButton, Tooltip, Typography } from '@material-ui/core';
 import MenuIcon from '@material-ui/icons/Menu';
-import NotificationsIcon from '@material-ui/icons/Notifications';
-import PowerSettingsNewIcon from '@material-ui/icons/PowerSettingsNew';
+import {
+  Notifications, PowerSettingsNew, Facebook
+} from '@material-ui/icons';
 import { withStyles } from '@material-ui/styles';
 import Promise from 'bluebird';
 
@@ -68,6 +69,14 @@ class Topbar extends React.Component {
           <Typography variant="h6" style={{color: '#000000'}}>{this.state.title}</Typography>
           <div className={classes.flexGrow} />
           <Hidden mdDown>
+            <Tooltip title="Đến trang Facebook Xứ Đoàn">
+              <IconButton
+                className={classes.icon}
+                onClick={() => window.open('https://www.facebook.com/thieunhicaothai/?ref=bookmarks', '_blank')}
+              >
+                <Facebook />
+              </IconButton>
+            </Tooltip>
             <Tooltip title="Thông báo">
               <IconButton className={classes.icon} >
                 <Badge
@@ -75,7 +84,7 @@ class Topbar extends React.Component {
                   color="primary"
                   variant="dot"
                 >
-                  <NotificationsIcon />
+                  <Notifications />
                 </Badge>
               </IconButton>
             </Tooltip>
@@ -84,17 +93,18 @@ class Topbar extends React.Component {
                 className={classes.icon}
                 onClick={event => this.logOut(event)}
               >
-                <PowerSettingsNewIcon />
+                <PowerSettingsNew />
               </IconButton>
             </Tooltip>
           </Hidden>
+
           <Hidden lgUp>
             <Tooltip title="Đăng xuất">
               <IconButton
                 className={classes.icon}
                 onClick={event => this.logOut(event)}
               >
-                <PowerSettingsNewIcon />
+                <PowerSettingsNew />
               </IconButton>
             </Tooltip>
             <Tooltip title="Menu">

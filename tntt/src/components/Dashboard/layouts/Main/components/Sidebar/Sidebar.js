@@ -2,10 +2,11 @@ import React from 'react';
 import clsx from 'clsx';
 import PropTypes from 'prop-types';
 import { withStyles } from '@material-ui/styles';
-import { Divider, Drawer } from '@material-ui/core';
+import { Divider, Drawer, Typography } from '@material-ui/core';
 import DashboardIcon from '@material-ui/icons/Dashboard';
 import PeopleIcon from '@material-ui/icons/People';
 import AccountBoxIcon from '@material-ui/icons/AccountBox';
+import CodeIcon from '@material-ui/icons/Code';
 import {
   Face
 } from '@material-ui/icons'
@@ -88,6 +89,11 @@ class Sidebar extends React.Component {
         title: 'Tài khoản của bạn',
         href: '/account',
         icon: <AccountBoxIcon />
+      },
+      {
+        title: 'Dành cho Dev',
+        href: '/for-dev',
+        icon: <CodeIcon />
       }
     ];
 
@@ -112,6 +118,8 @@ class Sidebar extends React.Component {
             callback={val => {callback(val)}}
             style={{'overflow': 'auto'}}
           />
+          <div style={{flexGrow: 1}}/>
+          <Typography variant="caption" color="primary" style={{display: 'flex', justifyContent: 'center'}}>Ứng dụng web v0.0.1</Typography>
         </div>
         <div className={classes.background} style={{ backgroundImage: "url(" + backgroundImage + ")" }} />
       </Drawer>

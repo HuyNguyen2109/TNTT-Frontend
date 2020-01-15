@@ -9,6 +9,7 @@ import {
   Dashboard as DashboardView,
   UserList as UserListView,
   Account as AccountView,
+  ForDev as ForDevView,
   NotFound as NotFoundView
 } from './views';
 
@@ -39,6 +40,12 @@ const Routes = () => {
         exact
         layout={MainLayout}
         path="/account"
+      />
+      <RouteWithLayout
+        component={ForDevView}
+        exact
+        layout={MainLayout}
+        path="/for-dev"
       />
       <RouteWithLayout
         component={NotFoundView}

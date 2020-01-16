@@ -199,7 +199,12 @@ class General extends React.Component {
       // for snackBar
       snackbarMessage: '',
       snackbarType: 'success',
-      snackerBarStatus: false
+      snackerBarStatus: false,
+      // isLoading for table
+      isLoadingClassTable: true,
+      isLoadingChildrenFundTable: true,
+      isLoadingEventTable: true,
+      isLoaingDocumentTable: true,
     }
   }
 
@@ -305,7 +310,8 @@ class General extends React.Component {
           }))
         })
         this.setState({
-          classes: classesArr
+          classes: classesArr,
+          isLoadingClassTable: false,
         })
 
         return axios.all(axiosRequests);
@@ -350,7 +356,8 @@ class General extends React.Component {
         })
         this.setState({
           childrenFunds: allFunds,
-          childrenFundTotalCount: totalFunds
+          childrenFundTotalCount: totalFunds,
+          isLoadingChildrenFundTable: false,
         })
         
         //draw chart
@@ -404,7 +411,8 @@ class General extends React.Component {
           event.date = (event.date === '')? '' : moment(event.date).format('DD/MM/YYYY');
         })
         this.setState({
-          events: listOfEvents
+          events: listOfEvents,
+          isLoadingEventTable: false,
         })
 
         return axios.get('/backend/document/all')
@@ -416,6 +424,7 @@ class General extends React.Component {
         })
         this.setState({
           documents: listOfDocuments,
+          isLoaingDocumentTable: false,
         })
       })
       .catch(err => {
@@ -424,7 +433,7 @@ class General extends React.Component {
   }
 
   createNewClass = (className) => {
-    this.setState({ isButtonDisabled: true })
+    this.setState({ isButtonDisabled: true, isLoadingClassTable: true })
     let classID = '';
     let classNameSplit = className.split(' ');
     for(let i = 0; i < classNameSplit.length - 1; i++) {
@@ -472,7 +481,7 @@ class General extends React.Component {
   }
 
   createNewFund = (fund) => {
-    this.setState({ isButtonDisabled: true })
+    this.setState({ isButtonDisabled: true, isLoadingChildrenFundTable: true })
     
     return axios
       .post('/backend/children-fund/new-fund', fund)
@@ -500,7 +509,7 @@ class General extends React.Component {
   }
 
   createNewEvent = (event) => {
-    this.setState({ isButtonDisabled: true })
+    this.setState({ isButtonDisabled: true, isLoadingEventTable: true })
 
     return axios
       .post('/backend/event/new-event', event)
@@ -528,6 +537,7 @@ class General extends React.Component {
   }
 
   createDocument = (e) => {
+    this.setState({ isLoaingDocumentTable: true})
     const data = new FormData();
     data.append('date', moment().format('YYYY-MM-DD hh:mm:ss')) 
     data.append('username', localStorage.getItem('username'))
@@ -545,13 +555,25 @@ class General extends React.Component {
         }
       })
       .catch(err => {
-        console.log(err)
-        this.setState({
-          snackerBarStatus: true,
-          snackbarType: 'error',
-          snackbarMessage: 'Đã có lỗi từ máy chủ',
-          isButtonDisabled: false
-        })
+        if(err.response.status === 409) {
+          this.setState({
+            snackerBarStatus: true,
+            snackbarType: 'error',
+            snackbarMessage: 'File đã có sẵn trên máy chủ, vui lòng đổi tên file nếu đó là bản cập nhật',
+            isButtonDisabled: false,
+            isLoaingDocumentTable: false,
+          })
+        }
+        else {
+          console.log(err)
+          this.setState({
+            snackerBarStatus: true,
+            snackbarType: 'error',
+            snackbarMessage: 'Đã có lỗi từ máy chủ',
+            isButtonDisabled: false,
+            isLoaingDocumentTable: false,
+          })
+        }
       })
   }
 
@@ -722,7 +744,7 @@ class General extends React.Component {
                     icons={tableIcons}
                     columns={this.state.classTableColumn}
                     data={this.state.classes}
-                    isLoading={(this.state.classes.length === 0)? true : false}
+                    isLoading={this.state.isLoadingClassTable}
                     options={{
                       paging: false,
                       sorting: false,
@@ -766,6 +788,7 @@ class General extends React.Component {
                                   userTotalCount: 0,
                                   childrenFundTotalCount: 0,
                                   internalFundTotalCount: 0,
+                                  isLoadingClassTable: true
                                 })
                                 this.getData();
                               }
@@ -823,7 +846,7 @@ class General extends React.Component {
                     icons={tableIcons}
                     columns={this.state.childrenFundColumns}
                     data={this.state.childrenFunds}
-                    isLoading={(this.state.childrenFunds.length === 0)? true : false}
+                    isLoading={this.state.isLoadingChildrenFundTable}
                     options={{
                       paging: false,
                       sorting: false,
@@ -863,6 +886,7 @@ class General extends React.Component {
                           return axios.post('/backend/children-fund/merge-fund')
                             .then(res => {
                               if(res.data.code === 'I001') {
+                                this.setState({ isLoadingChildrenFundTable: true })
                                 this.getData();
                               }
                             })
@@ -930,6 +954,7 @@ class General extends React.Component {
                                   userTotalCount: 0,
                                   childrenFundTotalCount: 0,
                                   internalFundTotalCount: 0,
+                                  isLoadingEventTable: true
                                 })
                                 this.getData();
                               }
@@ -948,7 +973,7 @@ class General extends React.Component {
                       </div>
                     }
                     icons={tableIcons}
-                    isLoading={(this.state.events.length === 0)? true : false}
+                    isLoading={this.state.isLoadingEventTable}
                     data={this.state.events}
                     columns={[
                       {
@@ -994,6 +1019,7 @@ class General extends React.Component {
                                   userTotalCount: 0,
                                   childrenFundTotalCount: 0,
                                   internalFundTotalCount: 0,
+                                  isLoadingEventTable: true
                                 })
                                 this.getData();
                               }
@@ -1055,7 +1081,7 @@ class General extends React.Component {
                     } 
                     icons={tableIcons}
                     data={this.state.documents}
-                    isLoading={(this.state.documents.length === 0)? true : false}
+                    isLoading={this.state.isLoaingDocumentTable}
                     columns={[
                       {
                         title: 'Tên tài liệu',
@@ -1099,6 +1125,7 @@ class General extends React.Component {
                           return axios.delete(`/backend/document/delete-by-id/${rowData._id}`)
                           .then(res => {
                             if(res.data.code === 'I001') {
+                              this.setState({ isLoaingDocumentTable: true})
                               this.getData();
                               this.setState({
                                 snackerBarStatus: true,
@@ -1152,7 +1179,7 @@ class General extends React.Component {
                     fontSize: '12px',
                     paddingTop: '1em'
                   }}>{'Cập nhật: ' + this.state.currentTime}</Typography>
-                  <input id="filePicker" type="file" onChange={e => this.createDocument(e)} accept=".doc, .docx, .xls, .xlsx, .ppt, .pptx, .pdf" style={{ 'display': 'none' }} />
+                  <input id="filePicker" type="file" onChange={e => this.createDocument(e)} accept=".doc, .docx, .xls, .xlsx, .ppt, .pptx, .pdf, .txt" style={{ 'display': 'none' }} />
                 </div>
               }
             />

@@ -55,7 +55,8 @@ class forDev extends React.Component {
       snackbarType: 'success',
       snackerBarStatus: false,
       isLoading: true,
-      isBackup: false,
+      isCircleLoading: true,
+      isBackupExist: false,
       isRestore: false,
     }
   }
@@ -69,6 +70,11 @@ class forDev extends React.Component {
       .then(result => {
         const logsArr = result.data.data.logs
         this.setState({ logs: logsArr, isLoading: false })
+
+        return axios.get('/backend/database/check-exist')
+      })
+      .then((result) => {
+        this.setState({isBackupExist : result.data.data})
       })
       .catch(err => {
         console.log(err);
@@ -182,7 +188,7 @@ class forDev extends React.Component {
               {(this.state.isLoading)? <LinearProgress style={{backgroundColor: this.state.color500}}/> : null}
               <Paper style={{height: '40em'}}>
                 <div style={{overflowY: 'auto', height: '100%'}}>
-                  {(this.state.logs.length !== 0)? this.state.logs.map(line => (<p>{line}</p>)) : null}
+                  {(this.state.logs.length !== 0)? this.state.logs.map(line => (<p key={line}>{line}</p>)) : null}
                 </div>
               </Paper>
             </div>
@@ -201,15 +207,16 @@ class forDev extends React.Component {
           <Paper elevation={5} className={classes.root}>
             <div style={{ marginTop: '2em' }} align="center">
               <Avatar className={classes.avatar}>
-                {(this.state.isBackup)? 
-                  <Clear fontSize='large' style={{color: 'red', position: 'relative'}} /> :
-                  <Check fontSize='large' style={{color: 'green', position: 'relative'}} />
+                {(this.state.isBackupExist)? 
+                  <Check fontSize='large' style={{color: 'green', position: 'relative'}} /> :
+                  <Clear fontSize='large' style={{color: 'red', position: 'relative'}} />
                 }
-                {(this.state.isBackup)? <CircularProgress size={90} className={classes.circleProgress}/>: null}
+                {(this.state.isCircleLoading)? null : <CircularProgress size={90} className={classes.circleProgress} disableShrink/>}
               </Avatar>
-              <Typography variant="subtitle1">Cơ sở dữ liệu hiện chưa được sao lưu</Typography>
-              <Button variant='contained' style={{ background: 'linear-gradient(to right bottom, #81c784, #4caf50)', color: 'white' }} className={classes.button}
+              <Typography variant="subtitle1">{(this.state.isBackupExist)? 'Cơ sở dữ liệu hiện đã sao lưu': 'Cơ sở dữ liệu hiện chưa được sao lưu'}</Typography>
+              <Button variant='contained' style={{ background: 'linear-gradient(to right bottom, #4db6ac, #009688)', color: 'white' }} className={classes.button}
                 onClick={() => {
+                  this.setState({isBackup : false})
                   return axios.get('/backend/database/backup')
                     .then(res => {
                       if (res.data.code === 'I001') {
@@ -217,7 +224,7 @@ class forDev extends React.Component {
                           snackerBarStatus: true,
                           snackbarType: 'success',
                           snackbarMessage: 'Sao lưu thành công',
-                          isBackup: !this.state.isBackup
+                          isCircleLoading: res.data.data
                         })
                       }
                     })
@@ -229,8 +236,31 @@ class forDev extends React.Component {
                       })
                     })
                 }}>Sao lưu</Button>
-              <Button variant='contained' style={{ background: 'linear-gradient(to right bottom, #e57373, #f44336)', color: 'white' }} className={classes.button}
-                >Phục hồi</Button>
+              <div />
+              <Button variant='contained' style={{ background: 'linear-gradient(to right bottom, #00796b, #004d40)', color: 'white' }} className={classes.button}
+                onClick={() => {
+                  return axios.delete('/backend/database/backup/delete-manually')
+                    .then(result => {
+                      if(result.data.code === 'I001'){
+                        this.setState({
+                          snackerBarStatus: true,
+                          snackbarType: 'success',
+                          snackbarMessage: 'Bản sao lưu đã được xóa',
+                        })
+                      }
+                      console.log(result)
+                    })
+                    .catch(err =>{
+                      if(err.response.status === 404) {
+                        this.setState({
+                          snackerBarStatus: true,
+                          snackbarType: 'error',
+                          snackbarMessage: 'Hiện chưa có bản sao lưu thủ công nào',
+                        })
+                      }
+                    })
+                }}
+                >Xóa bản sao lưu thủ công</Button>
             </div>
           </Paper>
         </Grid>

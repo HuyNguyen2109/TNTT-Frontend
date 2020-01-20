@@ -28,6 +28,16 @@ const useStyle = theme => ({
   chart: {
     width: '8em',
     height: '8em'
+  },
+  classMap: {
+    marginTop: theme.spacing(4),
+    marginBottom: theme.spacing(4),
+    marginLeft: theme.spacing(2),
+    marginRight: theme.spacing(2),
+  },
+  image: {
+    width: '100%',
+    height: '100%'
   }
 })
 
@@ -180,7 +190,7 @@ class General extends React.Component {
         {
           title: 'Nội dung',
           field: 'title',
-          cellStyle: {minWidth: 400}
+          cellStyle: {minWidth: 250}
         },
         {
           title: 'Số tiền',
@@ -205,6 +215,9 @@ class General extends React.Component {
       isLoadingChildrenFundTable: true,
       isLoadingEventTable: true,
       isLoaingDocumentTable: true,
+      //for tumblr image APIs
+      tumblrImageURL: '',
+      tumbleContent: '',
     }
   }
 
@@ -426,9 +439,20 @@ class General extends React.Component {
           documents: listOfDocuments,
           isLoaingDocumentTable: false,
         })
+
+        return axios.get('/backend/database/tumblr/posts')
+      })
+      .then(posts => {
+        this.setState({tumblrImageURL: posts.data.data.img})
+        document.getElementById('content').innerHTML = posts.data.data.content;
       })
       .catch(err => {
         console.log(err)
+        this.setState({
+          snackerBarStatus: true,
+          snackbarType: 'error',
+          snackbarMessage: 'Đã có lỗi từ máy chủ',
+        })
       });
   }
 
@@ -831,7 +855,7 @@ class General extends React.Component {
               }
             />
           </Grid>
-          <Grid item xs={12} sm={12} lg={8}>
+          <Grid item xs={12} sm={12} lg={4}>
             <Report 
               icon={<canvas id='childrenFund'/>}
               style={{
@@ -918,16 +942,32 @@ class General extends React.Component {
               }
             />
           </Grid>
+          <Grid item xs={12} sm={12} lg={4}>
+            <Report 
+              icon="Lời Chúa hằng ngày"
+              style={{
+                background: 'linear-gradient(to right bottom, #4db6ac, #009688)',
+                height: '4em',
+                marginBottom: '-2em',
+              }}
+              children={
+                <div style={{marginTop: '2em'}}>
+                  <img src={this.state.tumblrImageURL} alt='' className={classes.image} onClick={() => window.open(this.state.tumblrImageURL, '_blank')}/>
+                  <div style={{overflowX: 'auto', height: '12em'}} id='content'></div>
+                </div>
+              }
+            />
+          </Grid>
           <Grid item xs={12} sm={12} lg={6}>
             <Report 
               icon='Thông báo/sự kiện từ Xứ Đoàn'
               style={{
                 background: 'linear-gradient(to right bottom, #ce93d8, #9c27b0)',
-                height: '3em',
-                marginBottom: '-1.5em',
+                height: '4em',
+                marginBottom: '-2em',
               }}
               children={
-                <div style={{marginTop: '1.5em'}}>
+                <div style={{marginTop: '2em'}}>
                   <MaterialTable 
                     title = {
                       <div>
@@ -989,6 +1029,7 @@ class General extends React.Component {
                     options={{
                       paging: false,
                       sorting: false,
+                      grouping: false,
                       headerStyle: {
                         position: 'sticky',
                         top: 0,
@@ -1065,11 +1106,11 @@ class General extends React.Component {
               icon="Tài liệu Xứ Đoàn"
               style={{
                 background: 'linear-gradient(to right bottom, #f48fb1, #e91e63)',
-                height: '3em',
-                marginBottom: '-1.5em',
+                height: '4em',
+                marginBottom: '-2em',
               }}
               children={
-                <div style={{marginTop: '1.5em'}}>
+                <div style={{marginTop: '2em'}}>
                   <MaterialTable
                     title={
                       <Tooltip title="Tải lên">

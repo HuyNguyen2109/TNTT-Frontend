@@ -4,7 +4,7 @@ import axios from 'axios';
 import AnimatedNumber from 'animated-number-react';
 import Chart from 'chart.js';
 import {
-  Grid, Typography, Checkbox, IconButton, Tooltip
+  Grid, Typography, Checkbox, IconButton, Tooltip, Backdrop, CircularProgress
 } from '@material-ui/core';
 import { withStyles } from '@material-ui/core/styles';
 import { Face, Group, AttachMoney, Add, Remove, Publish, Delete, Clear, GetApp, CallMerge } from '@material-ui/icons';
@@ -38,7 +38,11 @@ const useStyle = theme => ({
   image: {
     width: '100%',
     height: '100%'
-  }
+  },
+  backdrop: {
+    zIndex: theme.zIndex.drawer + 1,
+    color: '#fff',
+  },
 })
 
 class General extends React.Component {
@@ -210,11 +214,8 @@ class General extends React.Component {
       snackbarMessage: '',
       snackbarType: 'success',
       snackerBarStatus: false,
-      // isLoading for table
-      isLoadingClassTable: true,
-      isLoadingChildrenFundTable: true,
-      isLoadingEventTable: true,
-      isLoaingDocumentTable: true,
+      // isLoading
+      isLoading: true,
       //for tumblr image APIs
       tumblrImageURL: '',
       tumbleContent: '',
@@ -222,7 +223,12 @@ class General extends React.Component {
   }
 
   componentDidMount = () => {
+    this._ismounted = true;
     return this.getData();
+  }
+
+  componentWillUnmount = () => {
+    this._ismounted = false;
   }
 
   formatValue = (value, type) => {
@@ -280,184 +286,165 @@ class General extends React.Component {
 
   getData = () => {
     let classLabels = [];
-    let classData = []
+    let classData = [];
     this.setState({
       classes: [],
       events: [],
       documents: [],
       childrenFunds: [],
+      isLoading: true,
     })
 
-    return axios
-      .get('/backend/children/count', {
-          params: {
-            condition: 'all'
+    if(this._ismounted === true) {
+      return axios.all([
+        axios.get('/backend/children/count', { params: { condition: 'all' } }),
+        axios.get('backend/user/all'),
+        axios.get('/backend/children-fund/all'),
+        axios.get('/backend/event/all'),
+        axios.get('/backend/document/all'),
+        axios.get('/backend/database/tumblr/posts'),
+        axios.get('/backend/class/all')
+      ])
+        .then(responses => {
+          let dataResponses = [];
+          responses.forEach(response => {
+            dataResponses.push(response.data.data)
+          })
+          // Funds modifications
+          let totalFunds = 0;
+          let allFunds = dataResponses[2];
+          let monthLabels = [];
+          let fundData = [];
+          allFunds = _.sortBy(allFunds, fund => fund.date);
+          allFunds.forEach(fund => {
+            fund.date = (fund.date === '')? '' : moment(fund.date).format('DD/MM/YYYY');
+            totalFunds += fund.price;
+            fund.price = this.priceFormat(fund.price);
+          })
+          
+          //draw chart
+          const groupedFunds = _.groupBy(dataResponses[2], fund => fund.date.split("/")[1])
+          Object.values(groupedFunds).forEach(keys => {
+            monthLabels.push(keys[0].date.split("/")[1] + '/' + keys[0].date.split("/")[2])
+            let priceDetail = 0;
+            keys.forEach(key => {
+              priceDetail += Number(key.price.replace('tr', ''))
+            })
+            fundData.push(priceDetail.toFixed(1));
+          })
+          let fundDataAfterCalculated = [];
+          for (let i = 0; i < fundData.length; i++) {
+            fundData[i] = Number(fundData[i]);
+            fundDataAfterCalculated.push(_.sum(fundData.slice(0, i+1)));
           }
+          if(monthLabels.length > 6) {
+            monthLabels = monthLabels.slice(-6, monthLabels.length);
+            fundDataAfterCalculated = fundDataAfterCalculated.slice(-6, fundDataAfterCalculated.length);
+          }
+          if(window.ChildrenFundChart) {
+            window.ChildrenFundChart.destroy();
+          }
+          Chart.defaults.global.defaultFontColor = 'white'
+          let ctx = document.getElementById('childrenFund');
+          window.ChildrenFundChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+              labels: monthLabels,
+              datasets: [{
+                label: 'Quỹ (triệu)',
+                data: fundDataAfterCalculated,
+                borderColor: 'rgba(255,255,255,0.9)',
+                backgroundColor: 'rgba(255,255,255,0.9)',
+                hoverBackgroundColor: 'rgba(255,255,255,0.9)',
+                pointRadius: 5,
+                showLine: true,
+                fill: false,
+                clip: 50
+              }]
+            },
+            options: this.state.lineChartOptions
+          })
+          // End of Fund modifications
+          // Event modifications
+          let listOfEvents = dataResponses[3];
+          listOfEvents.forEach(event => {
+            event.date = (event.date === '')? '' : moment(event.date).format('DD/MM/YYYY');
+          })
+          // End of Event modifications
+          // Document modifications
+          let listOfDocuments = dataResponses[4];
+          listOfDocuments.forEach(doc => {
+            doc.date = (doc.date === '')? '' : moment(doc.date).format('DD/MM/YYYY hh:mm:ss');
+          })
+          // End of Document modifications
+          // Tumblr post
+          let div = document.getElementById('content')
+          div.innerHTML = dataResponses[5].content;
+          div.removeChild(document.querySelector('h2'));
+          // End of Tumblr post
+          // Class modifications
+          let axiosRequests = [];
+          dataResponses[6] = dataResponses[6].filter(el => el.Value !== "Chung");
+          dataResponses[6].forEach(classEl => {
+            classLabels.push(classEl.ID);
+            axiosRequests.push(axios.get('/backend/children/count', { params: { condition: classEl.ID } }))})
+          // End of class modifications
+          this.setState({
+            childrenTotalCount: dataResponses[0],
+            userTotalCount: dataResponses[1].length,
+            childrenFunds: allFunds,
+            childrenFundTotalCount: totalFunds,
+            isLoadingChildrenFundTable: false,
+            events: listOfEvents,
+            isLoadingEventTable: false,
+            documents: listOfDocuments,
+            isLoaingDocumentTable: false,
+            tumblrImageURL: dataResponses[5].img,
+            classes: dataResponses[6],
+            isLoadingClassTable: false,
+            isLoading: false
+          })
+          
+          return axios.all(axiosRequests) 
         })
-      .then(count => {
-        this.setState({
-          childrenTotalCount: count.data.data
-        });
-
-        return axios.get('backend/user/all')
-      })
-      .then(users => {
-        const count = users.data.data.length;
-        this.setState({
-          userTotalCount: count
-        });
-
-        return axios.get('/backend/class/all')
-      })
-      .then(classes => {
-        const axiosRequests = [];
-        let classesArr = classes.data.data;
-        classesArr = classesArr.filter(el => el.Value !== "Chung");
-        classesArr.forEach(classEl => {
-          classLabels.push(classEl.ID);
-          axiosRequests.push(axios
-          .get('/backend/children/count', {
-            params: {
-              condition: classEl.ID
-            }
-          }))
-        })
-        this.setState({
-          classes: classesArr,
-          isLoadingClassTable: false,
-        })
-
-        return axios.all(axiosRequests);
-      })
-      .then((responseArr) => {
-        responseArr.forEach(res => {
-          classData.push(res.data.data)
-        })
-        //draw chart
-        if(window.ChildrenCountChart) {
-          window.ChildrenCountChart.destroy();
-        }
-        Chart.defaults.global.defaultFontColor = 'white'
-        let ctx = document.getElementById('chart');
-        window.ChildrenCountChart = new Chart(ctx, {
-          type: 'bar',
-          data: {
-            labels: classLabels,
-            datasets: [{
+        .then((responseArr) => {
+          responseArr.forEach(res => {
+            classData.push(res.data.data)
+          })
+          //draw chart
+          if(window.ChildrenCountChart) {
+            window.ChildrenCountChart.destroy();
+          }
+          Chart.defaults.global.defaultFontColor = 'white'
+          let ctx = document.getElementById('chart');
+          window.ChildrenCountChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+              labels: classLabels,
+              datasets: [{
                 label: 'Sỉ số',
                 data: classData,
                 backgroundColor: 'rgba(255,255,255,0.9)',
                 hoverBackgroundColor: 'rgba(255,255,255,0.9)',
                 maxBarThickness: 8
-            }]
-          },
-          options: this.state.barChartOptions
-        });
-
-        return axios.get('/backend/children-fund/all')
-      })
-      .then(funds => {
-        let totalFunds = 0;
-        let allFunds = funds.data.data;
-        let monthLabels = [];
-        let fundData = [];
-        allFunds = _.sortBy(allFunds, fund => fund.date);
-        allFunds.forEach(fund => {
-          fund.date = (fund.date === '')? '' : moment(fund.date).format('DD/MM/YYYY');
-          totalFunds += fund.price;
-          fund.price = this.priceFormat(fund.price);
+              }]
+            },
+            options: this.state.barChartOptions
+          }); 
         })
-        this.setState({
-          childrenFunds: allFunds,
-          childrenFundTotalCount: totalFunds,
-          isLoadingChildrenFundTable: false,
-        })
-        
-        //draw chart
-        const groupedFunds = _.groupBy(funds.data.data, fund => fund.date.split("/")[1])
-        Object.values(groupedFunds).forEach(keys => {
-          monthLabels.push(keys[0].date.split("/")[1] + '/' + keys[0].date.split("/")[2])
-          let priceDetail = 0;
-          keys.forEach(key => {
-            priceDetail += Number(key.price.replace('tr', ''))
+        .catch(err => {
+          this.setState({
+            snackerBarStatus: true,
+            snackbarType: 'error',
+            snackbarMessage: 'Đã có lỗi từ máy chủ',
+            isLoading: false
           })
-          fundData.push(priceDetail.toFixed(1));
-        })
-        let fundDataAfterCalculated = [];
-        for (let i = 0; i < fundData.length; i++) {
-          fundData[i] = Number(fundData[i]);
-          fundDataAfterCalculated.push(_.sum(fundData.slice(0, i+1)));
-        }
-        if(monthLabels.length > 6) {
-          monthLabels = monthLabels.slice(-6, monthLabels.length);
-          fundDataAfterCalculated = fundDataAfterCalculated.slice(-6, fundDataAfterCalculated.length);
-        }
-        if(window.ChildrenFundChart) {
-          window.ChildrenFundChart.destroy();
-        }
-        Chart.defaults.global.defaultFontColor = 'white'
-        let ctx = document.getElementById('childrenFund');
-        window.ChildrenFundChart = new Chart(ctx, {
-          type: 'line',
-          data: {
-            labels: monthLabels,
-            datasets: [{
-              label: 'Quỹ (triệu)',
-              data: fundDataAfterCalculated,
-              borderColor: 'rgba(255,255,255,0.9)',
-              backgroundColor: 'rgba(255,255,255,0.9)',
-              hoverBackgroundColor: 'rgba(255,255,255,0.9)',
-              pointRadius: 5,
-              showLine: true,
-              fill: false,
-              clip: 50
-            }]
-          },
-          options: this.state.lineChartOptions
-        })
-
-        return axios.get('/backend/event/all')
-      })
-      .then(events => {
-        const listOfEvents = events.data.data;
-        listOfEvents.forEach(event => {
-          event.date = (event.date === '')? '' : moment(event.date).format('DD/MM/YYYY');
-        })
-        this.setState({
-          events: listOfEvents,
-          isLoadingEventTable: false,
-        })
-
-        return axios.get('/backend/document/all')
-      })
-      .then(documents => {
-        const listOfDocuments = documents.data.data;
-        listOfDocuments.forEach(doc => {
-          doc.date = (doc.date === '')? '' : moment(doc.date).format('DD/MM/YYYY hh:mm:ss');
-        })
-        this.setState({
-          documents: listOfDocuments,
-          isLoaingDocumentTable: false,
-        })
-
-        return axios.get('/backend/database/tumblr/posts')
-      })
-      .then(posts => {
-        this.setState({tumblrImageURL: posts.data.data.img})
-        document.getElementById('content').innerHTML = posts.data.data.content;
-      })
-      .catch(err => {
-        console.log(err)
-        this.setState({
-          snackerBarStatus: true,
-          snackbarType: 'error',
-          snackbarMessage: 'Đã có lỗi từ máy chủ',
-        })
-      });
+        });
+    }
   }
 
   createNewClass = (className) => {
-    this.setState({ isButtonDisabled: true, isLoadingClassTable: true })
+    this.setState({ isButtonDisabled: true, isLoading: true })
     let classID = '';
     let classNameSplit = className.split(' ');
     for(let i = 0; i < classNameSplit.length - 1; i++) {
@@ -505,7 +492,7 @@ class General extends React.Component {
   }
 
   createNewFund = (fund) => {
-    this.setState({ isButtonDisabled: true, isLoadingChildrenFundTable: true })
+    this.setState({ isButtonDisabled: true, isLoading: true })
     
     return axios
       .post('/backend/children-fund/new-fund', fund)
@@ -533,7 +520,7 @@ class General extends React.Component {
   }
 
   createNewEvent = (event) => {
-    this.setState({ isButtonDisabled: true, isLoadingEventTable: true })
+    this.setState({ isButtonDisabled: true, isLoading: true })
 
     return axios
       .post('/backend/event/new-event', event)
@@ -561,7 +548,7 @@ class General extends React.Component {
   }
 
   createDocument = (e) => {
-    this.setState({ isLoaingDocumentTable: true})
+    this.setState({ isLoaingDocumentTable: true, isLoading: true})
     const data = new FormData();
     data.append('date', moment().format('YYYY-MM-DD hh:mm:ss')) 
     data.append('username', localStorage.getItem('username'))
@@ -632,6 +619,10 @@ class General extends React.Component {
 
     return (
       <div>
+        <Backdrop className={classes.backdrop} open={this.state.isLoading} onClick={() => this.setState({isLoading: false})}>
+          <CircularProgress color='primary' />
+          <Typography variant='subtitle1'>Đang lấy dữ liệu từ máy chủ...</Typography>
+        </Backdrop>
         <Grid container className={classes.container} spacing={4}>
           <Grid item xs={12} sm={6} lg={3}>
             <Report 
@@ -944,7 +935,7 @@ class General extends React.Component {
           </Grid>
           <Grid item xs={12} sm={12} lg={4}>
             <Report 
-              icon="Lời Chúa hằng ngày"
+              icon="Học Tiếng Anh cùng Lời Chúa"
               style={{
                 background: 'linear-gradient(to right bottom, #4db6ac, #009688)',
                 height: '4em',

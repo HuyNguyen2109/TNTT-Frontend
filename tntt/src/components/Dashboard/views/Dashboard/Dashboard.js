@@ -9,14 +9,14 @@ import moment from 'moment';
 import {
   PersonAdd,
   Cached,
-  Backup,
-  Restore,
   InsertDriveFile,
   Check,
   Clear,
   Delete,
   PlaylistAddCheck,
   Cancel,
+  GetApp,
+  Publish,
 } from '@material-ui/icons/';
 import {
   Paper,
@@ -47,7 +47,7 @@ const useStyles = theme => ({
   },
   inner: {
     overflow: 'auto',
-    marginTop: theme.spacing(1),
+    marginTop: theme.spacing(3),
     maxHeight: 400
   },
   nameContainer: {
@@ -116,6 +116,7 @@ class Dashboard extends React.Component {
       isExpansionButton: false,
       floatingFormType: '',
       search: '',
+      currentTeachers: [],
 
       windowsWidth: 0,
       windowsHeight: 0,
@@ -124,7 +125,7 @@ class Dashboard extends React.Component {
         {
           title: 'Tên Thiếu nhi',
           field: 'name',
-          cellStyle: {minWidth: 200}
+          cellStyle: { minWidth: 200 }
         },
         {
           title: 'Giáo khu',
@@ -158,11 +159,13 @@ class Dashboard extends React.Component {
 
     this.updateWindowDimensions = this.updateWindowDimensions.bind(this);
     this.myRef = createRef();
+    this._isMounted = false;
   }
 
   scrollToRef = () => this.myRef.current.scrollIntoView({ behavior: 'smooth' });
 
   componentDidMount = () => {
+    this._isMounted = true;
     this.updateWindowDimensions();
     window.addEventListener("resize", this.updateWindowDimensions.bind(this));
     localStorage.setItem('title', 'Danh sách Thiếu Nhi');
@@ -171,6 +174,7 @@ class Dashboard extends React.Component {
 
   componentWillUnmount = () => {
     window.removeEventListener("resize", this.updateWindowDimensions.bind(this));
+    this._isMounted = false;
   }
 
   updateWindowDimensions() {
@@ -184,16 +188,18 @@ class Dashboard extends React.Component {
     return axios
       .get('/backend/class/all')
       .then(result => {
-        let classArr = [];
-        result.data.data.forEach(res => {
-          classArr.push({
-            'title': res.Value,
-            'ID': res.ID
+        if (this._isMounted) {
+          let classArr = [];
+          result.data.data.forEach(res => {
+            classArr.push({
+              'title': res.Value,
+              'ID': res.ID
+            })
           })
-        })
-        this.setState({
-          classes: classArr
-        });
+          this.setState({
+            classes: classArr
+          });
+        }
       });
   }
 
@@ -207,19 +213,30 @@ class Dashboard extends React.Component {
           }
         })
 
-      .then(result => {
-        this.setState({
-          numberOfRecord: result.data.data
+        .then(result => {
+          if (this._isMounted) {
+            this.setState({
+              numberOfRecord: result.data.data
+            })
+          }
+
+          return axios.get(`/backend/user/get-user-by-class/${classID}`)
         })
-      })
-      .catch(err => {
-        console.log(err);
-        this.setState({
-          snackbarType: 'error',
-          snackerBarStatus: true,
-          snackbarMessage: 'Đã có lỗi trong quá trình nhận dữ liệu từ máy chủ'
+        .then(result => {
+          if (this._isMounted) {
+            this.setState({
+              currentTeachers: result.data.data
+            })
+          }
         })
-      })
+        .catch(err => {
+          console.log(err);
+          this.setState({
+            snackbarType: 'error',
+            snackerBarStatus: true,
+            snackbarMessage: 'Đã có lỗi trong quá trình nhận dữ liệu từ máy chủ'
+          })
+        })
     }
     else {
       return axios
@@ -229,9 +246,11 @@ class Dashboard extends React.Component {
           }
         })
         .then(result => {
-          this.setState({
-            numberOfRecord: result.data.data
-          })
+          if (this._isMounted) {
+            this.setState({
+              numberOfRecord: result.data.data
+            })
+          }
         })
         .catch(err => {
           console.log(err);
@@ -247,33 +266,35 @@ class Dashboard extends React.Component {
   getData = (classID, page, itemPerPage, search) => {
     const className = classID;
     return axios.get(`/backend/children/all/${page}`, {
-        params: {
-          itemPerPage: itemPerPage,
-          class: className,
-          search: search
+      params: {
+        itemPerPage: itemPerPage,
+        class: className,
+        search: search
+      }
+    })
+      .then(result => {
+        if (this._isMounted) {
+          let modifiedData = result.data.data;
+          modifiedData.forEach(row => {
+            row.birthday = (row.birthday === '' ? row.birthday : moment(row.birthday).format('DD/MM/YYYY'))
+            row.day_of_baptism = (row.day_of_baptism === '' ? row.day_of_baptism : moment(row.day_of_baptism).format('DD/MM/YYYY'))
+            row.day_of_eucharist = (row.day_of_eucharist === '' ? row.day_of_eucharist : moment(row.day_of_eucharist).format('DD/MM/YYYY'))
+            row.day_of_confirmation = (row.day_of_confirmation === '' ? row.day_of_confirmation : moment(row.day_of_confirmation).format('DD/MM/YYYY'));
+          })
+          this.setState({
+            records: modifiedData,
+            isLoadingData: false,
+          })
         }
       })
-    .then(result => {
-      let modifiedData = result.data.data;
-      modifiedData.forEach(row => {
-        row.birthday = (row.birthday === '' ? row.birthday : moment(row.birthday).format('DD/MM/YYYY'))
-        row.day_of_baptism = (row.day_of_baptism === '' ? row.day_of_baptism : moment(row.day_of_baptism).format('DD/MM/YYYY'))
-        row.day_of_eucharist = (row.day_of_eucharist === '' ? row.day_of_eucharist : moment(row.day_of_eucharist).format('DD/MM/YYYY'))
-        row.day_of_confirmation = (row.day_of_confirmation === '' ? row.day_of_confirmation : moment(row.day_of_confirmation).format('DD/MM/YYYY'));
+      .catch(err => {
+        console.log(err);
+        this.setState({
+          snackbarType: 'error',
+          snackerBarStatus: true,
+          snackbarMessage: 'Đã có lỗi trong quá trình nhận dữ liệu từ máy chủ'
+        })
       })
-      this.setState({
-        records: modifiedData,
-        isLoadingData: false,
-      })
-    })
-    .catch(err => {
-      console.log(err);
-      this.setState({
-        snackbarType: 'error',
-        snackerBarStatus: true,
-        snackbarMessage: 'Đã có lỗi trong quá trình nhận dữ liệu từ máy chủ'
-      })
-    })
   }
 
   reloadData = () => {
@@ -403,7 +424,7 @@ class Dashboard extends React.Component {
       this.reloadData();
     }
     else {
-      this.setState({ 
+      this.setState({
         snackerBarStatus: true,
         snackbarMessage: "Đã có lỗi xảy ra trong quá trình thay đổi",
         snackbarType: "error",
@@ -557,10 +578,11 @@ class Dashboard extends React.Component {
     return axios
       .get(`/backend/class/by-id/${e.target.value}`)
       .then(res => {
-        this.setState({
-          currentClass: res.data.data[0].Value
-        })
-        console.log(res.data.data[0])
+        if(this._isMounted) {
+          this.setState({
+            currentClass: res.data.data[0].Value
+          })
+        }
       })
   }
 
@@ -580,8 +602,22 @@ class Dashboard extends React.Component {
       <div className={(this.state.windowsWidth < 500) ? { padding: 0, width: '100%' } : classes.root}>
         <CustomHeader style={{
           background: this.state.themeColor,
-        }} title={(this.state.currentClass !== 'Chung')? "Danh sách Thiếu Nhi - " + this.state.currentClass : "Danh sách Thiếu Nhi"} 
-          subtitle="Bảng chi tiết sơ yếu lí lịch, lớp, điểm và điểm danh cho từng em thiếu nhi"/>
+          marginBottom: '-3em'
+        }} title={(this.state.currentClass !== 'Chung') ? "Danh sách Thiếu Nhi - " + this.state.currentClass : "Danh sách Thiếu Nhi"}
+          subtitle={
+            <div>
+              <Typography variant="subtitle2">Bảng chi tiết sơ yếu lí lịch, lớp, điểm và điểm danh cho từng em thiếu nhi</Typography>
+              <Toolbar variant="dense">
+                <Typography variant="subtitle2">Anh/Chị phụ trách</Typography>
+                {this.state.currentTeachers.map(people => (
+                  <Chip label={people.holyname + ' ' + people.fullname} 
+                        key={people.holyname + ' ' + people.fullname} 
+                        size="small" 
+                        style={{marginLeft: '5px', backgroundColor: '#4a148c', color: '#ffffff'}}/>
+                ))}
+              </Toolbar>
+            </div>
+          } />
         <Paper className={classes.content} elevation={5}>
           <div className={classes.inner}>
             {/* Table */}
@@ -679,15 +715,17 @@ class Dashboard extends React.Component {
                   onClick: () => this.reloadData(),
                 },
                 {
-                  icon: () => { return <Backup /> },
+                  icon: () => { return <GetApp /> },
                   tooltip: "Sao lưu toàn bộ danh sách",
                   isFreeAction: true,
+                  hidden: (this.state.windowsWidth < 500)? true: false,
                   onClick: () => this.handleExportData(),
                 },
                 {
-                  icon: () => { return <Restore /> },
+                  icon: () => { return <Publish /> },
                   tooltip: "Phục hồi danh sách",
                   isFreeAction: true,
+                  hidden: (this.state.windowsWidth < 500)? true: false,
                   onClick: () => this.handleRestoreData(),
                 },
                 {
@@ -697,7 +735,7 @@ class Dashboard extends React.Component {
                   onClick: () => this.handleSelectAll(),
                 },
                 {
-                  icon: () => { return <Clear style={{color: 'red'}} />},
+                  icon: () => { return <Clear style={{ color: 'red' }} /> },
                   tooltip: 'Chọn xóa',
                   onClick: (e, rowData) => this.handleRowClick(e, rowData)
                 },
@@ -751,8 +789,8 @@ class Dashboard extends React.Component {
             callback={this.handleCallBackFloatingform}
             type={this.state.floatingFormType}
             selectedData={this.state.selectedRecord}
-            updateStatus={this.handleStatusFromFloatingForm} 
-            resetSelectedRow={this.handleResetSelectedRow}/>
+            updateStatus={this.handleStatusFromFloatingForm}
+            resetSelectedRow={this.handleResetSelectedRow} />
           <input id="filePicker" type="file" onChange={e => this.handleFileChange(e)} accept=".csv" style={{ 'display': 'none' }} />
         </Paper>
         <div ref={this.myRef} />

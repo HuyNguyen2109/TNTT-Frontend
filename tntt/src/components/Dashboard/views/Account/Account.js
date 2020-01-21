@@ -11,7 +11,6 @@ const useStyles = theme => ({
   }
 });
 
-
 class Account extends React.Component {
   getUser = () => {
     return axios.get(`/backend/user/get-user/${localStorage.getItem('username')}`)

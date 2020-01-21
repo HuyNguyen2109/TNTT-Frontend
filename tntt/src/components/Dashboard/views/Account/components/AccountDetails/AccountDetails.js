@@ -45,18 +45,25 @@ class AccountDetails extends React.Component {
 
 
   componentDidMount = () => {
-    this.props.userdata.then(result => {
-      this.setState({
-        username: result.data.data.username,
-        fullname: result.data.data.fullname,
-        holyname: result.data.data.holyname,
-        birthday: moment(result.data.data.birthday).format(),
-        holyBirthday: moment(result.data.data.holy_birthday).format(),
-        phoneNumber: result.data.data.phone_number,
-        class: result.data.data.class,
-        email: result.data.data.email,
+    this._isMounted = true;
+    if(this._isMounted === true) {
+      this.props.userdata.then(result => {
+        this.setState({
+          username: result.data.data.username,
+          fullname: result.data.data.fullname,
+          holyname: result.data.data.holyname,
+          birthday: moment(result.data.data.birthday).format(),
+          holyBirthday: moment(result.data.data.holy_birthday).format(),
+          phoneNumber: result.data.data.phone_number,
+          class: result.data.data.class,
+          email: result.data.data.email,
+        })
       })
-    })
+    }
+  }
+
+  componentWillUnmount = () => {
+    this._isMounted = false
   }
 
   handleChange = (e, type) => {

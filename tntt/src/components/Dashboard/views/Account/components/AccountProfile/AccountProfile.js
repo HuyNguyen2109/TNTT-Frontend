@@ -52,30 +52,40 @@ class AccountProfile extends React.Component {
       //set default color
       themeColor: 'linear-gradient(to right bottom, #a1887f, #795548)'
     };
+
   };
 
   componentDidMount = () => {
-    this.displayTime();
-    this.props.userdata.then(result => {
-      this.setState({
-        //for display on website
-        fullname: result.data.data.fullname,
-        holyname: result.data.data.holyname,
-        //for calculating the progress
-        birthday: result.data.data.birthday,
-        holyBirthday: result.data.data.holy_birthday,
-        phoneNumber: result.data.data.phone_number,
-        email: result.data.data.email,
-        type: result.data.data.type
+    this._isMounted = true;
+    if(this._isMounted === true) {
+      this.displayTime();
+      this.props.userdata.then(result => {
+        this.setState({
+          //for display on website
+          fullname: result.data.data.fullname,
+          holyname: result.data.data.holyname,
+          //for calculating the progress
+          birthday: result.data.data.birthday,
+          holyBirthday: result.data.data.holy_birthday,
+          phoneNumber: result.data.data.phone_number,
+          email: result.data.data.email,
+          type: result.data.data.type
+        })
       })
-    })
+    }
   };
 
+  componentWillUnmount = () => {
+    this._isMounted = false;
+  }
+
   displayTime = () => {
-    this.setState({
-      currentTime: moment().format('hh:mm:ss A')
-    })
-    setTimeout(this.displayTime, 1000);
+    if(this._isMounted === true) {
+      this.setState({
+        currentTime: moment().format('hh:mm:ss A')
+      })
+      setTimeout(this.displayTime, 1000);
+    }
   }
 
   render = () => {
@@ -125,7 +135,8 @@ class AccountProfile extends React.Component {
 };
 
 AccountProfile.propTypes = {
-  className: PropTypes.string
+  className: PropTypes.string,
+  mount: PropTypes.bool
 };
 
 export default withStyles(useStyles)(AccountProfile);

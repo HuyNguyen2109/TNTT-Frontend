@@ -59,22 +59,29 @@ class forDev extends React.Component {
       isBackupExist: false,
       isRestore: false,
     }
+
+    this._isMounted = false;
   }
 
   componentDidMount = () => {
+    this._isMounted = true;
     return this.getLogs(this.state.selectedLogType)
+  }
+
+  componentWillUnmount = () => {
+    this._isMounted = false
   }
 
   getLogs = (type) => {
     return axios.get(`/backend/log/all/${type}`)
       .then(result => {
         const logsArr = result.data.data.logs
-        this.setState({ logs: logsArr, isLoading: false })
+        if (this._isMounted) this.setState({ logs: logsArr, isLoading: false })
 
         return axios.get('/backend/database/check-exist')
       })
       .then((result) => {
-        this.setState({isBackupExist : result.data.data})
+        if (this._isMounted) this.setState({isBackupExist : result.data.data})
       })
       .catch(err => {
         console.log(err);

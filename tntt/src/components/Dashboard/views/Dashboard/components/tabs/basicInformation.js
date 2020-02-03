@@ -71,7 +71,12 @@ class BasicInformation extends React.Component {
   }
 
   componentDidMount = () => {
-    return this.getClass();
+    this._isMounted = true;
+    if (this._isMounted) return this.getClass();
+  }
+
+  componentWillUnmount = () => {
+    this._isMounted = false;
   }
 
   componentDidUpdate = (prevProps) => {
@@ -82,20 +87,22 @@ class BasicInformation extends React.Component {
         .get(`/backend/children/by-name/${name}`)
         .then(result => {
           const data = result.data.data[0]
-          this.setState({
-            newName: data.name,
-            newFatherName: data.father_name,
-            newMotherName: data.mother_name,
-            newBirthday: (data.birthday === '') ? this.state.newBirthday : moment(data.birthday).format(),
-            newDayOfBaptism: (data.day_of_baptism === '') ? this.state.newDayOfBaptism : moment(data.day_of_baptism).format(),
-            newDayofEucharist: (data.day_of_eucharist === '') ? this.state.newDayofEucharist : moment(data.day_of_eucharist).format(),
-            newDayofConfirmation: (data.day_of_confirmation === '') ? this.state.newDayofConfirmation : moment(data.day_of_confirmation).format(),
-            newAddress: data.address,
-            newGender: (data.male === 'x') ? "Nam" : "Nữ",
-            newContact: data.contact,
-            newClass: data.class,
-            newDiocese: data.diocese
-          });
+          if(this._isMounted) {
+            this.setState({
+              newName: data.name,
+              newFatherName: data.father_name,
+              newMotherName: data.mother_name,
+              newBirthday: (data.birthday === '') ? this.state.newBirthday : moment(data.birthday).format(),
+              newDayOfBaptism: (data.day_of_baptism === '') ? this.state.newDayOfBaptism : moment(data.day_of_baptism).format(),
+              newDayofEucharist: (data.day_of_eucharist === '') ? this.state.newDayofEucharist : moment(data.day_of_eucharist).format(),
+              newDayofConfirmation: (data.day_of_confirmation === '') ? this.state.newDayofConfirmation : moment(data.day_of_confirmation).format(),
+              newAddress: data.address,
+              newGender: (data.male === 'x') ? "Nam" : "Nữ",
+              newContact: data.contact,
+              newClass: data.class,
+              newDiocese: data.diocese
+            });
+          }
         })
         .catch(err => {
           console.log(err)

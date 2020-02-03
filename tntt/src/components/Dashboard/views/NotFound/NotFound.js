@@ -1,8 +1,9 @@
 import React from 'react';
-import { makeStyles } from '@material-ui/styles';
-import { Grid, Typography } from '@material-ui/core';
+import { Grid, Typography, Button } from '@material-ui/core';
+import backgroundImage from '../../../../img/99840.jpg';
+import { withStyles } from '@material-ui/core/styles';
 
-const useStyles = makeStyles(theme => ({
+const useStyles = (theme) => ({
   root: {
     padding: theme.spacing(4)
   },
@@ -15,42 +16,53 @@ const useStyles = makeStyles(theme => ({
     display: 'inline-block',
     maxWidth: '100%',
     width: 560
+  },
+  bg: {
+    backgroundImage: `url(${backgroundImage})`,
+    backgroundRepeat: 'no-repeat',
+    backgroundSize: 'cover',
+    backgroundPosition: 'center',
+    height: '100%'
+  },
+})
+
+class NotFound extends React.Component {
+  backtoMain = () => {
+    return this.props.history.goBack();
   }
-}));
 
-const NotFound = () => {
-  const classes = useStyles();
+  render = () => {
+    const { classes } = this.props;
 
-  return (
-    <div className={classes.root}>
-      <Grid
-        container
-        justify="center"
-        spacing={4}
-      >
-        <Grid
-          item
-          lg={6}
-          xs={12}
-        >
-          <div className={classes.content}>
-            <Typography variant="h1">
-              404: The page you are looking for isn’t here
-            </Typography>
-            <Typography variant="subtitle2">
-              You either tried some shady route or you came here by mistake.
-              Whichever it is, try using the navigation
-            </Typography>
-            <img
-              alt="Under development"
-              className={classes.image}
-              src="/images/undraw_page_not_found_su7k.svg"
-            />
-          </div>
-        </Grid>
-      </Grid>
-    </div>
-  );
-};
+    return (
+      <div className={classes.bg}>
+        <div className={classes.root}>
+          <Grid
+            container
+            justify="center"
+            spacing={4}
+          >
+            <Grid
+              item
+              lg={6}
+              xs={12}
+            >
+              <div className={classes.content}>
+                <Typography variant="h1">
+                  404: Trang bạn đang tìm kiếm hiện không tồn tại
+                </Typography>
+                <Typography variant="subtitle2" style={{color: 'white'}}>
+                  Bạn được chuyển đến trang này do sai đường dẫn hoặc lỗi mạng.
+                  Vì bất kì lí do gì, xin tải lại trang hoặc dùng thanh điều hướng trình duyệt
+                </Typography>
+                <Button color="primary" variant="contained" style={{ marginTop: '3em' }} onClick={this.backtoMain}>Quay lại trang chủ</Button>
+              </div>
+            </Grid>
+          </Grid>
+        </div>
+      </div>
+    );
+  }
+}
 
-export default NotFound;
+export default withStyles(useStyles)(NotFound);

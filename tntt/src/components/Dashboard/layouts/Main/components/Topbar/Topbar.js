@@ -1,6 +1,6 @@
 import React from 'react';
 import clsx from 'clsx';
-import { AppBar, Toolbar, Badge, Hidden, IconButton, Tooltip, Typography } from '@material-ui/core';
+import { AppBar, Toolbar, Badge, Hidden, IconButton, Tooltip, Typography, Popover, Paper } from '@material-ui/core';
 import MenuIcon from '@material-ui/icons/Menu';
 import {
   Notifications, PowerSettingsNew, Facebook
@@ -28,6 +28,11 @@ const useStyles = theme => ({
   },
   title: {
     color: "black"
+  },
+  popoverContent: {
+    width: '15em',
+    height: '30em',
+    padding: theme.spacing(2)
   }
 });
 
@@ -37,7 +42,8 @@ class Topbar extends React.Component {
 
     this.state = {
       notifications: [],
-      title: ''
+      title: '',
+      anchorEl: null,
     }
   }
 
@@ -47,6 +53,14 @@ class Topbar extends React.Component {
         title: this.props.title
       });
     }
+  }
+
+  openPopover = (event) => {
+    this.setState({ anchorEl: event.target })
+  }
+
+  closePopover = () => {
+    this.setState({ anchorEl: null })
   }
 
   logOut = (event) => {
@@ -59,7 +73,7 @@ class Topbar extends React.Component {
 
   render = () => {
     const { classes, className, onSidebarOpen, ...rest } = this.props;
-
+    const open = Boolean(this.state.anchorEl)
     return (
       <AppBar
         {...rest}
@@ -78,7 +92,7 @@ class Topbar extends React.Component {
               </IconButton>
             </Tooltip>
             <Tooltip title="Thông báo">
-              <IconButton className={classes.icon} >
+              <IconButton className={classes.icon} onClick={this.openPopover}>
                 <Badge
                   badgeContent={this.state.notifications.length}
                   color="primary"
@@ -116,6 +130,22 @@ class Topbar extends React.Component {
             </IconButton>
             </Tooltip>
           </Hidden>
+          <Popover
+            open={open}
+            className={classes.popover}
+            anchorEl={this.state.anchorEl}
+            onClose={this.closePopover}
+            anchorOrigin={{
+              vertical: 'bottom',
+              horizontal: 'center',
+            }}
+            transformOrigin={{
+              vertical: 'top',
+              horizontal: 'right',
+            }}
+          >
+            <Paper className={classes.popoverContent}>AAA</Paper>
+          </Popover>
         </Toolbar>
       </AppBar>
     );

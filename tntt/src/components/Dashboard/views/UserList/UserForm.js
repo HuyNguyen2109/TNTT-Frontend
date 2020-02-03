@@ -56,10 +56,16 @@ class UserForm extends React.Component {
       classes: [],
       types: [
         {
+          title: 'Ban điều hành',
           type: 'Admin'
         },
         {
-          type: 'Guest'
+          title: 'Trưởng ngành',
+          type: 'Leader'
+        },
+        {
+          title: 'Thành viên',
+          type: 'Member'
         }
       ],
     };
@@ -357,7 +363,7 @@ class UserForm extends React.Component {
             >
               {this.state.types.map(typeEl => (
                 <MenuItem key={typeEl.type} value={typeEl.type}>
-                  {typeEl.type}
+                  {typeEl.title}
                 </MenuItem>
               ))}
             </TextField>

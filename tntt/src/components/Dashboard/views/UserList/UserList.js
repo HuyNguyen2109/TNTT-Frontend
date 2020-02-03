@@ -12,12 +12,15 @@ import {
   Clear,
   Delete,
   PersonAdd,
+  Add,
+  CallMerge
 } from '@material-ui/icons';
 import MaterialTable from 'material-table';
 import tableIcons from '../Dashboard/components/tableIcon';
 import SnackDialog from '../../../SnackerBar';
 import UserForm from './UserForm';
 import CustomHeader from '../../../Dashboard/components/CustomHeader/CustomHeader';
+import Dialog from '../General/components/Dialog';
 
 const useStyles = (theme) => ({
   master: {
@@ -85,7 +88,7 @@ class UserList extends React.Component {
           title: 'Họ và tên',
           field: 'fullname',
           editable: 'onAdd',
-          cellStyle: {minWidth: 200}
+          cellStyle: { minWidth: 200 }
         },
         {
           title: 'Số điện thoại',
@@ -170,17 +173,23 @@ class UserList extends React.Component {
         },
       ],
       //for theme color
-      themeColor: 'linear-gradient(to right bottom, #4db6ac, #009688)'
+      themeColor: 'linear-gradient(to right bottom, #4db6ac, #009688)',
+      isOpenEventForm: false,
+      isButtonDisabled: false,
+      internalFunds: [],
+      isLoadingFund: true,
     };
   }
 
   componentDidMount = () => {
     this.updateWindowDimensions();
+    this._isMounted = true;
     window.addEventListener('resize', this.updateWindowDimensions.bind(this));
-    return this.getUsers();
+    return this.getUsers() && this.getInternalFunds();
   }
 
   componentWillUnmount = () => {
+    this._isMounted = false;
     window.removeEventListener("resize", this.updateWindowDimensions.bind(this));
   }
 
@@ -191,6 +200,18 @@ class UserList extends React.Component {
     })
   }
 
+  priceFormat = (num) => {
+    if(Math.abs(num) > 999 && Math.abs(num) < 999999) {
+      return Math.sign(num)*((Math.abs(num)/1000).toFixed(1)) + 'ng';
+    }
+    else if (Math.abs(num) > 999999) {
+      return Math.sign(num)*((Math.abs(num)/1000000).toFixed(1)) + 'tr';
+    }
+    else {
+      return num
+    };
+  }
+
   getUsers = () => {
     return axios
       .get('/backend/user/all')
@@ -198,14 +219,16 @@ class UserList extends React.Component {
         let users = result.data.data;
         const currentUser = localStorage.getItem('username');
         users.forEach(user => {
-          user.birthday = (user.birthday === '')? '': moment(user.birthday).format('DD/MM/YYYY');
-          user.holy_birthday = (user.holy_birthday === '')? '' : moment(user.holy_birthday).format('DD/MM/YYYY');
+          user.birthday = (user.birthday === '') ? '' : moment(user.birthday).format('DD/MM/YYYY');
+          user.holy_birthday = (user.holy_birthday === '') ? '' : moment(user.holy_birthday).format('DD/MM/YYYY');
         })
         users = users.filter(user => user.username !== currentUser);
-        this.setState({
-          usersData: users,
-          isLoadingData: false
-        })
+        if(this._isMounted) {
+          this.setState({
+            usersData: users,
+            isLoadingData: false
+          })
+        }
       })
       .catch(err => {
         console.log(err);
@@ -214,6 +237,21 @@ class UserList extends React.Component {
           snackerBarStatus: true,
           snackbarMessage: 'Đã có lỗi trong quá trình nhận dữ liệu từ máy chủ'
         })
+      })
+  }
+
+  getInternalFunds = () => {
+    return axios
+      .get('/backend/internal-fund/all')
+      .then(result => {
+        let allInternalFunds = result.data.data;
+        allInternalFunds.forEach(fund => {
+          fund.price = this.priceFormat(fund.price);
+        })
+
+        if(this._isMounted) {
+          this.setState({ internalFunds: allInternalFunds, isLoadingFund: false })
+        }
       })
   }
 
@@ -259,6 +297,31 @@ class UserList extends React.Component {
       })
   }
 
+  createNewFund = (fund) => {
+    this.setState({ isButtonDisabled: true, isLoadingFund: true })
+
+    return axios
+      .post('/backend/internal-fund/new-fund', fund)
+      .then(res => {
+        if (res.data.code === 'I001') {
+          this.setState({
+            isButtonDisabled: false,
+            isOpenEventForm: false,
+          })
+          this.getInternalFunds();
+        }
+      })
+      .catch(err => {
+        this.setState({
+          snackerBarStatus: true,
+          snackbarType: 'error',
+          snackbarMessage: 'Đã có lỗi từ máy chủ',
+          isButtonDisabled: false,
+          isLoadingFund: false,
+        })
+      })
+  }
+
   handleRowClick = (e, rowData) => {
     let joined;
     if (this.state.selectedRows.includes(rowData) === true) {
@@ -283,7 +346,7 @@ class UserList extends React.Component {
   }
 
   handleStatusUserForm = (callback) => {
-    if(callback === 'successfully') {
+    if (callback === 'successfully') {
       this.setState({
         snackerBarStatus: true,
         snackbarMessage: "Thay đổi thành công",
@@ -292,7 +355,7 @@ class UserList extends React.Component {
       this.reloadData();
     }
     else {
-      this.setState({ 
+      this.setState({
         snackerBarStatus: true,
         snackbarMessage: "Đã có lỗi xảy ra trong quá trình thay đổi",
         snackbarType: "error",
@@ -309,8 +372,12 @@ class UserList extends React.Component {
     })
   }
 
+  handleCloseForm = (callback) => {
+    this.setState({ isOpenEventForm: callback })
+  }
+
   handleRowSelection = (e, rowData) => {
-    if(localStorage.getItem('type') === 'Admin') {
+    if (localStorage.getItem('type') === 'Admin') {
       this.setState({
         isOpeningUserFrom: true,
         typeOfForm: 'edit',
@@ -332,24 +399,23 @@ class UserList extends React.Component {
     this.setState({
       isLoadingData: true
     })
-    if(e.target.value !== '') {
+    if (e.target.value !== '') {
       return axios
         .get('/backend/user/all')
         .then(result => {
           let users = result.data.data;
           const currentUser = localStorage.getItem('username');
           users.forEach(user => {
-            user.birthday = (user.birthday === '')? '': moment(user.birthday).format('DD/MM/YYYY');
-            user.holy_birthday = (user.holy_birthday === '')? '' : moment(user.holy_birthday).format('DD/MM/YYYY');
+            user.birthday = (user.birthday === '') ? '' : moment(user.birthday).format('DD/MM/YYYY');
+            user.holy_birthday = (user.holy_birthday === '') ? '' : moment(user.holy_birthday).format('DD/MM/YYYY');
           })
           users = users.filter(user => user.username !== currentUser);
-          console.log(users);
           users = users.filter(user => user.birthday.split('/')[1] === e.target.value || user.holy_birthday.split('/')[1] === e.target.value);
           this.setState({
             usersData: users,
             isLoadingData: false
           })
-      })
+        })
     }
     else {
       return this.getUsers();
@@ -361,139 +427,229 @@ class UserList extends React.Component {
 
     return (
       <div className={(this.state.windowWidth < 500) ? { padding: 0, width: '100%' } : classes.master}>
-        <CustomHeader style={{
-          background: this.state.themeColor,
-        }} title="Danh sách thành viên" 
-          subtitle="Bảng chi tiết các anh/chị/quý tu sĩ đang hoạt động trong Xứ Đoàn"/>
-        <Paper className={classes.root} elevation={5}>
-          <div className={classes.content}>
-            <MaterialTable
-              title={
-                <Grid container spacing={1} alignItems="flex-end">
-                  <Grid item>
-                    <Typography variant="subtitle1">Sinh nhật và bổn mạng:</Typography>
-                  </Grid>
-                  <Grid item>
-                    <TextField
-                      select
-                      value={this.state.selectedMonth}
-                      onChange={e => this.handleMonthChange(e, "selectedMonth")}
-                      fullWidth
-                      SelectProps={{
-                        MenuProps: {
-                          className: classes.menu
+        <Grid container spacing={4}>
+          <Grid item lg={8} md={6} sm={12}>
+            <CustomHeader style={{
+              background: this.state.themeColor,
+            }} title="Danh sách thành viên"
+              subtitle="Bảng chi tiết các anh/chị/quý tu sĩ đang hoạt động trong Xứ Đoàn" />
+            <Paper className={classes.root} elevation={5}>
+              <div className={classes.content}>
+                <MaterialTable
+                  title={
+                    <Grid container spacing={1} alignItems="flex-end">
+                      <Grid item>
+                        <Typography variant="subtitle1">Sinh nhật và bổn mạng:</Typography>
+                      </Grid>
+                      <Grid item>
+                        <TextField
+                          select
+                          value={this.state.selectedMonth}
+                          onChange={e => this.handleMonthChange(e, "selectedMonth")}
+                          fullWidth
+                          SelectProps={{
+                            MenuProps: {
+                              className: classes.menu
+                            }
+                          }}
+                        >
+                          {this.state.months.map(month => (
+                            <MenuItem key={month.title} value={month.value}>
+                              {month.title}
+                            </MenuItem>
+                          ))}
+                        </TextField>
+                      </Grid>
+                    </Grid>
+                  }
+                  icons={tableIcons}
+                  data={this.state.usersData}
+                  columns={this.state.tableColumns}
+                  isLoading={this.state.isLoadingData}
+                  onRowClick={this.handleRowSelection}
+                  options={{
+                    paging: false,
+                    sorting: false,
+                    headerStyle: {
+                      position: 'sticky',
+                      top: 0,
+                      color: '#009688',
+                      fontSize: 15
+                    },
+                    search: true,
+                    maxBodyHeight: '300px',
+                    debounceInterval: 500,
+                    rowStyle: rowData => {
+                      if (this.state.selectedRows.indexOf(rowData) !== -1) {
+                        return {
+                          backgroundColor: '#ffecb3'
                         }
-                      }}
-                    >
-                      {this.state.months.map(month => (
-                        <MenuItem key={month.title} value={month.value}>
-                          {month.title}
-                        </MenuItem>
-                      ))}
-                    </TextField>
-                  </Grid>
-                </Grid>
-              }
-              icons={tableIcons}
-              data={this.state.usersData}
-              columns={this.state.tableColumns}
-              isLoading={this.state.isLoadingData}
-              onRowClick={this.handleRowSelection}
-              options={{
-                paging: false,
-                sorting: false,
-                headerStyle: {
-                  position: 'sticky',
-                  top: 0,
-                  color: '#009688',
-                  fontSize: 15
-                },
-                search: true,
-                maxBodyHeight: '300px',
-                debounceInterval: 500,
-                rowStyle: rowData => {
-                  if (this.state.selectedRows.indexOf(rowData) !== -1) {
-                    return { 
-                      backgroundColor: '#ffecb3'
+                      }
+                      return {};
                     }
-                  }
-                  return {};
-                }
-              }}
-              localization={{
-                header: {
-                  actions: ''
-                },
-                body: {
-                  emptyDataSourceMessage: 'Không có dữ liệu!',
-                  addTooltip: 'Tạo tài khoản mới',
-                  editRow: {
-                    saveTooltip: 'Lưu',
-                    cancelTooltip: 'Hủy bỏ'
-                  }
-                },
-                toolbar: {
-                  searchPlaceholder: 'Tìm kiếm...',
-                  searchTooltip: 'Nhập từ khóa để tìm kiếm'
-                },
-              }}
-              actions={[
-                {
-                  icon: () => { return <Cached /> },
-                  tooltip: "Cập nhật danh sách",
-                  isFreeAction: true,
-                  onClick: () => this.reloadData(),
-                },
-                {
-                  icon: () => { return <PersonAdd /> },
-                  isFreeAction: true,
-                  onClick: () => {
-                    this.setState({
-                      isOpeningUserFrom: true,
-                      typeOfForm: 'add',
-                    })
-                  },
-                  tooltip: 'Tạo tài khoản mới',
-                  disabled: (localStorage.getItem('type') === 'Admin')? false : true
-                },
-                {
-                  icon: () => { return <Clear style={{color: 'red'}} />},
-                  tooltip: 'Chọn xóa',
-                  onClick: (e, rowData) => this.handleRowClick(e, rowData),
-                  hidden: (localStorage.getItem('type') === 'Admin')? false : true
-                },
-              ]}
-              />
-          </div>
-          <UserForm 
-            open={this.state.isOpeningUserFrom}
-            type={this.state.typeOfForm}
-            callback={this.handleUserForm} 
-            status={this.handleStatusUserForm}
-            selectedData={this.state.selectedRecord}
-            resetSelectedRow={this.handleResetSelectedRow}/>
-          <Collapse in={(this.state.selectedRows.length > 0) ? true : false}>
-            <Toolbar className={classes.chipsContainer}>
-            <Typography variant="subtitle1">Đã chọn: {this.state.selectedRows.length}</Typography>
-              {this.state.selectedRows.map(row => (
-                <MuiThemeProvider theme={colorChips} key={row.username}>
-                  <Chip label={row.fullname} size="small" color='primary' />
-                </MuiThemeProvider>
-              ))}
-              <div className={classes.flexGrow} />
-              <Button
-                className={classes.formButton}
-                onClick={this.multipleDelete}
-                tooltip="Xóa tất cả"
-              ><Delete /></Button>
-              <Button
-                className={classes.formButton}
-                onClick={this.handleCancelAll}
-                tooltip="Xóa tất cả"
-              ><Cancel /></Button>
-            </Toolbar>
-          </Collapse>
-        </Paper>
+                  }}
+                  localization={{
+                    header: {
+                      actions: ''
+                    },
+                    body: {
+                      emptyDataSourceMessage: 'Không có dữ liệu!',
+                      addTooltip: 'Tạo tài khoản mới',
+                      editRow: {
+                        saveTooltip: 'Lưu',
+                        cancelTooltip: 'Hủy bỏ'
+                      }
+                    },
+                    toolbar: {
+                      searchPlaceholder: 'Tìm kiếm...',
+                      searchTooltip: 'Nhập từ khóa để tìm kiếm'
+                    },
+                  }}
+                  actions={[
+                    {
+                      icon: () => { return <Cached /> },
+                      tooltip: "Cập nhật danh sách",
+                      isFreeAction: true,
+                      onClick: () => this.reloadData(),
+                    },
+                    {
+                      icon: () => { return <PersonAdd /> },
+                      isFreeAction: true,
+                      onClick: () => {
+                        this.setState({
+                          isOpeningUserFrom: true,
+                          typeOfForm: 'add',
+                        })
+                      },
+                      tooltip: 'Tạo tài khoản mới',
+                      disabled: (localStorage.getItem('type') === 'Admin') ? false : true
+                    },
+                    {
+                      icon: () => { return <Clear style={{ color: 'red' }} /> },
+                      tooltip: 'Chọn xóa',
+                      onClick: (e, rowData) => this.handleRowClick(e, rowData),
+                      hidden: (localStorage.getItem('type') === 'Admin') ? false : true
+                    },
+                  ]}
+                />
+              </div>
+              <UserForm
+                open={this.state.isOpeningUserFrom}
+                type={this.state.typeOfForm}
+                callback={this.handleUserForm}
+                status={this.handleStatusUserForm}
+                selectedData={this.state.selectedRecord}
+                resetSelectedRow={this.handleResetSelectedRow} />
+              <Collapse in={(this.state.selectedRows.length > 0) ? true : false}>
+                <Toolbar className={classes.chipsContainer}>
+                  <Typography variant="subtitle1">Đã chọn: {this.state.selectedRows.length}</Typography>
+                  {this.state.selectedRows.map(row => (
+                    <MuiThemeProvider theme={colorChips} key={row.username}>
+                      <Chip label={row.fullname} size="small" color='primary' />
+                    </MuiThemeProvider>
+                  ))}
+                  <div className={classes.flexGrow} />
+                  <Button
+                    className={classes.formButton}
+                    onClick={this.multipleDelete}
+                    tooltip="Xóa tất cả"
+                  ><Delete /></Button>
+                  <Button
+                    className={classes.formButton}
+                    onClick={this.handleCancelAll}
+                    tooltip="Xóa tất cả"
+                  ><Cancel /></Button>
+                </Toolbar>
+              </Collapse>
+            </Paper>
+          </Grid>
+          <Grid item lg={4} md={6} sm={12}>
+            <CustomHeader style={{
+              background: this.state.themeColor,
+            }} title="Quỹ Xứ đoàn"
+              subtitle="Chi tiết thu chi quỹ nội bộ Xứ Đoàn" />
+            <Paper className={classes.root} elevation={5}>
+              <div className={classes.content}>
+                <MaterialTable
+                  icons={tableIcons}
+                  columns={[
+                    {
+                      title: 'Ngày',
+                      field: 'date',
+                      cellStyle: { minWidth: 20 }
+                    },
+                    {
+                      title: 'Nội dung',
+                      field: 'title',
+                      cellStyle: { minWidth: 250 }
+                    },
+                    {
+                      title: 'Số tiền',
+                      field: 'price',
+                      cellStyle: { minWidth: 50 }
+                    }
+                  ]}
+                  data={this.state.internalFunds}
+                  isLoading={this.state.isLoadingFund}
+                  options={{
+                    paging: false,
+                    sorting: false,
+                    headerStyle: {
+                      position: 'sticky',
+                      top: 0,
+                      color: '#009688',
+                      fontSize: 15
+                    },
+                    search: false,
+                    maxBodyHeight: '200px',
+                    showTitle: false
+                  }}
+                  localization={{
+                    body: {
+                      emptyDataSourceMessage: 'Không có dữ liệu!'
+                    },
+                  }}
+                  actions={[
+                    {
+                      icon: () => { return <Add /> },
+                      tooltip: 'Thêm sự kiện',
+                      isFreeAction: true,
+                      hidden: (localStorage.type !== 'Admin') ? true : false,
+                      onClick: () => {
+                        this.setState({
+                          isOpenEventForm: true,
+                        })
+                      }
+                    },
+                    {
+                      icon: () => { return <CallMerge /> },
+                      tooltip: 'Tổng kết quỹ đến hiện tại',
+                      isFreeAction: true,
+                      hidden: (localStorage.type !== 'Admin') ? true : false,
+                      onClick: () => {
+                        return axios.post('/backend/internal-fund/merge-fund')
+                          .then(res => {
+                            if (res.data.code === 'I001') {
+                              this.setState({ isLoadingFund: true })
+                              this.getInternalFunds();
+                            }
+                          })
+                          .catch(err => {
+                            this.setState({
+                              snackerBarStatus: true,
+                              snackbarType: 'error',
+                              snackbarMessage: 'Đã có lỗi từ máy chủ',
+                              isButtonDisabled: false
+                            })
+                          })
+                      }
+                    }
+                  ]}
+                />
+              </div>
+            </Paper>
+          </Grid>
+        </Grid>
         <SnackDialog
           variant={this.state.snackbarType}
           message={this.state.snackbarMessage}
@@ -502,6 +658,13 @@ class UserList extends React.Component {
           open={this.state.snackerBarStatus}
           type={this.state.floatingFormType}
         />
+        <Dialog
+          open={this.state.isOpenEventForm}
+          dialogType='fund'
+          callback={this.handleCloseForm}
+          func={this.createNewFund}
+          disabled={this.state.isButtonDisabled}
+          style={{ color: '#009688' }} />
       </div>
     )
   }

@@ -218,6 +218,7 @@ class General extends React.Component {
       isLoading: true,
       //for tumblr image APIs
       tumblrImageURL: '',
+      tumblrImagePage: '',
       tumbleContent: '',
     }
   }
@@ -303,7 +304,8 @@ class General extends React.Component {
         axios.get('/backend/event/all'),
         axios.get('/backend/document/all'),
         axios.get('/backend/database/tumblr/posts'),
-        axios.get('/backend/class/all')
+        axios.get('/backend/class/all'),
+        axios.get('/backend/internal-fund/all'),
       ])
         .then(responses => {
           let dataResponses = [];
@@ -322,6 +324,12 @@ class General extends React.Component {
             fund.price = this.priceFormat(fund.price);
           })
           
+          // Internal Fund modifications
+          let totalInternalFund = 0;
+          let allInternalFunds = dataResponses[7];
+          allInternalFunds.forEach(fund => {
+            totalInternalFund += fund.price;
+          })
           //draw chart
           const groupedFunds = _.groupBy(dataResponses[2], fund => fund.date.split("/")[1])
           Object.values(groupedFunds).forEach(keys => {
@@ -367,6 +375,7 @@ class General extends React.Component {
           // End of Fund modifications
           // Event modifications
           let listOfEvents = dataResponses[3];
+          listOfEvents = _.orderBy(listOfEvents, ['date'], ['desc']);
           listOfEvents.forEach(event => {
             event.date = (event.date === '')? '' : moment(event.date).format('DD/MM/YYYY');
           })
@@ -394,12 +403,11 @@ class General extends React.Component {
             userTotalCount: dataResponses[1].length,
             childrenFunds: allFunds,
             childrenFundTotalCount: totalFunds,
-            isLoadingChildrenFundTable: false,
+            internalFundTotalCount: totalInternalFund,
             events: listOfEvents,
-            isLoadingEventTable: false,
             documents: listOfDocuments,
-            isLoaingDocumentTable: false,
             tumblrImageURL: dataResponses[5].img,
+            tumblrImagePage: dataResponses[5].url,
             classes: dataResponses[6],
             isLoadingClassTable: false,
             isLoading: false
@@ -433,12 +441,18 @@ class General extends React.Component {
           }); 
         })
         .catch(err => {
-          this.setState({
-            snackerBarStatus: true,
-            snackbarType: 'error',
-            snackbarMessage: 'Đã có lỗi từ máy chủ',
-            isLoading: false
-          })
+          console.log(err.response)
+          if(err.response.status === 404 || err.response.status === 500) {
+            this.props.history.push('/not-found');
+          }
+          else {
+            this.setState({
+              snackerBarStatus: true,
+              snackbarType: 'error',
+              snackbarMessage: 'Đã có lỗi từ máy chủ',
+              isLoading: false
+            })
+          }
         });
     }
   }
@@ -548,7 +562,6 @@ class General extends React.Component {
   }
 
   createDocument = (e) => {
-    this.setState({ isLoaingDocumentTable: true, isLoading: true})
     const data = new FormData();
     data.append('date', moment().format('YYYY-MM-DD hh:mm:ss')) 
     data.append('username', localStorage.getItem('username'))
@@ -572,7 +585,7 @@ class General extends React.Component {
             snackbarType: 'error',
             snackbarMessage: 'File đã có sẵn trên máy chủ, vui lòng đổi tên file nếu đó là bản cập nhật',
             isButtonDisabled: false,
-            isLoaingDocumentTable: false,
+            isLoading: false,
           })
         }
         else {
@@ -582,7 +595,7 @@ class General extends React.Component {
             snackbarType: 'error',
             snackbarMessage: 'Đã có lỗi từ máy chủ',
             isButtonDisabled: false,
-            isLoaingDocumentTable: false,
+            isLoading: false,
           })
         }
       })
@@ -759,7 +772,6 @@ class General extends React.Component {
                     icons={tableIcons}
                     columns={this.state.classTableColumn}
                     data={this.state.classes}
-                    isLoading={this.state.isLoadingClassTable}
                     options={{
                       paging: false,
                       sorting: false,
@@ -803,7 +815,6 @@ class General extends React.Component {
                                   userTotalCount: 0,
                                   childrenFundTotalCount: 0,
                                   internalFundTotalCount: 0,
-                                  isLoadingClassTable: true
                                 })
                                 this.getData();
                               }
@@ -814,7 +825,8 @@ class General extends React.Component {
                                   snackerBarStatus: true,
                                   snackbarType: 'error',
                                   snackbarMessage: 'Lớp đã xóa hoặc không tồn tại trong CSDL',
-                                  isButtonDisabled: false
+                                  isButtonDisabled: false,
+                                  isLoading: false,
                                 })
                               }
                               else {
@@ -822,7 +834,8 @@ class General extends React.Component {
                                   snackerBarStatus: true,
                                   snackbarType: 'error',
                                   snackbarMessage: 'Đã có lỗi từ máy chủ',
-                                  isButtonDisabled: false
+                                  isButtonDisabled: false,
+                                  isLoading: false,
                                 })
                               }
                             })
@@ -857,11 +870,10 @@ class General extends React.Component {
               children={
                 <div style={{marginTop: '13em'}}>
                   <MaterialTable 
-                    title='Chi tiết quỹ TN'
+                    title='Nhật ký quỹ TN'
                     icons={tableIcons}
                     columns={this.state.childrenFundColumns}
                     data={this.state.childrenFunds}
-                    isLoading={this.state.isLoadingChildrenFundTable}
                     options={{
                       paging: false,
                       sorting: false,
@@ -901,7 +913,6 @@ class General extends React.Component {
                           return axios.post('/backend/children-fund/merge-fund')
                             .then(res => {
                               if(res.data.code === 'I001') {
-                                this.setState({ isLoadingChildrenFundTable: true })
                                 this.getData();
                               }
                             })
@@ -910,7 +921,8 @@ class General extends React.Component {
                                 snackerBarStatus: true,
                                 snackbarType: 'error',
                                 snackbarMessage: 'Đã có lỗi từ máy chủ',
-                                isButtonDisabled: false
+                                isButtonDisabled: false,
+                                isLoading: false,
                               })
                             })
                         }
@@ -943,7 +955,7 @@ class General extends React.Component {
               }}
               children={
                 <div style={{marginTop: '2em'}}>
-                  <img src={this.state.tumblrImageURL} alt='' className={classes.image} onClick={() => window.open(this.state.tumblrImageURL, '_blank')}/>
+                  <img src={this.state.tumblrImageURL} alt='' className={classes.image} onClick={() => window.open(`https://${this.state.tumblrImagePage}`, '_blank')}/>
                   <div style={{overflowX: 'auto', height: '12em'}} id='content'></div>
                 </div>
               }
@@ -985,7 +997,6 @@ class General extends React.Component {
                                   userTotalCount: 0,
                                   childrenFundTotalCount: 0,
                                   internalFundTotalCount: 0,
-                                  isLoadingEventTable: true
                                 })
                                 this.getData();
                               }
@@ -995,7 +1006,8 @@ class General extends React.Component {
                                 snackerBarStatus: true,
                                 snackbarType: 'error',
                                 snackbarMessage: 'Đã có lỗi từ máy chủ',
-                                isButtonDisabled: false
+                                isButtonDisabled: false,
+                                isLoading: false,
                               })
                             })
                           }}>
@@ -1004,7 +1016,6 @@ class General extends React.Component {
                       </div>
                     }
                     icons={tableIcons}
-                    isLoading={this.state.isLoadingEventTable}
                     data={this.state.events}
                     columns={[
                       {
@@ -1051,7 +1062,6 @@ class General extends React.Component {
                                   userTotalCount: 0,
                                   childrenFundTotalCount: 0,
                                   internalFundTotalCount: 0,
-                                  isLoadingEventTable: true
                                 })
                                 this.getData();
                               }
@@ -1061,7 +1071,8 @@ class General extends React.Component {
                                 snackerBarStatus: true,
                                 snackbarType: 'error',
                                 snackbarMessage: 'Đã có lỗi từ máy chủ',
-                                isButtonDisabled: false
+                                isButtonDisabled: false,
+                                isLoading: false,
                               })
                             })
                         } 
@@ -1113,7 +1124,6 @@ class General extends React.Component {
                     } 
                     icons={tableIcons}
                     data={this.state.documents}
-                    isLoading={this.state.isLoaingDocumentTable}
                     columns={[
                       {
                         title: 'Tên tài liệu',
@@ -1157,7 +1167,6 @@ class General extends React.Component {
                           return axios.delete(`/backend/document/delete-by-id/${rowData._id}`)
                           .then(res => {
                             if(res.data.code === 'I001') {
-                              this.setState({ isLoaingDocumentTable: true})
                               this.getData();
                               this.setState({
                                 snackerBarStatus: true,
@@ -1172,6 +1181,7 @@ class General extends React.Component {
                               snackerBarStatus: true,
                               snackbarType: 'error',
                               snackbarMessage: 'Đã có lỗi trong quá trình xóa tài liệu',
+                              isLoading: false,
                             })
                           })
                         }
@@ -1200,6 +1210,7 @@ class General extends React.Component {
                                 snackerBarStatus: true,
                                 snackbarType: 'error',
                                 snackbarMessage: 'Đã có lỗi trong quá trình tải xuống',
+                                isLoading: false,
                               }) 
                             })
                         }

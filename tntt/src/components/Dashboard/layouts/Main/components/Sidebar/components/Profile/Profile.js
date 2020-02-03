@@ -48,6 +48,19 @@ class Profile extends React.Component {
     this._isMounted = false
   }
 
+  formatUserType = (type) => {
+    switch(type) {
+      case 'Admin':
+        return 'Ban điều hành';
+      case 'Leader': 
+        return 'Trưởng ngành';
+      case 'Member':
+        return 'Thành viên';
+      default:
+        return 'Khách';
+    }
+  }
+
   getUser = () => {
     axios
       .get(`/backend/user/get-user/${localStorage.getItem('username')}`)
@@ -89,7 +102,7 @@ class Profile extends React.Component {
         >
           {this.state.fullname}
         </Typography>
-        <Typography variant="body2" align="center">{this.state.type}</Typography>
+        <Typography variant="body2" align="center">{this.formatUserType(this.state.type)}</Typography>
       </div>
     );
   }

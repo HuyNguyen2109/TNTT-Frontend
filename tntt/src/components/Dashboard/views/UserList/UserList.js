@@ -52,6 +52,12 @@ const useStyles = (theme) => ({
   menu: {
     width: '100%'
   },
+  customInput: {
+    '& label.Mui-focused': { color: '#009688' },
+    '& .MuiInput-underline:after': {
+      borderBottomColor: '#009688',
+    },
+  },
 });
 
 const colorChips = createMuiTheme({
@@ -182,22 +188,24 @@ class UserList extends React.Component {
   }
 
   componentDidMount = () => {
-    this.updateWindowDimensions();
     this._isMounted = true;
+    this.updateWindowDimensions();
     window.addEventListener('resize', this.updateWindowDimensions.bind(this));
     return this.getUsers() && this.getInternalFunds();
   }
 
   componentWillUnmount = () => {
-    this._isMounted = false;
     window.removeEventListener("resize", this.updateWindowDimensions.bind(this));
+    this._isMounted = false;
   }
 
   updateWindowDimensions = () => {
-    this.setState({
-      windowHeight: window.innerHeight,
-      windowWidth: window.innerWidth
-    })
+    if(this._isMounted) {
+      this.setState({
+        windowHeight: window.innerHeight,
+        windowWidth: window.innerWidth
+      })
+    }
   }
 
   priceFormat = (num) => {
@@ -444,6 +452,7 @@ class UserList extends React.Component {
                       <Grid item>
                         <TextField
                           select
+                          className={classes.customInput}
                           value={this.state.selectedMonth}
                           onChange={e => this.handleMonthChange(e, "selectedMonth")}
                           fullWidth
@@ -482,7 +491,7 @@ class UserList extends React.Component {
                     rowStyle: rowData => {
                       if (this.state.selectedRows.indexOf(rowData) !== -1) {
                         return {
-                          backgroundColor: '#ffecb3'
+                          backgroundColor: '#4db6ac'
                         }
                       }
                       return {};
@@ -568,7 +577,7 @@ class UserList extends React.Component {
               background: this.state.themeColor,
             }} title="Quỹ Xứ đoàn"
               subtitle="Chi tiết thu chi quỹ nội bộ Xứ Đoàn" />
-            <Paper className={classes.root} elevation={5}>
+            <Paper className={classes.root} elevation={5} style={{height: '400px'}}>
               <div className={classes.content}>
                 <MaterialTable
                   icons={tableIcons}
@@ -601,7 +610,7 @@ class UserList extends React.Component {
                       fontSize: 15
                     },
                     search: false,
-                    maxBodyHeight: '200px',
+                    maxBodyHeight: '250px',
                     showTitle: false
                   }}
                   localization={{

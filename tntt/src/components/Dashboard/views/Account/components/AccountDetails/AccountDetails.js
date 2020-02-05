@@ -21,7 +21,15 @@ import CustomHeader from '../../../../../Dashboard/components/CustomHeader/Custo
 
 const useStyles = (theme) => ({
   root: {
-  }
+  },
+  customInput: {
+    '& label.Mui-focused': { color: '#795548' },
+    '& .MuiOutlinedInput-root': {
+      '&.Mui-focused fieldset': {
+        borderColor: '#795548',
+      },
+    },
+  },
 });
 
 class AccountDetails extends React.Component {
@@ -146,6 +154,7 @@ class AccountDetails extends React.Component {
                 xs={12}
               >
                 <TextField
+                  className={classes.customInput}
                   disabled={true}
                   fullWidth
                   label="Tên tài khoản"
@@ -162,6 +171,7 @@ class AccountDetails extends React.Component {
                 xs={12}
               >
                 <TextField
+                  className={classes.customInput}
                   fullWidth
                   label="Tên thánh"
                   margin="dense"
@@ -178,6 +188,7 @@ class AccountDetails extends React.Component {
                 xs={12}
               >
                 <TextField
+                  className={classes.customInput}
                   fullWidth
                   label="Email"
                   margin="dense"
@@ -194,6 +205,7 @@ class AccountDetails extends React.Component {
                 xs={12}
               >
                 <TextField
+                  className={classes.customInput}
                   fullWidth
                   label="Số điện thoại"
                   margin="dense"
@@ -212,6 +224,7 @@ class AccountDetails extends React.Component {
                 <MuiPickersUtilsProvider utils={DateFnsUtils}>
                   <KeyboardDatePicker
                     fullWidth
+                    className={classes.customInput}
                     label="Sinh Nhật"
                     format="dd/MM/yyyy"
                     margin="dense"
@@ -234,6 +247,7 @@ class AccountDetails extends React.Component {
                 <MuiPickersUtilsProvider utils={DateFnsUtils}>
                   <KeyboardDatePicker
                     fullWidth
+                    className={classes.customInput}
                     label="Bổn mạng"
                     format="dd/MM/yyyy"
                     margin="dense"
@@ -254,6 +268,7 @@ class AccountDetails extends React.Component {
                 xs={12}
               >
                 <TextField
+                  className={classes.customInput}
                   disabled={true}
                   fullWidth
                   label="Lớp"

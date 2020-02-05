@@ -54,7 +54,13 @@ const useStyles = (theme) => ({
   },
   menu: {
     width: 200
-  }
+  },
+  customInput: {
+    '& label.Mui-focused': { color: '#9c27b0' },
+    '& .MuiInput-underline:after': {
+      borderBottomColor: '#9c27b0',
+    },
+  },
 })
 
 class GradesInformation extends React.Component {
@@ -66,7 +72,12 @@ class GradesInformation extends React.Component {
       absents: [],
       //for Grade TableData
       gradeType: ['Điểm thường', 'Điểm kiểm tra', 'Điểm thi'],
+      semesters: ['HKI', 'HKII'],
       gradeColumn: [
+        {
+          title: 'Học kỳ',
+          field: 'semester'
+        },
         {
           title: "Loại điểm",
           field: 'type'
@@ -107,6 +118,7 @@ class GradesInformation extends React.Component {
       newGradeTitle: '',
       newGrade: 0,
       newKey: '',
+      selectedSemester: 'HKI',
       //absentForm
       newAbsentType: '',
       newAbsentTitle: '',
@@ -147,7 +159,7 @@ class GradesInformation extends React.Component {
             })
           } else {
             absentsArr.forEach(absent => {
-              absent.day = (absent.day === '')? absent.day : moment(absent.day).format('DD/MM/YYYY')
+              absent.day = (absent.day === '') ? absent.day : moment(absent.day).format('DD/MM/YYYY')
             })
             this.setState({
               absents: absentsArr,
@@ -193,7 +205,7 @@ class GradesInformation extends React.Component {
           })
         } else {
           absentsArr.forEach(absent => {
-            absent.day = (absent.day === '')? absent.day : moment(absent.day).format('DD/MM/YYYY')
+            absent.day = (absent.day === '') ? absent.day : moment(absent.day).format('DD/MM/YYYY')
           })
           this.setState({
             absents: absentsArr,
@@ -213,7 +225,8 @@ class GradesInformation extends React.Component {
         'key': (this.state.newKey === '') ? uuid.v4() : this.state.newKey,
         'type': this.state.newGradeType,
         'title': this.state.newGradeTitle,
-        'point': parseInt(this.state.newGrade),
+        'point': parseFloat(this.state.newGrade),
+        'semester': this.state.selectedSemester
       }
       return axios
         .post(`/backend/children/grade/new/by-name/${this.props.selectedData.name}`, data)
@@ -327,13 +340,13 @@ class GradesInformation extends React.Component {
   handleChange = (e, type) => {
     const result = {};
     let data;
-    if(type === 'newAbsentDay') {
+    if (type === 'newAbsentDay') {
       data = e
     }
     else {
       data = e.target.value;
     }
-    if(type === 'newAbsentType' && e.target.value === "Không phép") {
+    if (type === 'newAbsentType' && e.target.value === "Không phép") {
       this.setState({
         newAbsentTitle: ''
       })
@@ -407,6 +420,7 @@ class GradesInformation extends React.Component {
                 {
                   icon: () => { return <Add /> },
                   isFreeAction: true,
+                  tooltip: 'Thêm mới',
                   onClick: () => {
                     this.setState({
                       newGradeTitle: '',
@@ -426,9 +440,42 @@ class GradesInformation extends React.Component {
             />
             <Collapse in={this.state.isAddGradeClicked}>
               <Grid container spacing={2}>
-                <Grid item xs={12} sm={3}>
+                <Grid item xs={12} sm={2}>
                   <TextField
                     required
+                    className={classes.customInput}
+                    style={{ marginTop: '1em'}}
+                    select
+                    label="Loại điểm"
+                    name="gradeType"
+                    id="gradeType"
+                    value={this.state.selectedSemester}
+                    onChange={e => this.handleChange(e, "selectedSemester")}
+                    fullWidth
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <ViewList />
+                        </InputAdornment>
+                      )
+                    }}
+                    SelectProps={{
+                      MenuProps: {
+                        className: classes.menu
+                      }
+                    }}
+                  >
+                    {this.state.semesters.map(el => (
+                      <MenuItem key={el} value={el}>
+                        {el}
+                      </MenuItem>
+                    ))}
+                  </TextField>
+                </Grid>
+                <Grid item xs={12} sm={2}>
+                  <TextField
+                    required
+                    className={classes.customInput}
                     style={{ marginTop: '1em' }}
                     select
                     label="Loại điểm"
@@ -457,10 +504,11 @@ class GradesInformation extends React.Component {
                     ))}
                   </TextField>
                 </Grid>
-                <Grid item xs={12} sm={3}>
+                <Grid item xs={12} sm={5}>
                   <TextField
                     fullWidth
                     required
+                    className={classes.customInput}
                     style={{ marginTop: '1em' }}
                     label="Nội dung"
                     value={this.state.newGradeTitle}
@@ -473,9 +521,10 @@ class GradesInformation extends React.Component {
                       )
                     }} />
                 </Grid>
-                <Grid item xs={12} sm={3}>
+                <Grid item xs={12} sm={1}>
                   <TextField
                     fullWidth
+                    className={classes.customInput}
                     style={{ marginTop: '1em' }}
                     label="Điểm"
                     value={this.state.newGrade}
@@ -488,7 +537,7 @@ class GradesInformation extends React.Component {
                       )
                     }} />
                 </Grid>
-                <Grid item xs={12} sm={3}>
+                <Grid item xs={12} sm={2}>
                   {(this.state.gradeTextFieldStatus === 'add') ?
                     <IconButton
                       style={{ marginTop: '1em' }}
@@ -553,6 +602,7 @@ class GradesInformation extends React.Component {
                 {
                   icon: () => { return <Add /> },
                   isFreeAction: true,
+                  tooltip: 'Thêm mới',
                   onClick: () => {
                     this.setState({
                       newAbsentDay: moment('1990-01-01').format(),
@@ -575,6 +625,7 @@ class GradesInformation extends React.Component {
                 <Grid item xs={12} sm={3}>
                   <TextField
                     required
+                    className={classes.customInput}
                     style={{ marginTop: '1em' }}
                     select
                     label="Loại phép"
@@ -608,6 +659,7 @@ class GradesInformation extends React.Component {
                     <KeyboardDatePicker
                       fullWidth
                       required
+                      className={classes.customInput}
                       style={{ marginTop: '1em' }}
                       format="dd/MM/yyyy"
                       id="absentDay"
@@ -622,7 +674,8 @@ class GradesInformation extends React.Component {
                 <Grid item xs={12} sm={3}>
                   <TextField
                     fullWidth
-                    disabled={(this.state.newAbsentType === "Không phép")? true : false}
+                    className={classes.customInput}
+                    disabled={(this.state.newAbsentType === "Không phép") ? true : false}
                     style={{ marginTop: '1em' }}
                     label="Lí do"
                     value={this.state.newAbsentTitle}

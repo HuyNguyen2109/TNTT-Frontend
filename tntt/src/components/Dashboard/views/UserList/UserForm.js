@@ -33,7 +33,13 @@ const useStyles = theme => ({
   },
   menu: {
     width: 200
-  }
+  },
+  customInput: {
+    '& label.Mui-focused': { color: '#009688' },
+    '& .MuiInput-underline:after': {
+      borderBottomColor: '#009688',
+    },
+  },
 })
 
 class UserForm extends React.Component {
@@ -232,7 +238,7 @@ class UserForm extends React.Component {
     const { classes, open } = this.props;
 
     return (
-      <Collapse in={open}>
+      <Collapse in={open} style={{marginTop: '2em'}}>
         <Typography variant="h6">
           Thông tin tài khoản
         </Typography>
@@ -241,6 +247,7 @@ class UserForm extends React.Component {
             <TextField
               fullWidth
               disabled
+              className={classes.customInput}
               value={this.state.username}
               label="Tên tài khoản"
               onChange={e => this.handleFormChange(e, 'username')}
@@ -257,6 +264,7 @@ class UserForm extends React.Component {
             <TextField
               fullWidth
               required
+              className={classes.customInput}
               disabled={(this.props.type==='edit')? true: false}
               value={this.state.holyName}
               label="Tên thánh"
@@ -276,6 +284,7 @@ class UserForm extends React.Component {
               disabled={(this.props.type==='edit')? true: false}
               value={this.state.fullname}
               label="Họ và tên"
+              className={classes.customInput}
               onChange={e => this.handleFormChange(e, 'fullname')}
               InputProps={{
                 endAdornment: (
@@ -292,6 +301,7 @@ class UserForm extends React.Component {
               required
               disabled={(this.props.type==='edit')? true: false}
               value={this.state.email}
+              className={classes.customInput}
               label="Email"
               onChange={e => this.handleFormChange(e, 'email')}
               InputProps={{
@@ -307,6 +317,7 @@ class UserForm extends React.Component {
             <TextField
               fullWidth
               required
+              className={classes.customInput}
               disabled={(this.props.type==='edit')? true: false}
               value={this.state.phone}
               label="Số điện thoại"
@@ -329,6 +340,7 @@ class UserForm extends React.Component {
                 format="dd/MM/yyyy"
                 label="Ngày sinh"
                 value={this.state.birthday}
+                className={classes.customInput}
                 onChange={e => this.handleFormChange(e, "birthday")}
                 KeyboardButtonProps={{
                   'aria-label': 'change date',
@@ -341,6 +353,7 @@ class UserForm extends React.Component {
                 disabled={(this.props.type==='edit')? true: false}
                 format="dd/MM/yyyy"
                 label="Bổn mạng"
+                className={classes.customInput}
                 value={this.state.holyBirthday}
                 onChange={e => this.handleFormChange(e, "holyBirthday")}
                 KeyboardButtonProps={{
@@ -353,6 +366,7 @@ class UserForm extends React.Component {
               select
               label="Chức vụ"
               value={this.state.type}
+              className={classes.customInput}
               onChange={e => this.handleFormChange(e, "type")}
               fullWidth
               SelectProps={{
@@ -373,6 +387,7 @@ class UserForm extends React.Component {
               select
               label="Lớp"
               value={this.state.class}
+              className={classes.customInput}
               onChange={e => this.handleFormChange(e, "class")}
               fullWidth
               SelectProps={{

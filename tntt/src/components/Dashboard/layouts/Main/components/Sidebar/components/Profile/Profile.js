@@ -70,6 +70,7 @@ class Profile extends React.Component {
             fullname: result.data.data.fullname,
             type: result.data.data.type
           })
+          localStorage.setItem('currentClass', result.data.data.class)
         }
         localStorage.setItem('type', result.data.data.type);
       })

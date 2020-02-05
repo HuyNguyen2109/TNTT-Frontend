@@ -86,7 +86,15 @@ class Signin extends React.Component {
     if(localStorage.getItem('username')!==null && localStorage.getItem('isRememberMe') === 'true') {
       this.props.history.push('/general')
     }
-    document.body.addEventListener('keyup', (e)=> {
+    window.addEventListener('keyup', (e)=> {
+      if(e.keyCode === 13) {
+        document.getElementById('loginButton').click();
+      }
+    })
+  }
+
+  componentWillUnmount = () => {
+    window.removeEventListener('keyup', (e)=> {
       if(e.keyCode === 13) {
         document.getElementById('loginButton').click();
       }

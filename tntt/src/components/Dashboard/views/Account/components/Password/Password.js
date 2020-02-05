@@ -19,7 +19,15 @@ import CustomHeader from '../../../../../Dashboard/components/CustomHeader/Custo
 const useStyles = (theme) => ({
   root: {
     paddingTop: theme.spacing(2)
-  }
+  },
+  customInput: {
+    '& label.Mui-focused': { color: '#795548' },
+    '& .MuiOutlinedInput-root': {
+      '&.Mui-focused fieldset': {
+        borderColor: '#795548',
+      },
+    },
+  },
 });
 
 class Password extends React.Component {
@@ -139,6 +147,7 @@ class Password extends React.Component {
               <Grid container spacing={3}>
                 <Grid item md={12} xs={12}>
                   <TextField
+                    className={classes.customInput}
                     fullWidth
                     margin="dense"
                     label="Mật khẩu hiện tại"
@@ -151,6 +160,7 @@ class Password extends React.Component {
                 </Grid>
                 <Grid item md={12} xs={12}>
                   <TextField
+                    className={classes.customInput}
                     fullWidth
                     margin="dense"
                     label="Mật khẩu mới"
@@ -163,6 +173,7 @@ class Password extends React.Component {
                 </Grid>
                 <Grid item md={12} xs={12}>
                   <TextField
+                    className={classes.customInput}
                     fullWidth
                     margin="dense"
                     label="Xác nhận lại mật khẩu mới "

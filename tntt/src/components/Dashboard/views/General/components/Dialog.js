@@ -69,14 +69,6 @@ class DialogFrom extends React.Component {
     }
   }
 
-  componentDidMount = () => {
-    document.body.addEventListener('keyup', (e) => {
-      if (e.keyCode === 13) {
-        document.getElementById('confirmButton').click();
-      }
-    })
-  }
-
   handleFormChange = (e, type) => {
     const result = {};
     let data;

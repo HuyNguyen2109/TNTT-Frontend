@@ -21,7 +21,15 @@ const useStyle = (theme) => ({
   },
   iconInButton: {
     margin: theme.spacing(1)
-  }
+  },
+  customInput: {
+    '& label.Mui-focused': { color: '#795548' },
+    '& .MuiOutlinedInput-root': {
+      '&.Mui-focused fieldset': {
+        borderColor: '#795548',
+      },
+    },
+  },
 })
 
 class Feedback extends React.Component {
@@ -110,6 +118,7 @@ class Feedback extends React.Component {
           <form style={{paddingTop: '3em'}}>
             <CardContent>
               <TextField
+                className={classes.customInput}
                 variant="outlined" 
                 multiline
                 fullWidth

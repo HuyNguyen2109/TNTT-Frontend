@@ -43,6 +43,12 @@ const useStyles = theme => ({
     backgroundColor: '#FFFFFF',
     borderColor: '#9c27b0',
   },
+  customInput: {
+    '& label.Mui-focused': { color: '#9c27b0' },
+    '& .MuiInput-underline:after': {
+      borderBottomColor: '#9c27b0',
+    },
+  },
 });
 
 class BasicInformation extends React.Component {
@@ -251,6 +257,7 @@ class BasicInformation extends React.Component {
           <Grid item xs={12}>
             <TextField
               required
+              className={classes.customInput}
               disabled={(this.props.type === 'edit')? true : false}
               autoFocus
               label="Tên Thiếu nhi"
@@ -274,6 +281,7 @@ class BasicInformation extends React.Component {
               label="Họ tên Cha"
               name="fatherName"
               id="fatherName"
+              className={classes.customInput}
               value={this.state.newFatherName}
               onChange={e => this.handleFormChange(e, "newFatherName")}
               fullWidth
@@ -292,6 +300,7 @@ class BasicInformation extends React.Component {
               label="Họ tên Mẹ"
               name="motherName"
               id="motherName"
+              className={classes.customInput}
               value={this.state.newMotherName}
               onChange={e => this.handleFormChange(e, "newMotherName")}
               fullWidth
@@ -311,6 +320,7 @@ class BasicInformation extends React.Component {
               label="Giáo khu"
               name="diocese"
               id="diocese"
+              className={classes.customInput}
               value={this.state.newDiocese}
               onChange={e => this.handleFormChange(e, "newDiocese")}
               fullWidth
@@ -334,6 +344,7 @@ class BasicInformation extends React.Component {
               label="Giới tính"
               name="gender"
               id="gender"
+              className={classes.customInput}
               value={this.state.newGender}
               onChange={e => this.handleFormChange(e, "newGender")}
               fullWidth
@@ -357,6 +368,7 @@ class BasicInformation extends React.Component {
                 format="dd/MM/yyyy"
                 id="birthday"
                 label="Ngày sinh"
+                className={classes.customInput}
                 value={this.state.newBirthday}
                 onChange={e => this.handleFormChange(e, "newBirthday")}
                 KeyboardButtonProps={{
@@ -369,6 +381,7 @@ class BasicInformation extends React.Component {
                 format="dd/MM/yyyy"
                 id="dayOfBaptism"
                 label="Ngày Rửa tội"
+                className={classes.customInput}
                 value={this.state.newDayOfBaptism}
                 onChange={e => this.handleFormChange(e, "newDayOfBaptism")}
                 KeyboardButtonProps={{
@@ -381,6 +394,7 @@ class BasicInformation extends React.Component {
                 format="dd/MM/yyyy"
                 id="dayOfEucharist"
                 label="Ngày Rước lễ"
+                className={classes.customInput}
                 value={this.state.newDayofEucharist}
                 onChange={e => this.handleFormChange(e, "newDayofEucharist")}
                 KeyboardButtonProps={{
@@ -393,6 +407,7 @@ class BasicInformation extends React.Component {
                 format="dd/MM/yyyy"
                 id="dayOfConfirmation"
                 label="Ngày Thêm sức"
+                className={classes.customInput}
                 value={this.state.newDayofConfirmation}
                 onChange={e => this.handleFormChange(e, "newDayofConfirmation")}
                 KeyboardButtonProps={{
@@ -406,6 +421,7 @@ class BasicInformation extends React.Component {
               label="Địa chỉ"
               name="address"
               id="address"
+              className={classes.customInput}
               value={this.state.newAddress}
               onChange={e => this.handleFormChange(e, "newAddress")}
               fullWidth
@@ -424,6 +440,7 @@ class BasicInformation extends React.Component {
               label="Liên lạc"
               name="contact"
               id="contact"
+              className={classes.customInput}
               value={this.state.newContact}
               onChange={e => this.handleFormChange(e, "newContact")}
               fullWidth
@@ -443,6 +460,7 @@ class BasicInformation extends React.Component {
               label="Lớp"
               name="class"
               id="class"
+              className={classes.customInput}
               value={this.state.newClass}
               onChange={e => this.handleFormChange(e, "newClass")}
               fullWidth

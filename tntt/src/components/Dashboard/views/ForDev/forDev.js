@@ -195,7 +195,7 @@ class forDev extends React.Component {
               {(this.state.isLoading)? <LinearProgress style={{backgroundColor: this.state.color500}}/> : null}
               <Paper style={{height: '40em'}}>
                 <div style={{overflowY: 'auto', height: '100%'}}>
-                  {(this.state.logs.length !== 0)? this.state.logs.map(line => (<p key={line}>{line}</p>)) : null}
+                  {(this.state.logs.length !== 0)? this.state.logs.map((line, i) => (<p key={i}>{line}</p>)) : null}
                 </div>
               </Paper>
             </div>

@@ -17,6 +17,10 @@ import {
   Cancel,
   GetApp,
   Publish,
+  Lock,
+  LockOpen,
+  LooksOne,
+  LooksTwo,
 } from '@material-ui/icons/';
 import {
   Paper,
@@ -28,7 +32,13 @@ import {
   Grid,
   TextField,
   MenuItem,
+  Tooltip,
 } from '@material-ui/core';
+import {
+  SpeedDial,
+  SpeedDialAction,
+  SpeedDialIcon
+} from '@material-ui/lab'
 import MaterialTable from 'material-table';
 
 import FloatingForm from './components/floatingForm';
@@ -76,6 +86,47 @@ const useStyles = theme => ({
       margin: theme.spacing(0.5),
     },
   },
+  customInput: {
+    '& label.Mui-focused': { color: '#9c27b0' },
+    '& .MuiInput-underline:after': {
+      borderBottomColor: '#9c27b0',
+    },
+  },
+  speedDial: {
+    position: 'fixed',
+    '&.MuiSpeedDial-directionUp, &.MuiSpeedDial-directionLeft': {
+      bottom: theme.spacing(2),
+      right: theme.spacing(2),
+    },
+    '&.MuiSpeedDial-directionDown, &.MuiSpeedDial-directionRight': {
+      top: theme.spacing(2),
+      left: theme.spacing(2),
+    },
+  },
+  fabButton: {
+    color: 'white',
+    backgroundColor: '#9c27b0',
+    '&:hover': {
+      backgroundColor: '#9c27b0',
+    }
+  },
+  fabButtonSecondary: {
+    color: 'white',
+    backgroundColor: '#ba68c8',
+    '&:hover': {
+      backgroundColor: '#ba68c8',
+    }
+  },
+  fabButtonError: {
+    color: 'white',
+    backgroundColor: '#e53935',
+    '&:hover': {
+      backgroundColor: '#e53935',
+    }
+  },
+  fabToolTip: {
+    'backgroundColor': '#000000'
+  }
 });
 
 const colorChips = createMuiTheme({
@@ -132,13 +183,21 @@ class Dashboard extends React.Component {
           field: 'diocese'
         },
         {
-          title: 'Nam?',
-          field: 'male'
-        },
-        {
           title: 'Ngày sinh',
           field: 'birthday'
-        }
+        },
+        {
+          title: 'Điểm HKI',
+          field: 'scoreI',
+        },
+        {
+          title: 'Điểm HKII',
+          field: 'scoreII'
+        },
+        {
+          title: 'Điểm cả năm',
+          field: 'finalScore'
+        },
       ],
       isLoadingData: true,
       action: 'view',
@@ -155,6 +214,30 @@ class Dashboard extends React.Component {
       snackbarType: "success",
 
       themeColor: 'linear-gradient(to right bottom, #ba68c8, #9c27b0)',
+
+      //for Speed dial
+      actions: [
+        {
+          icon: <LooksOne />,
+          name: 'Khóa điểm HKI',
+          keyword: 'HKI'
+        },
+        {
+          icon: <LooksTwo />,
+          name: 'Khóa điểm HKII',
+          keyword: 'HKII'
+        },
+        {
+          icon: <Lock />,
+          name: 'Khóa điểm cả năm',
+          keyword: 'Final'
+        },
+        {
+          icon: <LockOpen />,
+          name: 'Xóa toàn bộ điểm'
+        }
+      ],
+      isSpeedDialOpen: false,
     };
 
     this.updateWindowDimensions = this.updateWindowDimensions.bind(this);
@@ -168,7 +251,6 @@ class Dashboard extends React.Component {
     this._isMounted = true;
     this.updateWindowDimensions();
     window.addEventListener("resize", this.updateWindowDimensions.bind(this));
-    localStorage.setItem('title', 'Danh sách Thiếu Nhi');
     return this.getData('all', this.state.tablePage, this.state.itemPerPage, null) && this.getNumberOfRecord('all') && this.getClasses();
   }
 
@@ -178,10 +260,12 @@ class Dashboard extends React.Component {
   }
 
   updateWindowDimensions() {
-    this.setState({
-      windowsWidth: window.innerWidth,
-      windowsHeight: window.innerHeight
-    });
+    if (this._isMounted) {
+      this.setState({
+        windowsWidth: window.innerWidth,
+        windowsHeight: window.innerHeight
+      });
+    }
   }
 
   getClasses = () => {
@@ -370,6 +454,41 @@ class Dashboard extends React.Component {
           snackerBarStatus: true,
           snackbarMessage: 'Đã có lỗi trong quá trình xóa'
         })
+      })
+  }
+
+  lockSemesterScores = (scoreType) => {
+    const typeInfo = {
+      'type': scoreType,
+      'class': this.state.selectedClass
+    }
+    return axios
+      .post(`backend/children/lock-scores`, typeInfo)
+      .then(res => {
+        if (res.data.code === 'I001') {
+          this.reloadData();
+        }
+      })
+      .catch(err => {
+        console.log(err)
+        this.setState({
+          snackbarType: 'error',
+          snackerBarStatus: true,
+          snackbarMessage: 'Đã có lỗi xảy ra từ máy chủ'
+        })
+      })
+  }
+
+  resetScores = () => {
+    return axios
+      .delete(`/backend/children/reset-scores/${this.state.selectedClass}`)
+      .then(res => {
+        if (res.data.code === 'I001') {
+          this.reloadData();
+        }
+      })
+      .catch(err => {
+        console.log(err)
       })
   }
 
@@ -578,7 +697,7 @@ class Dashboard extends React.Component {
     return axios
       .get(`/backend/class/by-id/${e.target.value}`)
       .then(res => {
-        if(this._isMounted) {
+        if (this._isMounted) {
           this.setState({
             currentClass: res.data.data[0].Value
           })
@@ -586,6 +705,13 @@ class Dashboard extends React.Component {
       })
   }
 
+  handleSpeedDialClose = () => {
+    this.setState({ isSpeedDialOpen: false })
+  }
+
+  handleSpeedDialOpen = () => {
+    this.setState({ isSpeedDialOpen: true })
+  }
 
   toggleExpansionForm = () => {
     this.setState({
@@ -610,10 +736,10 @@ class Dashboard extends React.Component {
               <Toolbar variant="dense">
                 <Typography variant="subtitle2">Anh/Chị phụ trách</Typography>
                 {this.state.currentTeachers.map(people => (
-                  <Chip label={people.holyname + ' ' + people.fullname} 
-                        key={people.holyname + ' ' + people.fullname} 
-                        size="small" 
-                        style={{marginLeft: '5px', backgroundColor: '#4a148c', color: '#ffffff'}}/>
+                  <Chip label={people.holyname + ' ' + people.fullname}
+                    key={people.holyname + ' ' + people.fullname}
+                    size="small"
+                    style={{ marginLeft: '5px', backgroundColor: '#4a148c', color: '#ffffff' }} />
                 ))}
               </Toolbar>
             </div>
@@ -630,6 +756,7 @@ class Dashboard extends React.Component {
                   <Grid item>
                     <TextField
                       select
+                      className={classes.customInput}
                       value={this.state.selectedClass}
                       onChange={e => this.handleClassChange(e, "selectedClass")}
                       fullWidth
@@ -718,14 +845,14 @@ class Dashboard extends React.Component {
                   icon: () => { return <GetApp /> },
                   tooltip: "Sao lưu toàn bộ danh sách",
                   isFreeAction: true,
-                  hidden: (this.state.windowsWidth < 500)? true: false,
+                  hidden: (this.state.windowsWidth < 500) ? true : false,
                   onClick: () => this.handleExportData(),
                 },
                 {
                   icon: () => { return <Publish /> },
                   tooltip: "Phục hồi danh sách",
                   isFreeAction: true,
-                  hidden: (this.state.windowsWidth < 500)? true: false,
+                  hidden: (this.state.windowsWidth < 500) ? true : false,
                   onClick: () => this.handleRestoreData(),
                 },
                 {
@@ -802,6 +929,39 @@ class Dashboard extends React.Component {
           open={this.state.snackerBarStatus}
           type={this.state.floatingFormType}
         />
+        <Tooltip title="Khóa điểm" placement="left-end">
+          <SpeedDial
+            className={classes.speedDial}
+            ariaLabel="Lock Scores"
+            icon={<SpeedDialIcon icon={<Lock />} openIcon={<Clear />} />}
+            onClose={this.handleSpeedDialClose}
+            onOpen={this.handleSpeedDialOpen}
+            open={this.state.isSpeedDialOpen}
+            hidden={(this.state.currentClass !== 'Chung' && this.state.selectedClass === localStorage.getItem('currentClass')) ? false : true}
+            FabProps={{
+              className: classes.fabButton
+            }}
+            transitionDuration={0}
+          >
+            {this.state.actions.map(action => (
+              (action.name === 'Xóa toàn bộ điểm') ?
+                <SpeedDialAction
+                  className={classes.fabButtonError}
+                  disabled={(localStorage.getItem('type') === 'Admin') ? false : true}
+                  key={action.name}
+                  icon={action.icon}
+                  tooltipTitle={action.name}
+                  onClick={() => this.resetScores()} /> :
+                <SpeedDialAction
+                  className={classes.fabButtonSecondary}
+                  key={action.name}
+                  icon={action.icon}
+                  tooltipTitle={action.name}
+                  disabled={(this.state.currentClass !== 'Chung' && this.state.selectedClass === localStorage.getItem('currentClass')) ? false : true}
+                  onClick={() => this.lockSemesterScores(action.keyword)} />
+            ))}
+          </SpeedDial>
+        </Tooltip>
       </div>
     );
   }

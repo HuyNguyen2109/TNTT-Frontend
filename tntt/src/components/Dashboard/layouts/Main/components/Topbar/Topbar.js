@@ -1,9 +1,9 @@
 import React from 'react';
 import clsx from 'clsx';
-import { AppBar, Toolbar, Badge, Hidden, IconButton, Tooltip, Typography, Popover, Paper } from '@material-ui/core';
+import { AppBar, Toolbar, Hidden, IconButton, Tooltip, Typography } from '@material-ui/core';
 import MenuIcon from '@material-ui/icons/Menu';
 import {
-  Notifications, PowerSettingsNew, Facebook
+  PowerSettingsNew, Facebook
 } from '@material-ui/icons';
 import { withStyles } from '@material-ui/styles';
 import Promise from 'bluebird';
@@ -43,7 +43,6 @@ class Topbar extends React.Component {
     this.state = {
       notifications: [],
       title: '',
-      anchorEl: null,
     }
   }
 
@@ -53,14 +52,6 @@ class Topbar extends React.Component {
         title: this.props.title
       });
     }
-  }
-
-  openPopover = (event) => {
-    this.setState({ anchorEl: event.target })
-  }
-
-  closePopover = () => {
-    this.setState({ anchorEl: null })
   }
 
   logOut = (event) => {
@@ -73,7 +64,6 @@ class Topbar extends React.Component {
 
   render = () => {
     const { classes, className, onSidebarOpen, ...rest } = this.props;
-    const open = Boolean(this.state.anchorEl)
     return (
       <AppBar
         {...rest}
@@ -89,17 +79,6 @@ class Topbar extends React.Component {
                 onClick={() => window.open('https://www.facebook.com/thieunhicaothai/?ref=bookmarks', '_blank')}
               >
                 <Facebook />
-              </IconButton>
-            </Tooltip>
-            <Tooltip title="Thông báo">
-              <IconButton className={classes.icon} onClick={this.openPopover}>
-                <Badge
-                  badgeContent={this.state.notifications.length}
-                  color="primary"
-                  variant="dot"
-                >
-                  <Notifications />
-                </Badge>
               </IconButton>
             </Tooltip>
             <Tooltip title="Đăng xuất">
@@ -130,22 +109,6 @@ class Topbar extends React.Component {
             </IconButton>
             </Tooltip>
           </Hidden>
-          <Popover
-            open={open}
-            className={classes.popover}
-            anchorEl={this.state.anchorEl}
-            onClose={this.closePopover}
-            anchorOrigin={{
-              vertical: 'bottom',
-              horizontal: 'center',
-            }}
-            transformOrigin={{
-              vertical: 'top',
-              horizontal: 'right',
-            }}
-          >
-            <Paper className={classes.popoverContent}>AAA</Paper>
-          </Popover>
         </Toolbar>
       </AppBar>
     );

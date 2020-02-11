@@ -4,7 +4,7 @@ import axios from 'axios';
 import AnimatedNumber from 'animated-number-react';
 import Chart from 'chart.js';
 import {
-  Grid, Typography, Checkbox, IconButton, Tooltip, Backdrop, CircularProgress, Divider, Toolbar, MenuItem, Menu, ListItemIcon, ListItemText
+  Grid, Typography, Checkbox, IconButton, Tooltip, Backdrop, CircularProgress, Divider, Toolbar, MenuItem, Menu, ListItemIcon, ListItemText, Select, InputBase
 } from '@material-ui/core';
 import { withStyles } from '@material-ui/core/styles';
 import { Face, Group, AttachMoney, Add, Remove, Publish, Delete, Clear, GetApp, CallMerge, ShowChart, MoreVert, InfoOutlined } from '@material-ui/icons';
@@ -43,6 +43,13 @@ const useStyle = theme => ({
     zIndex: theme.zIndex.drawer + 1,
     color: '#fff',
   },
+  circleStyle: {
+    borderRadius: "50%",
+    width: 10,
+    height: 10,
+    display:"inline-block",
+    marginRight: theme.spacing(1),
+  }
 })
 
 class General extends React.Component {
@@ -50,6 +57,10 @@ class General extends React.Component {
     super(props)
 
     this.state = {
+      // Responsive
+      innerWidth: 0,
+      innerHeight: 0,
+      // General
       currentTime: moment().format('DD/MM/YYYY hh:mm:ss'),
       username: localStorage.getItem('username'),
       duration: 1000,
@@ -116,14 +127,17 @@ class General extends React.Component {
       lineChartOptions: {
         responsive: true,
         animation: {
-          duration: 500
+          duration: 1000
         },
         maintainAspectRatio: false,
         scales: {
           yAxes: [{
             ticks: {
-              stepSize: 15,
-              beginAtZero: true
+              stepSize: 25,
+              beginAtZero: true,
+              callback: (value, i, values) => {
+                return value + 'tr'
+              }
             },
             gridLines: {
               drawBorder: false,
@@ -132,24 +146,19 @@ class General extends React.Component {
               zeroLineColor: 'rgba(0,0,0,0.2)',
               borderDash: [1, 4],
               zeroLineBorderDash: [1, 4],
-            },
-            scaleLabel: {
-              display: true,
-              labelString: 'Quỹ (triệu)',
-              padding: 1,
-              lineHeight: 1
             }
           }],
           xAxes: [{
-            gridLines: {
-              drawOnChartArea: false,
-              display: false,
+            ticks: {
+              autoSkip: false
             },
-            scaleLabel: {
+            gridLines: {
               display: true,
-              labelString: 'Tháng',
-              padding: 1,
-              lineHeight: 1
+              drawBorder: false,
+              color: 'rgba(0,0,0,0.2)',
+              zeroLineColor: 'rgba(0,0,0,0.2)',
+              borderDash: [1, 4],
+              zeroLineBorderDash: [1, 4],
             }
           }]
         },
@@ -176,6 +185,7 @@ class General extends React.Component {
       isOpenAddClassForm: false,
       isButtonDisabled: false,
       //for Children Fund Table
+      selectedFundType: 'QTN',
       childrenFunds: [],
       childrenFundColumns: [
         {
@@ -214,15 +224,40 @@ class General extends React.Component {
       tumblrImagePage: '',
       tumbleContent: '',
     }
+
+    this.updateWindowDimensions = this.updateWindowDimensions.bind(this);
+    this._ismounted = false;
   }
 
   componentDidMount = () => {
     this._ismounted = true;
-    return this.getData();
+    this.updateWindowDimensions();
+    window.addEventListener("resize", this.updateWindowDimensions.bind(this));
+    this.getChildrenData()
+    this.getMemberData()
+    this.getFundData()
+    this.getClassData()
+    this.getEventData()
+    this.getDocumentData()
+    this.getTumblrPost();
   }
 
   componentWillUnmount = () => {
+    window.removeEventListener("resize", this.updateWindowDimensions.bind(this));
     this._ismounted = false;
+  }
+
+  updateWindowDimensions() {
+    if (this._ismounted) {
+      this.setState({
+        innerWidth: window.innerWidth,
+        innerHeight: window.innerHeight
+      });
+      if(window.ChildrenFundChart) {
+        window.ChildrenFundChart.destroy();
+        this.getFundData();
+      }
+    }
   }
 
   formatValue = (value, type) => {
@@ -278,135 +313,83 @@ class General extends React.Component {
     };
   }
 
-  getData = () => {
-    let classLabels = [];
-    let classData = [];
-    this.setState({
-      classes: [],
-      events: [],
-      documents: [],
-      childrenFunds: [],
-      isLoading: true,
-    })
-
+  getChildrenData = () => {
     if (this._ismounted === true) {
-      return axios.all([
-        axios.get('/backend/children/count', { params: { condition: 'all' } }),
-        axios.get('backend/user/all'),
-        axios.get('/backend/children-fund/all'),
-        axios.get('/backend/event/all'),
-        axios.get('/backend/document/all'),
-        axios.get('/backend/database/tumblr/posts'),
-        axios.get('/backend/class/all'),
-        axios.get('/backend/internal-fund/all'),
-      ])
-        .then(responses => {
-          let dataResponses = [];
-          responses.forEach(response => {
-            dataResponses.push(response.data.data)
-          })
-          // Funds modifications
-          let totalFunds = 0;
-          let allFunds = dataResponses[2];
-          let monthLabels = [];
-          let fundData = [];
-          allFunds = _.sortBy(allFunds, fund => fund.date);
-          allFunds.forEach(fund => {
-            fund.date = (fund.date === '') ? '' : moment(fund.date).format('DD/MM/YYYY');
-            totalFunds += fund.price;
-            fund.price = this.priceFormat(fund.price);
-          })
+      return axios.get('/backend/children/count', { params: { condition: 'all' } })
+        .then(res => {
+          this.setState({ childrenTotalCount: res.data.data })
+        })
+        .catch(err => {
+          console.log(err)
+        })
+    }
+  }
 
-          // Internal Fund modifications
-          let totalInternalFund = 0;
-          let allInternalFunds = dataResponses[7];
-          allInternalFunds.forEach(fund => {
-            totalInternalFund += fund.price;
-          })
-          //draw chart
-          const groupedFunds = _.groupBy(allFunds, fund => fund.date.split("/")[1])
-          Object.values(groupedFunds).forEach(keys => {
-            monthLabels.push(keys[0].date.split("/")[1] + '/' + keys[0].date.split("/")[2])
-            let priceDetail = 0;
-            keys.forEach(key => {
-              priceDetail += Number(key.price.replace('tr', ''))
-            })
-            fundData.push(priceDetail.toFixed(1));
-          })
-          let fundDataAfterCalculated = [];
-          for (let i = 0; i < fundData.length; i++) {
-            fundData[i] = Number(fundData[i]);
-            fundDataAfterCalculated.push(_.sum(fundData.slice(0, i + 1)));
-          }
-          if (monthLabels.length > 6) {
-            monthLabels = monthLabels.slice(-6, monthLabels.length);
-            fundDataAfterCalculated = fundDataAfterCalculated.slice(-6, fundDataAfterCalculated.length);
-          }
-          if (window.ChildrenFundChart) {
-            window.ChildrenFundChart.destroy();
-          }
-          Chart.defaults.global.defaultFontColor = 'black'
-          let ctx = document.getElementById('childrenFund');
-          window.ChildrenFundChart = new Chart(ctx, {
-            type: 'line',
-            data: {
-              labels: monthLabels,
-              datasets: [{
-                label: 'Quỹ (triệu)',
-                data: fundDataAfterCalculated,
-                borderColor: 'rgba(0,0,0,0.9)',
-                backgroundColor: 'rgba(0,0,0,0.9)',
-                hoverBackgroundColor: 'rgba(0,0,0,0.9)',
-                pointRadius: 3,
-                showLine: true,
-                fill: false,
-                clip: 50
-              }]
-            },
-            options: this.state.lineChartOptions
-          })
-          // End of Fund modifications
+  getMemberData = () => {
+    if (this._ismounted === true) {
+      return axios.get('backend/user/all')
+        .then(res => {
+          this.setState({ userTotalCount: res.data.data.length })
+        })
+        .catch(err => {
+          console.log(err)
+        })
+    }
+  }
+
+  getEventData = () => {
+    if (this._ismounted === true) {
+      return axios.get('/backend/event/all')
+        .then(res => {
           // Event modifications
-          let listOfEvents = dataResponses[3];
+          let listOfEvents = res.data.data;
           listOfEvents = _.orderBy(listOfEvents, ['date'], ['desc']);
           listOfEvents.forEach(event => {
             event.date = (event.date === '') ? '' : moment(event.date).format('DD/MM/YYYY');
           })
           // End of Event modifications
+          this.setState({ events: listOfEvents })
+        })
+        .catch(err => {
+          console.log(err)
+        })
+    }
+  }
+
+  getDocumentData = () => {
+    if (this._ismounted === true) {
+      return axios.get('/backend/document/all')
+        .then(res => {
           // Document modifications
-          let listOfDocuments = dataResponses[4];
+          let listOfDocuments = res.data.data;
           listOfDocuments.forEach(doc => {
             doc.date = (doc.date === '') ? '' : moment(doc.date).format('DD/MM/YYYY hh:mm:ss');
           })
           // End of Document modifications
-          // Tumblr post
-          let div = document.getElementById('content')
-          div.innerHTML = dataResponses[5].content;
-          div.removeChild(document.querySelector('h2'));
-          // End of Tumblr post
+          this.setState({ documents: listOfDocuments })
+        })
+        .catch(err => {
+          console.log(err)
+        })
+    }
+  }
+
+  getClassData = () => {
+    let classLabels = [];
+    let classData = [];
+    if (this._ismounted === true) {
+      axios.get('/backend/class/all')
+        .then(classes => {
           // Class modifications
+          let classesArr = [];
           let axiosRequests = [];
-          dataResponses[6] = dataResponses[6].filter(el => el.Value !== "Chung");
-          dataResponses[6].forEach(classEl => {
+          classesArr = classes.data.data.filter(el => el.Value !== "Chung");
+          this.setState({ classes: classesArr })
+          classesArr.forEach(classEl => {
             classLabels.push(classEl.ID);
             axiosRequests.push(axios.get('/backend/children/count', { params: { condition: classEl.ID } }))
           })
           // End of class modifications
-          this.setState({
-            childrenTotalCount: dataResponses[0],
-            userTotalCount: dataResponses[1].length,
-            childrenFunds: allFunds,
-            childrenFundTotalCount: totalFunds,
-            internalFundTotalCount: totalInternalFund,
-            events: listOfEvents,
-            documents: listOfDocuments,
-            tumblrImageURL: dataResponses[5].img,
-            tumblrImagePage: dataResponses[5].url,
-            classes: dataResponses[6],
-            isLoadingClassTable: false,
-            isLoading: false
-          })
-
           return axios.all(axiosRequests)
         })
         .then((responseArr) => {
@@ -432,22 +415,188 @@ class General extends React.Component {
               }]
             },
             options: this.state.barChartOptions
+
           });
         })
         .catch(err => {
-          console.log(err.response)
-          if (err.response.status === 404 || err.response.status === 500) {
-            this.props.history.push('/not-found');
+          console.log(err)
+        })
+    }
+  }
+
+  getFundData = () => {
+    if (this._ismounted === true) {
+      return axios.all([
+        axios.get('/backend/children-fund/all'),
+        axios.get('/backend/internal-fund/all'),
+      ])
+        .then(responses => {
+          let dataResponses = [];
+          responses.forEach(response => {
+            dataResponses.push(response.data.data)
+          })
+          // get 6 previous months from now
+          let months = [];
+          let n = 0;
+          while (n < 6) {
+            months.push(moment().subtract(n, 'months').format('MM/YYYY'));
+            n += 1;
           }
-          else {
-            this.setState({
-              snackerBarStatus: true,
-              snackbarType: 'error',
-              snackbarMessage: 'Đã có lỗi từ máy chủ',
-              isLoading: false
+          months = months.sort((a, b) => a - b)
+          // Funds modifications
+          let totalFunds = 0;
+          let allFunds = dataResponses[0];
+          let fundData = [];
+          allFunds = _.sortBy(allFunds, fund => fund.date);
+          allFunds.forEach(fund => {
+            fund.date = (fund.date === '') ? '' : moment(fund.date).format('DD/MM/YYYY');
+            totalFunds += fund.price;
+            fund.price = this.priceFormat(fund.price);
+          })
+          // Internal Fund modifications
+          let totalInternalFund = 0;
+          let allInternalFunds = dataResponses[1];
+          let internalFundData = [];
+          allInternalFunds = _.sortBy(allInternalFunds, fund => fund.date);
+          allInternalFunds.forEach(fund => {
+            fund.date = (fund.date === '') ? '' : moment(fund.date).format('DD/MM/YYYY');
+            totalInternalFund += fund.price;
+            fund.price = this.priceFormat(fund.price);
+          })
+          //draw chart
+          const groupedFunds = _.groupBy(allFunds, fund => fund.date.split("/")[1] + '/' + fund.date.split("/")[2])
+          const groupedInternalFunds = _.groupBy(allInternalFunds, fund => fund.date.split("/")[1] + '/' + fund.date.split("/")[2]);
+          let transformChildrenFundArr = [];
+          let transformInternalFundArr = [];
+          Object.entries(groupedFunds).forEach(keys => {
+            transformChildrenFundArr.push({
+              'key': keys[0],
+              'data': keys[1]
             })
+          })
+          Object.entries(groupedInternalFunds).forEach(keys => {
+            transformInternalFundArr.push({
+              'key': keys[0],
+              'data': keys[1]
+            })
+          })
+          for (let i = 0; i < months.length; i++) {
+            if (transformChildrenFundArr[i] === undefined) {
+              fundData.unshift(0)
+            }
+            else {
+              let priceDetail = 0;
+              transformChildrenFundArr[i].data.forEach(key => {
+                if (key.price.indexOf('tr') > -1) {
+                  return priceDetail += Number(key.price.replace('tr', ''))
+                }
+                else if (key.price.indexOf('ng') > -1) {
+                  return priceDetail += Number(key.price.replace('ng', '')) * 1000 / 1000000
+                }
+                else return priceDetail += Number(key.price)
+              })
+              fundData.push(priceDetail.toFixed(1));
+            };
+
+            if(transformInternalFundArr[i] === undefined) {
+              internalFundData.unshift(0)
+            }
+            else {
+              let priceDetail = 0;
+              transformInternalFundArr[i].data.forEach(key => {
+                if (key.price.indexOf('tr') > -1) {
+                  return priceDetail += Number(key.price.replace('tr', ''))
+                }
+                else if (key.price.indexOf('ng') > -1) {
+                  return priceDetail += Number(key.price.replace('ng', '')) * 1000 / 1000000
+                }
+                else return priceDetail += Number(key.price)
+              })
+              internalFundData.push(priceDetail.toFixed(1));
+            }
           }
-        });
+
+          let fundDataAfterCalculated = [];
+          let internalFundDataAfterCalculated = [];
+          for (let i = 0; i < fundData.length; i++) {
+            fundData[i] = Number(fundData[i]);
+            fundDataAfterCalculated.push(_.sum(fundData.slice(0, i + 1)));
+          }
+          for (let i = 0; i < internalFundData.length; i++) {
+            internalFundData[i] = Number(internalFundData[i]);
+            internalFundDataAfterCalculated.push(_.sum(internalFundData.slice(0, i + 1)));
+          }
+
+          if (window.ChildrenFundChart) {
+            window.ChildrenFundChart.destroy();
+          }
+          Chart.defaults.global.defaultFontColor = 'black'
+          let ctx = document.getElementById('childrenFund');
+          window.ChildrenFundChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+              labels: months,
+              datasets: [{
+                label: 'Quỹ Thiếu Nhi (triệu)',
+                data: fundDataAfterCalculated,
+                borderColor: 'rgba(76,175,80,0.9)',
+                backgroundColor: 'rgba(76,175,80,0.1)',
+                hoverBackgroundColor: 'rgba(76,175,80,0.9)',
+                pointRadius: 5,
+                pointBorderWidth: 3,
+                pointBorderColor: 'rgba(76,175,80,0.9)',
+                pointBackgroundColor: 'rgba(255,255,255,1.0)',
+                showLine: true,
+                fill: 'start',
+                clip: 50
+              }, {
+                label: 'Quỹ Nội bộ (triệu)',
+                data: internalFundDataAfterCalculated,
+                borderColor: 'rgba(255,87,34,0.9)',
+                backgroundColor: 'rgba(255,87,34,0.1)',
+                hoverBackgroundColor: 'rgba(255,87,34,0.9)',
+                pointRadius: 5,
+                pointBorderWidth: 3,
+                pointBorderColor: 'rgba(255,87,34,0.9)',
+                pointBackgroundColor: 'rgba(255,255,255,1.0)',
+                showLine: true,
+                fill: 'start',
+                clip: 50
+              }]
+            },
+            options: this.state.lineChartOptions
+          })
+          // End of Fund modifications
+          this.setState({
+            childrenFundTotalCount: totalFunds,
+            internalFundTotalCount: totalInternalFund,
+            childrenFunds: allFunds,
+          })
+        })
+        .catch(err => {
+          console.log(err)
+        })
+    }
+  }
+
+  getTumblrPost = () => {
+    if (this._ismounted === true) {
+      return axios.get('/backend/database/tumblr/posts')
+        .then(res => {
+          // Tumblr post
+          let div = document.getElementById('content')
+          div.innerHTML = res.data.data.content;
+          div.removeChild(document.querySelector('h2'));
+          // End of Tumblr post
+
+          this.setState({
+            tumblrImageURL: res.data.data.img,
+            tumblrImagePage: res.data.data.url,
+          })
+        })
+        .catch(err => {
+          console.log(err)
+        })
     }
   }
 
@@ -502,29 +651,59 @@ class General extends React.Component {
   createNewFund = (fund) => {
     this.setState({ isButtonDisabled: true, isLoading: true })
 
-    return axios
-      .post('/backend/children-fund/new-fund', fund)
-      .then(res => {
-        if (res.data.code === 'I001') {
-          this.setState({
-            isButtonDisabled: false,
-            isOpenAddFundForm: false,
-            childrenTotalCount: 0,
-            userTotalCount: 0,
-            childrenFundTotalCount: 0,
-            internalFundTotalCount: 0,
-          })
-          this.getData();
-        }
-      })
-      .catch(err => {
-        this.setState({
-          snackerBarStatus: true,
-          snackbarType: 'error',
-          snackbarMessage: 'Đã có lỗi từ máy chủ',
-          isButtonDisabled: false
+    if (this.state.selectedFundType === 'QTN') {
+      return axios
+        .post('/backend/children-fund/new-fund', fund)
+        .then(res => {
+          if (res.data.code === 'I001') {
+            this.setState({
+              isButtonDisabled: false,
+              isOpenAddFundForm: false,
+              childrenTotalCount: 0,
+              userTotalCount: 0,
+              childrenFundTotalCount: 0,
+              internalFundTotalCount: 0,
+              selectedFundType: 'QTN'
+            })
+            this.getData();
+          }
         })
-      })
+        .catch(err => {
+          this.setState({
+            snackerBarStatus: true,
+            snackbarType: 'error',
+            snackbarMessage: 'Đã có lỗi từ máy chủ',
+            isButtonDisabled: false
+          })
+        })
+    }
+    else {
+      return axios
+        .post('/backend/internal-fund/new-fund', fund)
+        .then(res => {
+          if (res.data.code === 'I001') {
+            this.setState({
+              isButtonDisabled: false,
+              isOpenAddFundForm: false,
+              childrenTotalCount: 0,
+              userTotalCount: 0,
+              childrenFundTotalCount: 0,
+              internalFundTotalCount: 0,
+              selectedFundType: 'QTN'
+            })
+            this.getData();
+          }
+        })
+        .catch(err => {
+          this.setState({
+            snackerBarStatus: true,
+            snackbarType: 'error',
+            snackbarMessage: 'Đã có lỗi từ máy chủ',
+            isButtonDisabled: false,
+            isLoadingFund: false,
+          })
+        })
+    }
   }
 
   createNewEvent = (event) => {
@@ -621,15 +800,43 @@ class General extends React.Component {
     document.getElementById('filePicker').click();
   }
 
+  handleChangeValue = (e, type) => {
+    const result = {};
+    let data = e.target.value;
+    result[type] = data;
+    result['childrenFunds'] = [];
+    this.setState(result);
+    if (e.target.value === 'QTN') {
+      return axios.get('/backend/children-fund/all')
+        .then(res => {
+          let allFunds = res.data.data;
+          allFunds = _.sortBy(allFunds, fund => fund.date);
+          allFunds.forEach(fund => {
+            fund.date = (fund.date === '') ? '' : moment(fund.date).format('DD/MM/YYYY');
+            fund.price = this.priceFormat(fund.price);
+          })
+          this.setState({ childrenFunds: allFunds })
+        })
+    }
+    else {
+      return axios.get('/backend/internal-fund/all')
+        .then(res => {
+          let allFunds = res.data.data;
+          allFunds = _.sortBy(allFunds, fund => fund.date);
+          allFunds.forEach(fund => {
+            fund.date = (fund.date === '') ? '' : moment(fund.date).format('DD/MM/YYYY');
+            fund.price = this.priceFormat(fund.price);
+          })
+          this.setState({ childrenFunds: allFunds })
+        })
+    }
+  }
+
   render = () => {
     const { classes } = this.props;
 
     return (
       <div>
-        {/* <Backdrop className={classes.backdrop} open={this.state.isLoading} onClick={() => this.setState({isLoading: false})}>
-          <CircularProgress color='primary' />
-          <Typography variant='subtitle1'>Đang lấy dữ liệu từ máy chủ...</Typography>
-        </Backdrop> */}
         <Grid container className={classes.container} spacing={4}>
           <Grid item xs={12} sm={6} lg={3}>
             <Report
@@ -677,6 +884,7 @@ class General extends React.Component {
                       duration={this.state.duration}
                       formatValue={value => this.formatValue(value, 'a/c')} />
                   </Typography>
+                  <Divider />
                   <Typography variant='body2' style={{
                     textAlign: 'left',
                     fontSize: '12px',
@@ -707,6 +915,7 @@ class General extends React.Component {
                       duration={this.state.duration}
                       formatValue={value => this.formatValue(value, 'đ')} />
                   </Typography>
+                  <Divider />
                   <Typography variant='body2' style={{
                     textAlign: 'left',
                     fontSize: '12px',
@@ -737,6 +946,7 @@ class General extends React.Component {
                       duration={this.state.duration}
                       formatValue={value => this.formatValue(value, 'đ')} />
                   </Typography>
+                  <Divider />
                   <Typography variant='body2' style={{
                     textAlign: 'left',
                     fontSize: '12px',
@@ -762,17 +972,22 @@ class General extends React.Component {
                 marginBottom: '-4em',
               }}
               children={
-                <div style={{ height: '35em' }}>
+                <div style={(this.state.innerWidth < 500)? {height: '36em'} : {height: '35em'}}>
                   <Toolbar disableGutters={true}>
-                    <div style={{ flex: 1 }} />
+                    <div style={{ flex: 1, marginLeft: '7em' }} />
                     <div>
                       <Typography variant="h5" style={{ textAlign: 'right' }}>Quỹ</Typography>
                       <Typography variant="subtitle2" style={{ textAlign: 'right' }}>Biểu đồ thể hiện tình hình quỹ 6 tháng gần nhất</Typography>
                     </div>
                   </Toolbar>
                   <Divider />
-                  <div style={{ marginTop: '2em'}}>
-                    <canvas id='childrenFund' style={{height: '30em'}} />
+                  <div style={{height: '28em'}}>
+                    <Toolbar disableGutters>
+                      <Typography variant="subtitle1"><div className={classes.circleStyle} style={{backgroundColor: '#4caf50'}} />Quỹ Thiếu Nhi</Typography>
+                      <div style={{marginRight: '1em'}}/>
+                      <Typography variant="subtitle1"><div className={classes.circleStyle} style={{backgroundColor: '#ff5722'}} />Quỹ Nội bộ</Typography>
+                    </Toolbar>
+                    <canvas id='childrenFund' />
                   </div>
                 </div>
               }
@@ -788,8 +1003,16 @@ class General extends React.Component {
                 width: '6em'
               }}
               children={
-                <div style={{ height: '35em' }}>
+                <div style={(this.state.innerWidth < 500)? {height: 'auto'} : {height: '35em'}}>
                   <Toolbar disableGutters={true}>
+                    <Select
+                      value={this.state.selectedFundType}
+                      onChange={(e) => this.handleChangeValue(e, 'selectedFundType')}
+                      input={<InputBase />}
+                      style={{marginLeft: '7em'}}>
+                      <MenuItem value='QTN'>Quỹ TN</MenuItem>
+                      <MenuItem value='QR'>Quỹ nội bộ</MenuItem>
+                    </Select>
                     <div style={{ flex: 1 }} />
                     <div>
                       <Typography variant="h5" style={{ textAlign: 'right' }}>Quỹ</Typography>
@@ -830,21 +1053,43 @@ class General extends React.Component {
                       <MenuItem
                         disabled={(localStorage.type !== 'Admin') ? true : false}
                         onClick={() => {
-                          return axios.post('/backend/children-fund/merge-fund')
-                            .then(res => {
-                              if (res.data.code === 'I001') {
-                                this.getData();
-                              }
-                            })
-                            .catch(err => {
-                              this.setState({
-                                snackerBarStatus: true,
-                                snackbarType: 'error',
-                                snackbarMessage: 'Đã có lỗi từ máy chủ',
-                                isButtonDisabled: false,
-                                isLoading: false,
+                          if (this.state.selectedFundType === 'QTN') {
+                            return axios.post('/backend/children-fund/merge-fund')
+                              .then(res => {
+                                if (res.data.code === 'I001') {
+                                  this.getData();
+                                  this.setState({ isOpenFundActionMenu: null, selectedFundType: 'QTN' })
+                                }
                               })
-                            })
+                              .catch(err => {
+                                this.setState({
+                                  snackerBarStatus: true,
+                                  snackbarType: 'error',
+                                  snackbarMessage: 'Đã có lỗi từ máy chủ',
+                                  isButtonDisabled: false,
+                                  isOpenFundActionMenu: null,
+                                  selectedFundType: 'QTN'
+                                })
+                              })
+                          }
+                          else {
+                            return axios.post('/backend/internal-fund/merge-fund')
+                              .then(res => {
+                                if (res.data.code === 'I001') {
+                                  this.getData();
+                                  this.setState({ isOpenFundActionMenu: null, selectedFundType: 'QTN' })
+                                }
+                              })
+                              .catch(err => {
+                                this.setState({
+                                  snackerBarStatus: true,
+                                  snackbarType: 'error',
+                                  snackbarMessage: 'Đã có lỗi từ máy chủ',
+                                  isButtonDisabled: false,
+                                  isOpenFundActionMenu: null
+                                })
+                              })
+                          }
                         }}
                       >
                         <ListItemIcon><CallMerge /></ListItemIcon>
@@ -853,7 +1098,7 @@ class General extends React.Component {
                     </Menu>
                   </Toolbar>
                   <Divider />
-                  <div style={{ marginTop: '1em' }}>
+                  <div style={{ marginTop: '1em', overflow: 'auto' }}>
                     <MaterialTable
                       icons={tableIcons}
                       columns={this.state.childrenFundColumns}

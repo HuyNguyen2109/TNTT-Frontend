@@ -4,10 +4,16 @@ import axios from 'axios';
 import AnimatedNumber from 'animated-number-react';
 import Chart from 'chart.js';
 import {
-  Grid, Typography, Checkbox, IconButton, Tooltip, Backdrop, CircularProgress, Divider, Toolbar, MenuItem, Menu, ListItemIcon, ListItemText, Select, InputBase
+  Grid, Typography, Checkbox, IconButton, Tooltip, Divider,
+  Toolbar, MenuItem, Menu, ListItemIcon, ListItemText, Select, InputBase, LinearProgress, Table, TableHead, TableCell, TableBody, TableRow
 } from '@material-ui/core';
-import { withStyles } from '@material-ui/core/styles';
-import { Face, Group, AttachMoney, Add, Remove, Publish, Delete, Clear, GetApp, CallMerge, ShowChart, MoreVert, InfoOutlined } from '@material-ui/icons';
+import { withStyles, lighten } from '@material-ui/core/styles';
+import { Skeleton } from '@material-ui/lab';
+import {
+  Face, Group, AttachMoney, Add, Remove, Publish,
+  Delete, Clear, GetApp, ShowChart, MoreVert, InfoOutlined,
+  ArrowUpward, ArrowDownward, Edit, Class, GTranslate, Description, EventAvailable, Today
+} from '@material-ui/icons';
 import MaterialTable from 'material-table';
 import _ from 'lodash';
 
@@ -15,6 +21,7 @@ import tableIcons from './components/tableIcon';
 import Report from './components/Report'
 import DialogForm from './components/Dialog';
 import SnackDialog from '../../../SnackerBar';
+import 'moment/locale/vi';
 
 const useStyle = theme => ({
   root: {},
@@ -36,8 +43,7 @@ const useStyle = theme => ({
     marginRight: theme.spacing(2),
   },
   image: {
-    width: '100%',
-    height: '100%'
+    width: '100%'
   },
   backdrop: {
     zIndex: theme.zIndex.drawer + 1,
@@ -47,8 +53,14 @@ const useStyle = theme => ({
     borderRadius: "50%",
     width: 10,
     height: 10,
-    display:"inline-block",
+    display: "inline-block",
     marginRight: theme.spacing(1),
+  },
+  colorPrimary: {
+    backgroundColor: lighten('#ff9800', 0.5),
+  },
+  barColorPrimary: {
+    backgroundColor: '#ff9800',
   }
 })
 
@@ -70,58 +82,24 @@ class General extends React.Component {
       childrenFundTotalCount: 0,
       internalFundTotalCount: 0,
       // option for Bar chart
-      barChartOptions: {
+      doughnutChartOptions: {
         responsive: true,
         maintainAspectRatio: false,
         animation: {
           duration: 200
         },
-        scales: {
-          yAxes: [{
-            ticks: {
-              beginAtZero: true,
-              stepSize: 10,
-            },
-            gridLines: {
-              drawBorder: false,
-              color: 'rgba(255,255,255,0.5)',
-              zeroLineColor: 'rgba(255,255,255,0.5)',
-              borderDash: [1, 2],
-              zeroLineBorderDash: [1, 2],
-            },
-            scaleLabel: {
-              display: true,
-              labelString: 'số lượng (em)',
-              padding: 1,
-              lineHeight: 1
-            }
-          }],
-          xAxes: [{
-            gridLines: {
-              drawOnChartArea: false,
-              display: false,
-            },
-            scaleLabel: {
-              display: true,
-              labelString: 'lớp',
-              padding: 1,
-              lineHeight: 1
-            }
-          }]
-        },
-        title: {
-          display: true,
-          text: 'Biểu đồ Số lượng thiếu nhi theo lớp',
-          position: 'bottom',
-          padding: 3,
-          fontStyle: 'normal',
-          fontFamily: 'Arial',
-        },
         layout: {
           padding: 2
         },
+        title: {
+          display: true,
+          position: 'bottom',
+          fontSzie: 14,
+          text: 'Biểu đồ số lượng Thiếu nhi từng lớp'
+        },
         legend: {
-          display: false
+          display: true,
+          position: 'left'
         },
       },
       lineChartOptions: {
@@ -184,6 +162,7 @@ class General extends React.Component {
       selectedClassRows: [],
       isOpenAddClassForm: false,
       isButtonDisabled: false,
+      isOpenClassActionMenu: null,
       //for Children Fund Table
       selectedFundType: 'QTN',
       childrenFunds: [],
@@ -191,26 +170,46 @@ class General extends React.Component {
         {
           title: 'Ngày',
           field: 'date',
-          cellStyle: { minWidth: 20 }
+          cellStyle: {
+            minWidth: 10,
+            maxWidth: 10,
+          }
         },
         {
           title: 'Nội dung',
           field: 'title',
-          cellStyle: { minWidth: 250 }
+          cellStyle: {
+            minWidth: 150,
+            maxWidth: 150
+          }
         },
         {
           title: 'Số tiền',
           field: 'price',
-          cellStyle: { minWidth: 50 }
+          cellStyle: {
+            minWidth: 20,
+            maxWidth: 20,
+          }
         }
       ],
       isOpenAddFundForm: false,
       isOpenFundActionMenu: null,
+      selectedMonths: 6,
+      fundDifference: 0,
+      internalFundDifferences: 0,
+      totalImport: 0,
+      totalExport: 0,
+      subtractChildrenFund: 0,
+      totalInternalImport: 0,
+      totalInternalExport: 0,
+      subtractInternalFund: 0,
       // for Event Table
       isOpenAddEventForm: false,
+      isOpenEventActionMenu: null,
       events: [],
       // for Documents Table
       documents: [],
+      isOpenDocumentActionMenu: null,
       // type of dialog
       typeofDialog: '',
       // for snackBar
@@ -223,6 +222,12 @@ class General extends React.Component {
       tumblrImageURL: '',
       tumblrImagePage: '',
       tumbleContent: '',
+      isTumblrLoading: true,
+      //for calendar
+      currentDisplayTime: '',
+      currentDisplayDate: moment().locale('vi').format('dddd, DD MMMM YYYY'),
+      weekdayShort: [],
+      calendarContent: [],
     }
 
     this.updateWindowDimensions = this.updateWindowDimensions.bind(this);
@@ -232,10 +237,12 @@ class General extends React.Component {
   componentDidMount = () => {
     this._ismounted = true;
     this.updateWindowDimensions();
+    this.displayTime();
+    this.displayCalendar();
     window.addEventListener("resize", this.updateWindowDimensions.bind(this));
     this.getChildrenData()
     this.getMemberData()
-    this.getFundData()
+    this.getFundData(this.state.selectedMonths)
     this.getClassData()
     this.getEventData()
     this.getDocumentData()
@@ -253,9 +260,9 @@ class General extends React.Component {
         innerWidth: window.innerWidth,
         innerHeight: window.innerHeight
       });
-      if(window.ChildrenFundChart) {
-        window.ChildrenFundChart.destroy();
-        this.getFundData();
+      if (window.ChildrenFundChart) {
+        this.getFundData(6);
+        this.getClassData();
       }
     }
   }
@@ -311,6 +318,49 @@ class General extends React.Component {
     else {
       return num
     };
+  }
+
+  displayTime = () => {
+    if (this._ismounted === true) {
+      let localeMoment = moment().locale('vi')
+      this.setState({
+        currentDisplayTime: localeMoment.format('LT'),
+      })
+      setTimeout(this.displayTime, 1000);
+    }
+  }
+
+  displayCalendar = () => {
+    if (this._ismounted === true) {
+      let firstDay = moment().startOf('month').format('d');
+      let blanks = [];
+      let daysInMonth = [];
+      for (let i = 0; i < firstDay; i++) {
+        blanks.push(<TableCell key={i + Math.floor(Math.random() * 100000)} style={{ fontSize: 11, textAlign: 'center' }}>{''}</TableCell>);
+      }
+      for (let d = 1; d <= moment().daysInMonth(); d++) {
+        if (d === Number(moment().format('D'))) daysInMonth.push(<TableCell key={d} style={{ fontSize: 11, textAlign: 'center', color: 'white', backgroundColor: '#9c27b0' }}>{d}</TableCell>);
+        else daysInMonth.push(<TableCell key={d} style={{ fontSize: 11, textAlign: 'center' }}>{d}</TableCell>);
+      }
+      let totalSlot = [...blanks, ...daysInMonth];
+      let rows = [], cells = [];
+      totalSlot.forEach((row, i) => {
+        if (i % 7 !== 0) cells.push(row)
+        else {
+          rows.push(cells);
+          cells = [];
+          cells.push(row)
+        }
+        if (i === totalSlot.length - 1) rows.push(cells)
+      })
+      let dayArr = rows.map((d, i) => {
+        return <TableRow key={i + Math.floor(Math.random() * 100000)}>{d}</TableRow>;
+      })
+      this.setState({
+        weekdayShort: moment.weekdaysShort(),
+        calendarContent: dayArr,
+      })
+    }
   }
 
   getChildrenData = () => {
@@ -377,8 +427,15 @@ class General extends React.Component {
   getClassData = () => {
     let classLabels = [];
     let classData = [];
+    let unconfirmedData = 0;
+    let colors = [];
     if (this._ismounted === true) {
-      axios.get('/backend/class/all')
+      return axios.get('/backend/children/count', { params: { condition: 'all' } })
+        .then(res => {
+          unconfirmedData = res.data.data
+
+          return axios.get('/backend/class/all')
+        })
         .then(classes => {
           // Class modifications
           let classesArr = [];
@@ -395,26 +452,34 @@ class General extends React.Component {
         .then((responseArr) => {
           responseArr.forEach(res => {
             classData.push(res.data.data)
+            unconfirmedData -= res.data.data
           })
+          classLabels.unshift('Chưa có lớp/Đã xong');
+          classData.unshift(unconfirmedData);
           //draw chart
           if (window.ChildrenCountChart) {
             window.ChildrenCountChart.destroy();
           }
-          Chart.defaults.global.defaultFontColor = 'white'
+          colors = classData.map((data, index, classData) => {
+            const nonData = '#2196f3'
+            if (index === 0) return nonData;
+            else return '#' + (Math.random() * 0xFFFFFF << 0).toString(16);
+          })
+          Chart.defaults.global.defaultFontColor = 'black'
           let ctx = document.getElementById('chart');
           window.ChildrenCountChart = new Chart(ctx, {
-            type: 'bar',
+            type: 'doughnut',
             data: {
               labels: classLabels,
               datasets: [{
-                label: 'Sỉ số',
+                label: 'Sỉ số (em)',
                 data: classData,
-                backgroundColor: 'rgba(255,255,255,0.9)',
-                hoverBackgroundColor: 'rgba(255,255,255,0.9)',
-                maxBarThickness: 8
+                backgroundColor: colors,
+                hoverBorderWidth: 5,
+                hoverBorderColor: colors
               }]
             },
-            options: this.state.barChartOptions
+            options: this.state.doughnutChartOptions
 
           });
         })
@@ -424,8 +489,16 @@ class General extends React.Component {
     }
   }
 
-  getFundData = () => {
+  getFundData = (numberOfMonths) => {
     if (this._ismounted === true) {
+      let months = [];
+      let n = 0;
+      while (n < numberOfMonths) {
+        months.push(moment().subtract(n, 'months').format('MM/YYYY'));
+        n += 1;
+      }
+      months = months.sort((a, b) => a - b)
+
       return axios.all([
         axios.get('/backend/children-fund/all'),
         axios.get('/backend/internal-fund/all'),
@@ -436,21 +509,25 @@ class General extends React.Component {
             dataResponses.push(response.data.data)
           })
           // get 6 previous months from now
-          let months = [];
-          let n = 0;
-          while (n < 6) {
-            months.push(moment().subtract(n, 'months').format('MM/YYYY'));
-            n += 1;
-          }
-          months = months.sort((a, b) => a - b)
+
           // Funds modifications
           let totalFunds = 0;
           let allFunds = dataResponses[0];
           let fundData = [];
+          let totalImport = 0;
+          let totalExport = 0;
+          let totalInternalImport = 0;
+          let totalInternalExport = 0;
           allFunds = _.sortBy(allFunds, fund => fund.date);
           allFunds.forEach(fund => {
             fund.date = (fund.date === '') ? '' : moment(fund.date).format('DD/MM/YYYY');
             totalFunds += fund.price;
+            if (fund.date.split('/')[2] === moment().subtract(1, 'years').format('YYYY') && Number(fund.price) >= 0) {
+              totalImport += Number(fund.price)
+            };
+            if (fund.date.split('/')[2] === moment().subtract(1, 'years').format('YYYY') && Number(fund.price) < 0) {
+              totalExport += Number(fund.price)
+            };
             fund.price = this.priceFormat(fund.price);
           })
           // Internal Fund modifications
@@ -461,6 +538,12 @@ class General extends React.Component {
           allInternalFunds.forEach(fund => {
             fund.date = (fund.date === '') ? '' : moment(fund.date).format('DD/MM/YYYY');
             totalInternalFund += fund.price;
+            if (fund.date.split('/')[2] === moment().subtract(1, 'years').format('YYYY') && Number(fund.price) >= 0) {
+              totalInternalImport += Number(fund.price)
+            };
+            if (fund.date.split('/')[2] === moment().subtract(1, 'years').format('YYYY') && Number(fund.price) < 0) {
+              totalInternalExport += Number(fund.price)
+            };
             fund.price = this.priceFormat(fund.price);
           })
           //draw chart
@@ -498,7 +581,7 @@ class General extends React.Component {
               fundData.push(priceDetail.toFixed(1));
             };
 
-            if(transformInternalFundArr[i] === undefined) {
+            if (transformInternalFundArr[i] === undefined) {
               internalFundData.unshift(0)
             }
             else {
@@ -526,6 +609,11 @@ class General extends React.Component {
             internalFundData[i] = Number(internalFundData[i]);
             internalFundDataAfterCalculated.push(_.sum(internalFundData.slice(0, i + 1)));
           }
+
+          this.setState({
+            fundDifference: Number(fundDataAfterCalculated[fundDataAfterCalculated.length - 1]) - Number(fundDataAfterCalculated[fundDataAfterCalculated.length - 2]),
+            internalFundDifferences: Number(internalFundDataAfterCalculated[internalFundDataAfterCalculated.length - 1] - Number(internalFundDataAfterCalculated[internalFundDataAfterCalculated.length - 2]))
+          })
 
           if (window.ChildrenFundChart) {
             window.ChildrenFundChart.destroy();
@@ -571,6 +659,12 @@ class General extends React.Component {
             childrenFundTotalCount: totalFunds,
             internalFundTotalCount: totalInternalFund,
             childrenFunds: allFunds,
+            totalImport: totalImport,
+            totalExport: totalExport,
+            subtractChildrenFund: totalImport - Math.abs(totalExport),
+            totalInternalImport: totalInternalImport,
+            totalInternalExport: totalInternalExport,
+            subtractInternalFund: totalInternalImport - Math.abs(totalInternalExport)
           })
         })
         .catch(err => {
@@ -584,18 +678,21 @@ class General extends React.Component {
       return axios.get('/backend/database/tumblr/posts')
         .then(res => {
           // Tumblr post
-          let div = document.getElementById('content')
-          div.innerHTML = res.data.data.content;
-          div.removeChild(document.querySelector('h2'));
+          // let div = document.getElementById('content')
+          // div.innerHTML = res.data.data.content;
+          // div.removeChild(document.querySelector('h2'));
           // End of Tumblr post
 
           this.setState({
             tumblrImageURL: res.data.data.img,
             tumblrImagePage: res.data.data.url,
+            tumbleContent: res.data.data.content,
+            isTumblrLoading: false,
           })
         })
         .catch(err => {
           console.log(err)
+          this.setState({ isTumblrLoading: false })
         })
     }
   }
@@ -620,12 +717,8 @@ class General extends React.Component {
           this.setState({
             isButtonDisabled: false,
             isOpenAddClassForm: false,
-            childrenTotalCount: 0,
-            userTotalCount: 0,
-            childrenFundTotalCount: 0,
-            internalFundTotalCount: 0,
           })
-          this.getData();
+          this.getClassData();
         }
       })
       .catch(err => {
@@ -659,16 +752,13 @@ class General extends React.Component {
             this.setState({
               isButtonDisabled: false,
               isOpenAddFundForm: false,
-              childrenTotalCount: 0,
-              userTotalCount: 0,
-              childrenFundTotalCount: 0,
-              internalFundTotalCount: 0,
               selectedFundType: 'QTN'
             })
-            this.getData();
+            this.getFundData(6);
           }
         })
         .catch(err => {
+          console.log(err)
           this.setState({
             snackerBarStatus: true,
             snackbarType: 'error',
@@ -685,13 +775,9 @@ class General extends React.Component {
             this.setState({
               isButtonDisabled: false,
               isOpenAddFundForm: false,
-              childrenTotalCount: 0,
-              userTotalCount: 0,
-              childrenFundTotalCount: 0,
-              internalFundTotalCount: 0,
               selectedFundType: 'QTN'
             })
-            this.getData();
+            this.getFundData(6);
           }
         })
         .catch(err => {
@@ -716,12 +802,8 @@ class General extends React.Component {
           this.setState({
             isButtonDisabled: false,
             isOpenAddEventForm: false,
-            childrenTotalCount: 0,
-            userTotalCount: 0,
-            childrenFundTotalCount: 0,
-            internalFundTotalCount: 0,
           })
-          this.getData();
+          this.getEventData();
         }
       })
       .catch(err => {
@@ -743,7 +825,7 @@ class General extends React.Component {
     return axios.post('/backend/document/create', data)
       .then(res => {
         if (res.data.code === "I001") {
-          this.getData()
+          this.getDocumentData()
           this.setState({
             snackerBarStatus: true,
             snackbarType: 'success',
@@ -832,6 +914,13 @@ class General extends React.Component {
     }
   }
 
+  handleChangeMonth = (e, type) => {
+    let result = {};
+    result[type] = e.target.value;
+    this.setState(result)
+    this.getFundData(e.target.value)
+  }
+
   render = () => {
     const { classes } = this.props;
 
@@ -846,7 +935,7 @@ class General extends React.Component {
                   <Typography variant='subtitle2' style={{
                     textAlign: 'right'
                   }}>Thiếu Nhi</Typography>
-                  <Typography variant='h5' style={{
+                  <Typography variant='h4' style={{
                     textAlign: 'right'
                   }}><AnimatedNumber
                       value={this.state.childrenTotalCount}
@@ -877,7 +966,7 @@ class General extends React.Component {
                   <Typography variant='subtitle2' style={{
                     textAlign: 'right'
                   }}>HT/GLV</Typography>
-                  <Typography variant='h5' style={{
+                  <Typography variant='h4' style={{
                     textAlign: 'right'
                   }}><AnimatedNumber
                       value={this.state.userTotalCount}
@@ -908,7 +997,7 @@ class General extends React.Component {
                   <Typography variant='subtitle2' style={{
                     textAlign: 'right'
                   }}>Quỹ Thiếu Nhi</Typography>
-                  <Typography variant='h5' style={{
+                  <Typography variant='h4' style={{
                     textAlign: 'right'
                   }}><AnimatedNumber
                       value={this.state.childrenFundTotalCount}
@@ -920,7 +1009,12 @@ class General extends React.Component {
                     textAlign: 'left',
                     fontSize: '12px',
                     paddingTop: '1em'
-                  }}>{'Cập nhật: ' + this.state.currentTime}</Typography>
+                  }}>{(this.state.fundDifference >= 0) ?
+                    <ArrowUpward style={{ color: 'green', fontSize: '12px' }} /> :
+                    <ArrowDownward style={{ color: 'red', fontSize: '12px' }} />}
+                    {(Math.abs(Number(this.state.fundDifference)) > 0 && Math.abs(Number(this.state.fundDifference)) < 1) ?
+                      Math.abs(Number(this.state.fundDifference).toFixed(1)) + 'ng ' : Math.abs(Number(this.state.fundDifference).toFixed(1)) + 'tr '}
+                    so với tháng trước</Typography>
                 </div>
               }
               style={{
@@ -939,7 +1033,7 @@ class General extends React.Component {
                   <Typography variant='subtitle2' style={{
                     textAlign: 'right'
                   }}>Quỹ nội bộ</Typography>
-                  <Typography variant='h5' style={{
+                  <Typography variant='h4' style={{
                     textAlign: 'right'
                   }}><AnimatedNumber
                       value={this.state.internalFundTotalCount}
@@ -951,7 +1045,12 @@ class General extends React.Component {
                     textAlign: 'left',
                     fontSize: '12px',
                     paddingTop: '1em'
-                  }}>{'Cập nhật: ' + this.state.currentTime}</Typography>
+                  }}>{(this.state.internalFundDifferences >= 0) ?
+                    <ArrowUpward style={{ color: 'green', fontSize: '12px' }} /> :
+                    <ArrowDownward style={{ color: 'red', fontSize: '12px' }} />}
+                    {(Math.abs(Number(this.state.internalFundDifferences)) > 0 && Math.abs(Number(this.state.internalFundDifferences)) < 1) ?
+                      Math.abs(Number(this.state.internalFundDifferences).toFixed(1)) + 'ng ' : Math.abs(Number(this.state.internalFundDifferences).toFixed(1)) + 'tr '}
+                    so với tháng trước</Typography>
                 </div>
               }
               style={{
@@ -972,20 +1071,31 @@ class General extends React.Component {
                 marginBottom: '-4em',
               }}
               children={
-                <div style={(this.state.innerWidth < 500)? {height: '36em'} : {height: '35em'}}>
+                <div style={(this.state.innerWidth < 500) ? { height: '37em' } : { height: '35em' }}>
                   <Toolbar disableGutters={true}>
                     <div style={{ flex: 1, marginLeft: '7em' }} />
                     <div>
                       <Typography variant="h5" style={{ textAlign: 'right' }}>Quỹ</Typography>
-                      <Typography variant="subtitle2" style={{ textAlign: 'right' }}>Biểu đồ thể hiện tình hình quỹ 6 tháng gần nhất</Typography>
+                      <Typography variant="subtitle2" style={{ textAlign: 'right' }}>{`Biểu đồ thể hiện tình hình quỹ ${this.state.selectedMonths} tháng gần nhất`}</Typography>
                     </div>
                   </Toolbar>
                   <Divider />
-                  <div style={{height: '28em'}}>
+                  <div style={{ height: '28em' }}>
                     <Toolbar disableGutters>
-                      <Typography variant="subtitle1"><div className={classes.circleStyle} style={{backgroundColor: '#4caf50'}} />Quỹ Thiếu Nhi</Typography>
-                      <div style={{marginRight: '1em'}}/>
-                      <Typography variant="subtitle1"><div className={classes.circleStyle} style={{backgroundColor: '#ff5722'}} />Quỹ Nội bộ</Typography>
+                      <div>
+                        <Typography variant="subtitle1"><div className={classes.circleStyle} style={{ backgroundColor: '#4caf50' }} />Quỹ Thiếu Nhi</Typography>
+                        <Typography variant="subtitle1"><div className={classes.circleStyle} style={{ backgroundColor: '#ff5722' }} />Quỹ Nội bộ</Typography>
+                      </div>
+                      <div style={{ flex: 1 }} />
+                      <Select
+                        value={this.state.selectedMonths}
+                        onChange={(e) => this.handleChangeMonth(e, 'selectedMonths')}
+                        input={<InputBase />}
+                        style={{ justifyContent: 'right' }}>
+                        <MenuItem value={6}>6 tháng</MenuItem>
+                        <MenuItem value={9}>9 tháng</MenuItem>
+                        <MenuItem value={12}>12 tháng</MenuItem>
+                      </Select>
                     </Toolbar>
                     <canvas id='childrenFund' />
                   </div>
@@ -1003,13 +1113,13 @@ class General extends React.Component {
                 width: '6em'
               }}
               children={
-                <div style={(this.state.innerWidth < 500)? {height: 'auto'} : {height: '35em'}}>
+                <div style={(this.state.innerWidth < 500) ? { height: 'auto' } : { height: '18em' }}>
                   <Toolbar disableGutters={true}>
                     <Select
                       value={this.state.selectedFundType}
                       onChange={(e) => this.handleChangeValue(e, 'selectedFundType')}
                       input={<InputBase />}
-                      style={{marginLeft: '7em'}}>
+                      style={{ marginLeft: '7em' }}>
                       <MenuItem value='QTN'>Quỹ TN</MenuItem>
                       <MenuItem value='QR'>Quỹ nội bộ</MenuItem>
                     </Select>
@@ -1039,7 +1149,7 @@ class General extends React.Component {
                       }}
                     >
                       <MenuItem
-                        disabled={(localStorage.type !== 'Admin') ? true : false}
+                        disabled={(localStorage.getItem('type') !== 'Admin') ? true : false}
                         onClick={() => {
                           this.setState({
                             isOpenAddFundForm: true,
@@ -1049,51 +1159,6 @@ class General extends React.Component {
                         }}>
                         <ListItemIcon><Add /></ListItemIcon>
                         <ListItemText primary="Tạo mới" />
-                      </MenuItem>
-                      <MenuItem
-                        disabled={(localStorage.type !== 'Admin') ? true : false}
-                        onClick={() => {
-                          if (this.state.selectedFundType === 'QTN') {
-                            return axios.post('/backend/children-fund/merge-fund')
-                              .then(res => {
-                                if (res.data.code === 'I001') {
-                                  this.getData();
-                                  this.setState({ isOpenFundActionMenu: null, selectedFundType: 'QTN' })
-                                }
-                              })
-                              .catch(err => {
-                                this.setState({
-                                  snackerBarStatus: true,
-                                  snackbarType: 'error',
-                                  snackbarMessage: 'Đã có lỗi từ máy chủ',
-                                  isButtonDisabled: false,
-                                  isOpenFundActionMenu: null,
-                                  selectedFundType: 'QTN'
-                                })
-                              })
-                          }
-                          else {
-                            return axios.post('/backend/internal-fund/merge-fund')
-                              .then(res => {
-                                if (res.data.code === 'I001') {
-                                  this.getData();
-                                  this.setState({ isOpenFundActionMenu: null, selectedFundType: 'QTN' })
-                                }
-                              })
-                              .catch(err => {
-                                this.setState({
-                                  snackerBarStatus: true,
-                                  snackbarType: 'error',
-                                  snackbarMessage: 'Đã có lỗi từ máy chủ',
-                                  isButtonDisabled: false,
-                                  isOpenFundActionMenu: null
-                                })
-                              })
-                          }
-                        }}
-                      >
-                        <ListItemIcon><CallMerge /></ListItemIcon>
-                        <ListItemText primary="Tổng kết quỹ" />
                       </MenuItem>
                     </Menu>
                   </Toolbar>
@@ -1113,22 +1178,48 @@ class General extends React.Component {
                           fontSize: 15
                         },
                         search: false,
-                        maxBodyHeight: '28em',
-                        minBodyHeight: '28em',
+                        maxBodyHeight: '13em',
+                        minBodyHeight: '13em',
                         showTitle: false,
-                        toolbar: false
+                        toolbar: false,
                       }}
                       localization={{
                         body: {
                           emptyDataSourceMessage: 'Không có dữ liệu!'
                         },
+                        header: {
+                          actions: 'Chỉnh sửa'
+                        }
                       }}
+                      actions={[
+                        {
+                          icon: () => { return <Edit style={{ color: '#ff9800' }} /> },
+                          tooltip: 'Chỉnh sửa',
+                          onClick: () => {
+                            alert('Clicked')
+                          }
+                        },
+                        {
+                          icon: () => { return <Clear style={{ color: 'red' }} /> },
+                          tooltip: 'Xóa',
+                          onClick: (e, rowData) => {
+                            return axios.delete(`/backend/children-fund/delete/${rowData._id}`)
+                              .then(res => {
+                                if (res.data.code === 'I001') {
+                                  this.getFundData(6)
+                                }
+                              })
+                              .catch(err => {
+                                this.setState({
+                                  snackerBarStatus: true,
+                                  snackbarType: 'error',
+                                  snackbarMessage: 'Đã có lỗi từ máy chủ. Không thể xóa!',
+                                })
+                              })
+                          }
+                        }
+                      ]}
                     />
-                    <Typography variant='body2' style={{
-                      textAlign: 'left',
-                      fontSize: '12px',
-                      paddingTop: '1em'
-                    }}>{'Cập nhật: ' + this.state.currentTime}</Typography>
                     <DialogForm
                       open={this.state.isOpenAddFundForm}
                       dialogType={this.state.typeofDialog}
@@ -1140,117 +1231,128 @@ class General extends React.Component {
                 </div>
               }
             />
-          </Grid>
-          <Grid item xs={12} sm={12} lg={4}>
             <Report
-              icon="Học Tiếng Anh cùng Lời Chúa"
+              icon={<InfoOutlined className={classes.icon} />}
               style={{
-                background: 'linear-gradient(to bottom right, #4db6ac, #009688)',
-                height: '4em',
-                marginBottom: '-2em',
+                background: 'linear-gradient(to bottom right, #ffcc80, #ff9800)',
+                marginBottom: '-4em',
+                height: '6em',
+                width: '6em',
+                marginTop: '2em'
               }}
               children={
-                <div style={{ marginTop: '2em' }}>
-                  <img src={this.state.tumblrImageURL} alt='' className={classes.image} onClick={() => window.open(`https://${this.state.tumblrImagePage}`, '_blank')} />
-                  <div style={{ overflowX: 'auto', height: '12em' }} id='content'></div>
+                <div style={(this.state.innerWidth < 500) ? { height: 'auto' } : { height: '11em' }}>
+                  <Toolbar disableGutters={true}>
+                    <div style={{ flex: 1, marginLeft: '7em' }} />
+                    <div>
+                      <Typography variant="h5" style={{ textAlign: 'right' }}>{`Quỹ năm ${moment().subtract(1, 'years').format('YYYY')}`}</Typography>
+                      <Typography variant="subtitle2" style={{ textAlign: 'right' }}>Tổng kết sơ bộ</Typography>
+                    </div>
+                  </Toolbar>
+                  <Divider />
+                  <div style={{ marginTop: '1em' }}>
+                    {(this.state.selectedFundType === 'QTN') ?
+                      (
+                        <React.Fragment>
+                          <Typography variant="body2">{`Tổng thu: ${this.priceFormat(this.state.totalImport)}`}</Typography>
+                          <LinearProgress
+                            variant="determinate"
+                            value={(this.state.totalImport / (this.state.childrenFundTotalCount)) * 100}
+                            classes={{ colorPrimary: classes.colorPrimary, barColorPrimary: classes.barColorPrimary }}
+                            style={{ height: 10 }} />
+                          <Typography variant="body2">{`Tổng chi: ${this.priceFormat(this.state.totalExport)}`}</Typography>
+                          <LinearProgress
+                            variant="determinate"
+                            value={(Math.abs(this.state.totalExport) / (this.state.childrenFundTotalCount)) * 100}
+                            classes={{ colorPrimary: classes.colorPrimary, barColorPrimary: classes.barColorPrimary }}
+                            style={{ height: 10 }} />
+                          <Typography variant="body2">{`Tồn: ${this.priceFormat(this.state.subtractChildrenFund)}`}</Typography>
+                          <LinearProgress
+                            variant="determinate"
+                            value={(this.state.subtractChildrenFund / (this.state.childrenFundTotalCount)) * 100}
+                            classes={{ colorPrimary: classes.colorPrimary, barColorPrimary: classes.barColorPrimary }}
+                            style={{ height: 10 }} />
+                        </React.Fragment>
+                      ) : (
+                        <React.Fragment>
+                          <Typography variant="body2">{`Tổng thu: ${this.priceFormat(this.state.totalInternalImport)}`}</Typography>
+                          <LinearProgress
+                            variant="determinate"
+                            value={(this.state.totalInternalImport / (this.state.childrenFundTotalCount)) * 100}
+                            classes={{ colorPrimary: classes.colorPrimary, barColorPrimary: classes.barColorPrimary }}
+                            style={{ height: 10 }} />
+                          <Typography variant="body2">{`Tổng chi: ${this.priceFormat(this.state.totalInternalExport)}`}</Typography>
+                          <LinearProgress
+                            variant="determinate"
+                            value={(Math.abs(this.state.totalInternalExport) / (this.state.childrenFundTotalCount)) * 100}
+                            classes={{ colorPrimary: classes.colorPrimary, barColorPrimary: classes.barColorPrimary }}
+                            style={{ height: 10 }} />
+                          <Typography variant="body2">{`Tồn: ${this.priceFormat(this.state.subtractInternalFund)}`}</Typography>
+                          <LinearProgress
+                            variant="determinate"
+                            value={(this.state.subtractInternalFund / (this.state.childrenFundTotalCount)) * 100}
+                            classes={{ colorPrimary: classes.colorPrimary, barColorPrimary: classes.barColorPrimary }}
+                            style={{ height: 10 }} />
+                        </React.Fragment>
+                      )}
+                  </div>
                 </div>
               }
             />
           </Grid>
-          <Grid item xs={12} sm={12} lg={6}>
+          <Grid item xs={12} sm={12} lg={4}>
             <Report
-              icon='Thông báo/sự kiện từ Xứ Đoàn'
+              icon={<EventAvailable className={classes.icon} />}
               style={{
                 background: 'linear-gradient(to bottom right, #ce93d8, #9c27b0)',
-                height: '4em',
-                marginBottom: '-2em',
+                height: '6em',
+                width: '6em',
+                marginBottom: '-4em',
               }}
               children={
-                <div style={{ marginTop: '2em' }}>
-                  <MaterialTable
-                    title={
-                      <div>
-                        <Tooltip title="Thêm sự kiện mới">
-                          <IconButton
-                            disabled={(localStorage.type !== 'Admin') ? true : false}
-                            onClick={() => {
-                              this.setState({
-                                isOpenAddEventForm: true,
-                                typeofDialog: 'event'
-                              })
-                            }}>
-                            <Add /></IconButton>
-                        </Tooltip>
-                        <Tooltip title="Xóa các sự kiện đã hoàn thành">
-                          <IconButton
-                            disabled={(localStorage.type !== 'Admin') ? true : false}
-                            onClick={() => {
-                              return axios.delete('/backend/event/delete-checked')
-                                .then(res => {
-                                  if (res.data.code === 'I001') {
-                                    this.setState({
-                                      childrenTotalCount: 0,
-                                      userTotalCount: 0,
-                                      childrenFundTotalCount: 0,
-                                      internalFundTotalCount: 0,
-                                    })
-                                    this.getData();
-                                  }
-                                })
-                                .catch(err => {
-                                  this.setState({
-                                    snackerBarStatus: true,
-                                    snackbarType: 'error',
-                                    snackbarMessage: 'Đã có lỗi từ máy chủ',
-                                    isButtonDisabled: false,
-                                    isLoading: false,
-                                  })
-                                })
-                            }}>
-                            <Delete /></IconButton>
-                        </Tooltip>
-                      </div>
-                    }
-                    icons={tableIcons}
-                    data={this.state.events}
-                    columns={[
-                      {
-                        title: 'Ngày',
-                        field: 'date',
-                      },
-                      {
-                        title: 'Nội dung',
-                        field: 'content',
-                        cellStyle: { minWidth: 220 }
-                      }
-                    ]}
-                    options={{
-                      paging: false,
-                      sorting: false,
-                      grouping: false,
-                      headerStyle: {
-                        position: 'sticky',
-                        top: 0,
-                        color: '#9c27b0',
-                        fontSize: 15
-                      },
-                      search: false,
-                      maxBodyHeight: '300px',
-                    }}
-                    localization={{
-                      body: {
-                        emptyDataSourceMessage: 'Không có dữ liệu!'
-                      },
-                      header: {
-                        actions: 'Hoàn thành'
-                      }
-                    }}
-                    actions={[
-                      {
-                        icon: '',
-                        tooltip: 'Hoàn thành',
-                        onClick: (e, rowData) => {
-                          return axios.post(`/backend/event/update-by-id/${rowData._id}`)
+                <div style={(this.state.innerWidth < 500) ? { height: 'auto' } : { height: '11em' }}>
+                  <Toolbar disableGutters={true}>
+                    <div style={{ flex: 1, marginLeft: '7em' }} />
+                    <div>
+                      <Typography variant="h5" style={{ textAlign: 'right' }}>Thông báo</Typography>
+                      <Typography variant="subtitle2" style={{ textAlign: 'right' }}>Sự kiện/Thông báo đến từ Xứ Đoàn</Typography>
+                    </div>
+                    <Tooltip title="Chỉnh sửa">
+                      <IconButton onClick={(e) => { this.setState({ isOpenEventActionMenu: e.target }) }} >
+                        <MoreVert />
+                      </IconButton>
+                    </Tooltip>
+                    <Menu
+                      anchorEl={this.state.isOpenEventActionMenu}
+                      open={Boolean(this.state.isOpenEventActionMenu)}
+                      onClose={() => { this.setState({ isOpenEventActionMenu: null }) }}
+                      keepMounted
+                      getContentAnchorEl={null}
+                      anchorOrigin={{
+                        vertical: 'bottom',
+                        horizontal: 'center',
+                      }}
+                      transformOrigin={{
+                        vertical: 'top',
+                        horizontal: 'right',
+                      }}
+                    >
+                      <MenuItem
+                        disabled={(localStorage.getItem('type') !== 'Admin' && localStorage.getItem('type') !== 'Member') ? true : false}
+                        onClick={() => {
+                          this.setState({
+                            isOpenAddEventForm: true,
+                            typeofDialog: 'event',
+                            isOpenEventActionMenu: null
+                          })
+                        }}>
+                        <ListItemIcon><Add /></ListItemIcon>
+                        <ListItemText primary="Tạo mới sự kiện" />
+                      </MenuItem>
+                      <MenuItem
+                        disabled={(localStorage.getItem('type') !== 'Admin' && localStorage.getItem('type') !== 'Member') ? true : false}
+                        onClick={() => {
+                          return axios.delete('/backend/event/delete-checked')
                             .then(res => {
                               if (res.data.code === 'I001') {
                                 this.setState({
@@ -1258,12 +1360,15 @@ class General extends React.Component {
                                   userTotalCount: 0,
                                   childrenFundTotalCount: 0,
                                   internalFundTotalCount: 0,
+                                  isOpenEventActionMenu: null,
                                 })
-                                this.getData();
+                                this.getEventData();
                               }
                             })
                             .catch(err => {
+                              console.log(err)
                               this.setState({
+                                isOpenEventActionMenu: null,
                                 snackerBarStatus: true,
                                 snackbarType: 'error',
                                 snackbarMessage: 'Đã có lỗi từ máy chủ',
@@ -1271,233 +1376,73 @@ class General extends React.Component {
                                 isLoading: false,
                               })
                             })
+                        }}
+                      >
+                        <ListItemIcon><Delete /></ListItemIcon>
+                        <ListItemText primary="Xóa sự kiện hoàn thành" />
+                      </MenuItem>
+                    </Menu>
+                  </Toolbar>
+                  <Divider />
+                  <div style={{ marginTop: '1em', overflow: 'auto' }}>
+                    <MaterialTable
+                      icons={tableIcons}
+                      data={this.state.events}
+                      columns={[
+                        {
+                          title: 'Ngày',
+                          field: 'date',
+                        },
+                        {
+                          title: 'Nội dung',
+                          field: 'content',
+                          cellStyle: { minWidth: 220 }
                         }
-                      },
-                    ]}
-                    components={{
-                      Action: props => (
-                        <Checkbox
-                          checked={props.data.isChecked}
-                          disabled={props.data.isChecked}
-                          onChange={(e) => props.action.onClick(e, props.data)} />
-                      )
-                    }}
-                  />
-                  <Typography variant='body2' style={{
-                    textAlign: 'left',
-                    fontSize: '12px',
-                    paddingTop: '1em'
-                  }}>{'Cập nhật: ' + this.state.currentTime}</Typography>
-                  <DialogForm
-                    open={this.state.isOpenAddEventForm}
-                    dialogType={this.state.typeofDialog}
-                    callback={this.callbackEventTable}
-                    func={this.createNewEvent}
-                    disabled={this.state.isButtonDisabled}
-                    style={{ color: '#9c27b0' }} />
-                </div>
-              }
-            />
-          </Grid>
-          <Grid item xs={12} sm={12} lg={6}>
-            <Report
-              icon="Tài liệu Xứ Đoàn"
-              style={{
-                background: 'linear-gradient(to bottom right, #f48fb1, #e91e63)',
-                height: '4em',
-                marginBottom: '-2em',
-              }}
-              children={
-                <div style={{ marginTop: '2em' }}>
-                  <MaterialTable
-                    title={
-                      <Tooltip title="Tải lên">
-                        <IconButton
-                          disabled={(localStorage.type !== 'Admin') ? true : false}
-                          onClick={this.handleUploadClick}
-                        ><Publish /></IconButton>
-                      </Tooltip>
-                    }
-                    icons={tableIcons}
-                    data={this.state.documents}
-                    columns={[
-                      {
-                        title: 'Tên tài liệu',
-                        field: 'filename'
-                      },
-                      {
-                        title: 'Người đăng tải',
-                        field: 'username',
-                      },
-                      {
-                        title: 'Chỉnh sửa lần cuối',
-                        field: 'date'
-                      },
-                    ]}
-                    options={{
-                      paging: false,
-                      sorting: false,
-                      headerStyle: {
-                        position: 'sticky',
-                        top: 0,
-                        color: '#e91e63',
-                        fontSize: 15
-                      },
-                      search: false,
-                      maxBodyHeight: '300px',
-                    }}
-                    localization={{
-                      body: {
-                        emptyDataSourceMessage: 'Không có dữ liệu!'
-                      },
-                      header: {
-                        actions: ''
-                      }
-                    }}
-                    actions={[
-                      {
-                        icon: () => { return <Clear style={{ color: 'red' }} /> },
-                        tooltip: 'Xóa tài liệu',
-                        onClick: (e, rowData) => {
-
-                          return axios.delete(`/backend/document/delete-by-id/${rowData._id}`)
-                            .then(res => {
-                              if (res.data.code === 'I001') {
-                                this.getData();
-                                this.setState({
-                                  snackerBarStatus: true,
-                                  snackbarType: 'success',
-                                  snackbarMessage: 'Xóa tài liệu thành công',
-                                })
-                              }
-                            })
-                            .catch(err => {
-                              console.log(err)
-                              this.setState({
-                                snackerBarStatus: true,
-                                snackbarType: 'error',
-                                snackbarMessage: 'Đã có lỗi trong quá trình xóa tài liệu',
-                                isLoading: false,
+                      ]}
+                      options={{
+                        paging: false,
+                        sorting: false,
+                        grouping: false,
+                        headerStyle: {
+                          position: 'sticky',
+                          top: 0,
+                          color: '#9c27b0',
+                          fontSize: 15
+                        },
+                        search: false,
+                        maxBodyHeight: '6em',
+                        minBodyHeight: '6em',
+                        showTitle: false,
+                        toolbar: false,
+                        header: false,
+                      }}
+                      localization={{
+                        body: {
+                          emptyDataSourceMessage: 'Không có dữ liệu!'
+                        },
+                        header: {
+                          actions: 'Hoàn thành'
+                        }
+                      }}
+                      actions={[
+                        {
+                          icon: '',
+                          tooltip: 'Hoàn thành',
+                          onClick: (e, rowData) => {
+                            return axios.post(`/backend/event/update-by-id/${rowData._id}`)
+                              .then(res => {
+                                if (res.data.code === 'I001') {
+                                  this.setState({
+                                    childrenTotalCount: 0,
+                                    userTotalCount: 0,
+                                    childrenFundTotalCount: 0,
+                                    internalFundTotalCount: 0,
+                                  })
+                                  this.getEventData();
+                                }
                               })
-                            })
-                        }
-                      },
-                      {
-                        icon: () => { return <GetApp /> },
-                        tooltip: 'Tải xuống',
-                        onClick: (e, rowData) => {
-                          return axios.get(`/backend/document/download/by-id/${rowData._id}`)
-                            .then(res => {
-                              let link = document.createElement('a');
-                              link.href = res.data.data;
-                              link.setAttribute('download', rowData.filename);
-                              link.click();
-                            })
-                            .then(() => {
-                              this.setState({
-                                snackerBarStatus: true,
-                                snackbarType: 'success',
-                                snackbarMessage: 'Tải xuống thành công',
-                              })
-                            })
-                            .catch(err => {
-                              console.log(err)
-                              this.setState({
-                                snackerBarStatus: true,
-                                snackbarType: 'error',
-                                snackbarMessage: 'Đã có lỗi trong quá trình tải xuống',
-                                isLoading: false,
-                              })
-                            })
-                        }
-                      }
-                    ]}
-                  />
-                  <Typography variant='body2' style={{
-                    textAlign: 'left',
-                    fontSize: '12px',
-                    paddingTop: '1em'
-                  }}>{'Cập nhật: ' + this.state.currentTime}</Typography>
-                  <input id="filePicker" type="file" onChange={e => this.createDocument(e)} accept=".doc, .docx, .xls, .xlsx, .ppt, .pptx, .pdf, .txt" style={{ 'display': 'none' }} />
-                </div>
-              }
-            />
-          </Grid>
-          <Grid item xs={12} sm={12} lg={4}>
-            <Report
-              icon={<canvas id='chart' />}
-              style={{
-                background: 'linear-gradient(to bottom right, #64b5f6, #2196f3)',
-                marginBottom: '-13em',
-                height: '15em',
-              }}
-              children={
-                <div style={{ marginTop: '13em' }}>
-                  <MaterialTable
-                    title="Danh sách lớp"
-                    icons={tableIcons}
-                    columns={this.state.classTableColumn}
-                    data={this.state.classes}
-                    options={{
-                      paging: false,
-                      sorting: false,
-                      headerStyle: {
-                        position: 'sticky',
-                        top: 0,
-                        color: '#2196f3',
-                        fontSize: 15
-                      },
-                      search: false,
-                      maxBodyHeight: '200px',
-                    }}
-                    localization={{
-                      header: {
-                        actions: ''
-                      },
-                      body: {
-                        emptyDataSourceMessage: 'Không có dữ liệu!'
-                      },
-                    }}
-                    actions={[
-                      {
-                        icon: () => { return <Add /> },
-                        tooltip: 'Thêm lớp',
-                        isFreeAction: true,
-                        hidden: (localStorage.type !== 'Admin') ? true : false,
-                        onClick: () => {
-                          this.setState({
-                            isOpenAddClassForm: true,
-                            typeofDialog: 'class'
-                          })
-                        }
-                      },
-                      {
-                        icon: () => { return <Remove style={{ color: 'red' }} /> },
-                        tooltip: 'Xóa',
-                        onClick: (e, rowData) => {
-                          return axios.delete(`/backend/class/delete/by-id/${rowData.ID}`)
-                            .then(res => {
-                              if (res.data.code === 'I001') {
-                                this.setState({
-                                  childrenTotalCount: 0,
-                                  userTotalCount: 0,
-                                  childrenFundTotalCount: 0,
-                                  internalFundTotalCount: 0,
-                                })
-                                this.getData();
-                              }
-                            })
-                            .catch(err => {
-                              if (err.response.status === 404) {
-                                this.setState({
-                                  snackerBarStatus: true,
-                                  snackbarType: 'error',
-                                  snackbarMessage: 'Lớp đã xóa hoặc không tồn tại trong CSDL',
-                                  isButtonDisabled: false,
-                                  isLoading: false,
-                                })
-                              }
-                              else {
+                              .catch(err => {
+                                console.log(err)
                                 this.setState({
                                   snackerBarStatus: true,
                                   snackbarType: 'error',
@@ -1505,24 +1450,429 @@ class General extends React.Component {
                                   isButtonDisabled: false,
                                   isLoading: false,
                                 })
+                              })
+                          }
+                        },
+                      ]}
+                      components={{
+                        Action: props => (
+                          <Tooltip title="Đánh dấu hoàn thành">
+                            <Checkbox
+                              checked={props.data.isChecked}
+                              disabled={props.data.isChecked}
+                              onChange={(e) => props.action.onClick(e, props.data)} />
+                          </Tooltip>
+                        )
+                      }}
+                    />
+                    <DialogForm
+                      open={this.state.isOpenAddEventForm}
+                      dialogType={this.state.typeofDialog}
+                      callback={this.callbackEventTable}
+                      func={this.createNewEvent}
+                      disabled={this.state.isButtonDisabled}
+                      style={{ color: '#9c27b0' }} />
+                  </div>
+                </div>
+              }
+            />
+            <Report
+              icon={<Today className={classes.icon} />}
+              style={{
+                marginTop: '2em',
+                background: 'linear-gradient(to bottom right, #ce93d8, #9c27b0)',
+                height: '6em',
+                width: '6em',
+                marginBottom: '-4em',
+              }}
+              children={
+                <div style={(this.state.innerWidth < 500) ? { height: 'auto' } : { height: '18em' }}>
+                  <Toolbar disableGutters={true}>
+                    <div style={{ flex: 1, marginLeft: '7em' }} />
+                    <div>
+                      <Typography variant="h5" style={{ textAlign: 'right' }}>{this.state.currentDisplayTime}</Typography>
+                      <Typography variant="subtitle2" style={{ textAlign: 'right' }}>{this.state.currentDisplayDate}</Typography>
+                    </div>
+                  </Toolbar>
+                  <Divider />
+                  <Table style={{ width: '100%' }} size='small'>
+                    <TableHead>
+                      <TableRow>
+                        {this.state.weekdayShort.map(day => {
+                          return (
+                            <TableCell
+                              style={{
+                                color: 'white',
+                                backgroundColor: '#9c27b0',
+                                fontSize: 11,
+                                textAlign: 'center'
+                              }}
+                              key={day}>{day}</TableCell>)
+                        })}
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>{this.state.calendarContent}</TableBody>
+                  </Table>
+                </div>
+              }
+            />
+          </Grid>
+          <Grid item xs={12} sm={12} lg={8}>
+            <Report
+              icon={<Class className={classes.icon} />}
+              style={{
+                background: 'linear-gradient(to bottom right, #64b5f6, #2196f3)',
+                marginBottom: '-4em',
+                height: '6em',
+                width: '6em'
+              }}
+              children={
+                <div style={(this.state.innerWidth < 500) ? { height: 'auto' } : { height: '35em' }}>
+                  <Toolbar disableGutters>
+                    <div style={{ flex: 1, marginLeft: '7em' }} />
+                    <div>
+                      <Typography variant="h5" style={{ textAlign: 'right' }}>Lớp</Typography>
+                      <Typography variant="subtitle2" style={{ textAlign: 'right' }}>Danh sách lớp và biểu đồ số lượng Thiếu nhi từng lớp</Typography>
+                    </div>
+                    <Tooltip title="Chỉnh sửa">
+                      <IconButton onClick={(e) => { this.setState({ isOpenClassActionMenu: e.target }) }} >
+                        <MoreVert />
+                      </IconButton>
+                    </Tooltip>
+                    <Menu
+                      anchorEl={this.state.isOpenClassActionMenu}
+                      open={Boolean(this.state.isOpenClassActionMenu)}
+                      onClose={() => { this.setState({ isOpenClassActionMenu: null }) }}
+                      keepMounted
+                      getContentAnchorEl={null}
+                      anchorOrigin={{
+                        vertical: 'bottom',
+                        horizontal: 'center',
+                      }}
+                      transformOrigin={{
+                        vertical: 'top',
+                        horizontal: 'right',
+                      }}
+                    >
+                      <MenuItem
+                        disabled={(localStorage.type !== 'Admin') ? true : false}
+                        onClick={() => {
+                          this.setState({
+                            isOpenAddClassForm: true,
+                            typeofDialog: 'class',
+                            isOpenClassActionMenu: null
+                          })
+                        }}>
+                        <ListItemIcon><Add /></ListItemIcon>
+                        <ListItemText primary="Tạo mới lớp" />
+                      </MenuItem>
+                    </Menu>
+                  </Toolbar>
+                  <Divider />
+                  <Grid container spacing={2} style={{ marginTop: '1em' }}>
+                    <Grid item xs={12} md={6} lg={8}>
+                      <div style={{ height: '28em' }}>
+                        <canvas id='chart' />
+                      </div>
+                    </Grid>
+                    <Grid item xs={12} md={6} lg={4}>
+                      <div style={{ overflow: 'auto' }}>
+                        <MaterialTable
+                          icons={tableIcons}
+                          columns={this.state.classTableColumn}
+                          data={this.state.classes}
+                          options={{
+                            paging: false,
+                            sorting: false,
+                            headerStyle: {
+                              position: 'sticky',
+                              top: 0,
+                              color: '#2196f3',
+                              fontSize: 15
+                            },
+                            search: false,
+                            maxBodyHeight: '30em',
+                            minBodyHeight: '30em',
+                            showTitle: false,
+                            toolbar: false,
+                          }}
+                          localization={{
+                            header: {
+                              actions: ''
+                            },
+                            body: {
+                              emptyDataSourceMessage: 'Không có dữ liệu!'
+                            },
+                          }}
+                          actions={[
+                            {
+                              icon: () => { return <Remove style={{ color: 'red' }} /> },
+                              tooltip: 'Xóa',
+                              onClick: (e, rowData) => {
+                                return axios.delete(`/backend/class/delete/by-id/${rowData.ID}`)
+                                  .then(res => {
+                                    if (res.data.code === 'I001') {
+                                      this.setState({
+                                        childrenTotalCount: 0,
+                                        userTotalCount: 0,
+                                        childrenFundTotalCount: 0,
+                                        internalFundTotalCount: 0,
+                                      })
+                                      this.getClassData();
+                                    }
+                                  })
+                                  .catch(err => {
+                                    if (err.response.status === 404) {
+                                      this.setState({
+                                        snackerBarStatus: true,
+                                        snackbarType: 'error',
+                                        snackbarMessage: 'Lớp đã xóa hoặc không tồn tại trong CSDL',
+                                        isButtonDisabled: false,
+                                        isLoading: false,
+                                      })
+                                    }
+                                    else {
+                                      this.setState({
+                                        snackerBarStatus: true,
+                                        snackbarType: 'error',
+                                        snackbarMessage: 'Đã có lỗi từ máy chủ',
+                                        isButtonDisabled: false,
+                                        isLoading: false,
+                                      })
+                                    }
+                                  })
                               }
-                            })
+                            }
+                          ]}
+                        />
+                        <DialogForm
+                          open={this.state.isOpenAddClassForm}
+                          dialogType={this.state.typeofDialog}
+                          callback={this.callbackClassTable}
+                          func={this.createNewClass}
+                          disabled={this.state.isButtonDisabled}
+                          style={{ color: '#2196f3' }} />
+                      </div>
+                    </Grid>
+                  </Grid>
+                </div>
+              }
+            />
+          </Grid>
+          <Grid item xs={12} sm={12} lg={6}>
+            <Report
+              icon={<GTranslate className={classes.icon} />}
+              style={{
+                background: 'linear-gradient(to bottom right, #4db6ac, #009688)',
+                height: '6em',
+                width: '6em',
+                marginBottom: '-4em',
+              }}
+              children={
+                <div style={(this.state.innerWidth < 500) ? { height: 'auto' } : { height: '20em' }}>
+                  <Toolbar disableGutters={true}>
+                    <div style={{ flex: 1, marginLeft: '7em' }} />
+                    <div>
+                      <Typography variant="h5" style={{ textAlign: 'right' }}>English corner</Typography>
+                      <Typography variant="subtitle2" style={{ textAlign: 'right' }}>Trau dồi kiến thức Anh Ngữ thông qua Tin Mừng hằng ngày</Typography>
+                    </div>
+                  </Toolbar>
+                  <Divider />
+                  <div style={{ marginTop: '1em' }}>
+                    <Grid container spacing={2}>
+                      <Grid item xs={12} md={12} lg={6}>
+                        {(this.state.isTumblrLoading) ?
+                          <Skeleton variant="rect" width='100%' height={240} /> :
+                          <img
+                            src={this.state.tumblrImageURL}
+                            alt=''
+                            className={classes.image}
+                            onClick={() => window.open(`https://${this.state.tumblrImagePage}`, '_blank')} />}
+                      </Grid>
+                      <Grid item xs={12} md={12} lg={6}>
+                        {(this.state.isTumblrLoading) ?
+                          (<div>
+                            <Skeleton variant="text" height={15} />
+                            <Skeleton variant="text" height={15} />
+                            <Skeleton variant="text" height={15} />
+                            <Skeleton variant="text" height={15} />
+                            <Skeleton variant="text" height={15} />
+                            <Skeleton variant="text" height={15} />
+                            <Skeleton variant="text" height={15} />
+                            <Skeleton variant="text" height={15} />
+                            <Skeleton variant="text" height={15} />
+                            <Skeleton variant="text" height={15} />
+                          </div>) :
+                          <div
+                            style={{ overflowX: 'auto', height: '15em' }}
+                            id='content'
+                            dangerouslySetInnerHTML={{ __html: this.state.tumbleContent }} />}
+                      </Grid>
+                    </Grid>
+                  </div>
+                </div>
+              }
+            />
+          </Grid>
+          <Grid item xs={12} sm={12} lg={6}>
+            <Report
+              icon={<Description className={classes.icon} />}
+              style={{
+                background: 'linear-gradient(to bottom right, #f48fb1, #e91e63)',
+                height: '6em',
+                width: '6em',
+                marginBottom: '-4em',
+              }}
+              children={
+                <div style={(this.state.innerWidth < 500) ? { height: 'auto' } : { height: '20em' }}>
+                  <Toolbar disableGutters>
+                    <div style={{ flex: 1, marginLeft: '7em' }} />
+                    <div>
+                      <Typography variant="h5" style={{ textAlign: 'right' }}>Tài liệu Xứ đoàn</Typography>
+                      <Typography variant="subtitle2" style={{ textAlign: 'right' }}>Lưu trữ các tài liệu chi tiết</Typography>
+                    </div>
+                    <Tooltip title="Mở rộng">
+                      <IconButton onClick={(e) => { this.setState({ isOpenDocumentActionMenu: e.target }) }} >
+                        <MoreVert />
+                      </IconButton>
+                    </Tooltip>
+                    <Menu
+                      anchorEl={this.state.isOpenDocumentActionMenu}
+                      open={Boolean(this.state.isOpenDocumentActionMenu)}
+                      onClose={() => { this.setState({ isOpenDocumentActionMenu: null }) }}
+                      keepMounted
+                      getContentAnchorEl={null}
+                      anchorOrigin={{
+                        vertical: 'bottom',
+                        horizontal: 'center',
+                      }}
+                      transformOrigin={{
+                        vertical: 'top',
+                        horizontal: 'right',
+                      }}
+                    >
+                      <MenuItem
+                        disabled={(localStorage.type !== 'Admin') ? true : false}
+                        onClick={() => {
+                          this.setState({
+                            isOpenDocumentActionMenu: null
+                          })
+                          this.handleUploadClick()
+                        }}>
+                        <ListItemIcon><Publish /></ListItemIcon>
+                        <ListItemText primary="Upload tài liệu" />
+                      </MenuItem>
+                    </Menu>
+                  </Toolbar>
+                  <Divider />
+                  <div style={{ marginTop: '1em', overflow: 'auto' }}>
+                    <MaterialTable
+                      icons={tableIcons}
+                      data={this.state.documents}
+                      columns={[
+                        {
+                          title: 'Tên tài liệu',
+                          field: 'filename'
+                        },
+                        {
+                          title: 'Người đăng tải',
+                          field: 'username',
+                        },
+                        {
+                          title: 'Chỉnh sửa lần cuối',
+                          field: 'date'
+                        },
+                      ]}
+                      options={{
+                        paging: false,
+                        sorting: false,
+                        headerStyle: {
+                          position: 'sticky',
+                          top: 0,
+                          color: '#e91e63',
+                          fontSize: 15
+                        },
+                        search: false,
+                        maxBodyHeight: '15em',
+                        minBodyHeight: '15em',
+                        toolbar: false,
+                        showTitle: false,
+                      }}
+                      localization={{
+                        body: {
+                          emptyDataSourceMessage: 'Không có dữ liệu!'
+                        },
+                        header: {
+                          actions: ''
                         }
-                      }
-                    ]}
-                  />
-                  <Typography variant='body2' style={{
-                    textAlign: 'left',
-                    fontSize: '12px',
-                    paddingTop: '1em'
-                  }}>{'Cập nhật: ' + this.state.currentTime}</Typography>
-                  <DialogForm
-                    open={this.state.isOpenAddClassForm}
-                    dialogType={this.state.typeofDialog}
-                    callback={this.callbackClassTable}
-                    func={this.createNewClass}
-                    disabled={this.state.isButtonDisabled}
-                    style={{ color: '#2196f3' }} />
+                      }}
+                      actions={[
+                        {
+                          icon: () => { return <Edit style={{ color: '#e91e63' }} /> },
+                          tooltip: 'Đổi tên',
+                          onClick: (e, rowData) => {
+                            alert('Clicked!')
+                          }
+                        },
+                        {
+                          icon: () => { return <GetApp style={{ color: 'green' }} /> },
+                          tooltip: 'Tải xuống',
+                          onClick: (e, rowData) => {
+                            return axios.get(`/backend/document/download/by-id/${rowData._id}`)
+                              .then(res => {
+                                let link = document.createElement('a');
+                                link.href = res.data.data;
+                                link.setAttribute('download', rowData.filename);
+                                link.click();
+                              })
+                              .then(() => {
+                                this.setState({
+                                  snackerBarStatus: true,
+                                  snackbarType: 'success',
+                                  snackbarMessage: 'Tải xuống thành công',
+                                })
+                              })
+                              .catch(err => {
+                                console.log(err)
+                                this.setState({
+                                  snackerBarStatus: true,
+                                  snackbarType: 'error',
+                                  snackbarMessage: 'Đã có lỗi trong quá trình tải xuống',
+                                  isLoading: false,
+                                })
+                              })
+                          }
+                        },
+                        {
+                          icon: () => { return <Clear style={{ color: 'red' }} /> },
+                          tooltip: 'Xóa tài liệu',
+                          onClick: (e, rowData) => {
+
+                            return axios.delete(`/backend/document/delete-by-id/${rowData._id}`)
+                              .then(res => {
+                                if (res.data.code === 'I001') {
+                                  this.getDocumentData();
+                                  this.setState({
+                                    snackerBarStatus: true,
+                                    snackbarType: 'success',
+                                    snackbarMessage: 'Xóa tài liệu thành công',
+                                  })
+                                }
+                              })
+                              .catch(err => {
+                                console.log(err)
+                                this.setState({
+                                  snackerBarStatus: true,
+                                  snackbarType: 'error',
+                                  snackbarMessage: 'Đã có lỗi trong quá trình xóa tài liệu',
+                                  isLoading: false,
+                                })
+                              })
+                          }
+                        }
+                      ]}
+                    />
+                  </div>
                 </div>
               }
             />
@@ -1535,6 +1885,7 @@ class General extends React.Component {
           callback={this.callbackSnackerBarHanlder}
           open={this.state.snackerBarStatus}
         />
+        <input id="filePicker" type="file" onChange={e => this.createDocument(e)} accept=".doc, .docx, .xls, .xlsx, .ppt, .pptx, .pdf, .txt" style={{ 'display': 'none' }} />
       </div>
     )
   }

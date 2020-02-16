@@ -12,7 +12,7 @@ import { Skeleton } from '@material-ui/lab';
 import {
   Face, Group, AttachMoney, Add, Remove, Publish,
   Delete, Clear, GetApp, ShowChart, MoreVert, InfoOutlined,
-  ArrowUpward, ArrowDownward, Edit, Class, GTranslate, Description, EventAvailable, Today
+  ArrowUpward, ArrowDownward, Edit, Class, GTranslate, Description, EventAvailable, Today,
 } from '@material-ui/icons';
 import MaterialTable from 'material-table';
 import _ from 'lodash';
@@ -73,7 +73,7 @@ class General extends React.Component {
       innerWidth: 0,
       innerHeight: 0,
       // General
-      currentTime: moment().format('DD/MM/YYYY hh:mm:ss'),
+      currentTime: moment().format('DD/MM/YYYY'),
       username: localStorage.getItem('username'),
       duration: 1000,
       // Report results
@@ -171,8 +171,8 @@ class General extends React.Component {
           title: 'Ngày',
           field: 'date',
           cellStyle: {
-            minWidth: 10,
-            maxWidth: 10,
+            minWidth: 80,
+            maxWidth: 80,
           }
         },
         {
@@ -324,7 +324,7 @@ class General extends React.Component {
     if (this._ismounted === true) {
       let localeMoment = moment().locale('vi')
       this.setState({
-        currentDisplayTime: localeMoment.format('LT'),
+        currentDisplayTime: localeMoment.format('LTS'),
       })
       setTimeout(this.displayTime, 1000);
     }
@@ -497,7 +497,7 @@ class General extends React.Component {
         months.push(moment().subtract(n, 'months').format('MM/YYYY'));
         n += 1;
       }
-      months = months.sort((a, b) => a - b)
+      months = months.reverse()
 
       return axios.all([
         axios.get('/backend/children-fund/all'),
@@ -926,8 +926,8 @@ class General extends React.Component {
 
     return (
       <div>
-        <Grid container className={classes.container} spacing={4}>
-          <Grid item xs={12} sm={6} lg={3}>
+        <Grid container className={classes.container} spacing={3}>
+          <Grid item xs={12} md={6} lg={3}>
             <Report
               icon={<Face className={classes.icon} />}
               children={
@@ -943,9 +943,8 @@ class General extends React.Component {
                       formatValue={value => this.formatValue(value, 'em')} />
                   </Typography>
                   <Divider />
-                  <Typography variant='body2' style={{
+                  <Typography variant='body1' style={{
                     textAlign: 'left',
-                    fontSize: '12px',
                     paddingTop: '1em'
                   }}>{'Cập nhật: ' + this.state.currentTime}</Typography>
                 </div>
@@ -958,7 +957,7 @@ class General extends React.Component {
               }}
             />
           </Grid>
-          <Grid item xs={12} sm={6} lg={3}>
+          <Grid item xs={12} md={6} lg={3}>
             <Report
               icon={<Group className={classes.icon} />}
               children={
@@ -974,9 +973,8 @@ class General extends React.Component {
                       formatValue={value => this.formatValue(value, 'a/c')} />
                   </Typography>
                   <Divider />
-                  <Typography variant='body2' style={{
+                  <Typography variant='body1' style={{
                     textAlign: 'left',
-                    fontSize: '12px',
                     paddingTop: '1em'
                   }}>{'Cập nhật: ' + this.state.currentTime}</Typography>
                 </div>
@@ -989,7 +987,7 @@ class General extends React.Component {
               }}
             />
           </Grid>
-          <Grid item xs={12} sm={6} lg={3}>
+          <Grid item xs={12} md={6} lg={3}>
             <Report
               icon={<AttachMoney className={classes.icon} />}
               children={
@@ -1005,9 +1003,8 @@ class General extends React.Component {
                       formatValue={value => this.formatValue(value, 'đ')} />
                   </Typography>
                   <Divider />
-                  <Typography variant='body2' style={{
+                  <Typography variant='body1' style={{
                     textAlign: 'left',
-                    fontSize: '12px',
                     paddingTop: '1em'
                   }}>{(this.state.fundDifference >= 0) ?
                     <ArrowUpward style={{ color: 'green', fontSize: '12px' }} /> :
@@ -1025,7 +1022,7 @@ class General extends React.Component {
               }}
             />
           </Grid>
-          <Grid item xs={12} sm={6} lg={3}>
+          <Grid item xs={12} md={6} lg={3}>
             <Report
               icon={<AttachMoney className={classes.icon} />}
               children={
@@ -1041,9 +1038,8 @@ class General extends React.Component {
                       formatValue={value => this.formatValue(value, 'đ')} />
                   </Typography>
                   <Divider />
-                  <Typography variant='body2' style={{
+                  <Typography variant='body1' style={{
                     textAlign: 'left',
-                    fontSize: '12px',
                     paddingTop: '1em'
                   }}>{(this.state.internalFundDifferences >= 0) ?
                     <ArrowUpward style={{ color: 'green', fontSize: '12px' }} /> :
@@ -1178,8 +1174,8 @@ class General extends React.Component {
                           fontSize: 15
                         },
                         search: false,
-                        maxBodyHeight: '13em',
-                        minBodyHeight: '13em',
+                        maxBodyHeight: '11em',
+                        minBodyHeight: '11em',
                         showTitle: false,
                         toolbar: false,
                       }}
@@ -1310,7 +1306,7 @@ class General extends React.Component {
                 marginBottom: '-4em',
               }}
               children={
-                <div style={(this.state.innerWidth < 500) ? { height: 'auto' } : { height: '11em' }}>
+                <div style={(this.state.innerWidth < 500) ? { height: 'auto' } : { height: '15em' }}>
                   <Toolbar disableGutters={true}>
                     <div style={{ flex: 1, marginLeft: '7em' }} />
                     <div>
@@ -1410,8 +1406,8 @@ class General extends React.Component {
                           fontSize: 15
                         },
                         search: false,
-                        maxBodyHeight: '6em',
-                        minBodyHeight: '6em',
+                        maxBodyHeight: '10em',
+                        minBodyHeight: '10em',
                         showTitle: false,
                         toolbar: false,
                         header: false,
@@ -1486,7 +1482,7 @@ class General extends React.Component {
                 marginBottom: '-4em',
               }}
               children={
-                <div style={(this.state.innerWidth < 500) ? { height: 'auto' } : { height: '18em' }}>
+                <div style={(this.state.innerWidth < 500) ? { height: 'auto' } : { height: '14em' }}>
                   <Toolbar disableGutters={true}>
                     <div style={{ flex: 1, marginLeft: '7em' }} />
                     <div>
@@ -1495,7 +1491,7 @@ class General extends React.Component {
                     </div>
                   </Toolbar>
                   <Divider />
-                  <Table style={{ width: '100%' }} size='small'>
+                  <Table padding='none' style={{marginRight: '1em'}}>
                     <TableHead>
                       <TableRow>
                         {this.state.weekdayShort.map(day => {

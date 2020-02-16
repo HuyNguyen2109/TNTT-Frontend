@@ -19,6 +19,15 @@ const useStyles = theme => ({
   // },
   menu: {
     width: 50
+  },
+  customInput: {
+    '& label.Mui-focused': { color: '#000000' },
+    '& .MuiInput-underline:after': {
+      borderBottomColor: '#000000',
+    },
+  },
+  title:{
+    fontSize: '20px'
   }
 })
 
@@ -127,9 +136,10 @@ class DialogFrom extends React.Component {
       <Dialog open={open} onClose={this.handleClose} className={classes.root}>
         {(dialogType === 'class') ?
           <div>
-            <DialogTitle>Tạo lớp giáo lý mới</DialogTitle>
-            <DialogContent>
+            <DialogTitle className={classes.title}>Tạo lớp giáo lý mới</DialogTitle>
+            <DialogContent dividers>
               <TextField
+                className={classes.customInput}
                 fullWidth
                 autoFocus
                 label='Tên lớp'
@@ -141,10 +151,11 @@ class DialogFrom extends React.Component {
           :
           (dialogType === 'fund') ?
             <div>
-              <DialogTitle>Tạo nội dung thu/chi quỹ mới</DialogTitle>
-              <DialogContent>
+              <DialogTitle className={classes.title}>Tạo nội dung thu/chi quỹ mới</DialogTitle>
+              <DialogContent dividers>
                 <MuiPickersUtilsProvider utils={DateFnsUtils}>
                   <KeyboardDatePicker
+                    className={classes.customInput}
                     fullWidth
                     format="dd/MM/yyyy"
                     label="Ngày"
@@ -155,6 +166,7 @@ class DialogFrom extends React.Component {
                     }} />
                 </MuiPickersUtilsProvider>
                 <TextField
+                  className={classes.customInput}
                   fullWidth
                   autoFocus
                   label='Nội dung'
@@ -162,6 +174,7 @@ class DialogFrom extends React.Component {
                   onChange={e => this.handleFormChange(e, 'title')}
                 />
                 <TextField
+                  className={classes.customInput}
                   select
                   label="Loại chi tiêu"
                   value={this.state.chosenFundType}
@@ -180,8 +193,8 @@ class DialogFrom extends React.Component {
                   ))}
                 </TextField>
                 <TextField
+                  className={classes.customInput}
                   fullWidth
-                  autoFocus
                   label='Số tiền'
                   value={this.state.price}
                   onChange={e => this.handleFormChange(e, 'price')}
@@ -192,10 +205,11 @@ class DialogFrom extends React.Component {
               </DialogContent>
             </div> :
             <div>
-              <DialogTitle>Tạo Thông báo/Sự kiện mới</DialogTitle>
-              <DialogContent>
+              <DialogTitle className={classes.title}>Tạo Thông báo/Sự kiện mới</DialogTitle>
+              <DialogContent dividers>
                 <MuiPickersUtilsProvider utils={DateFnsUtils}>
                   <KeyboardDatePicker
+                    className={classes.customInput}
                     fullWidth
                     format="dd/MM/yyyy"
                     label="Ngày"
@@ -206,6 +220,7 @@ class DialogFrom extends React.Component {
                     }} />
                 </MuiPickersUtilsProvider>
                 <TextField
+                  className={classes.customInput}
                   fullWidth
                   autoFocus
                   label='Thông báo/Sự kiện'

@@ -4,13 +4,13 @@ import axios from 'axios';
 import AnimatedNumber from 'animated-number-react';
 import Chart from 'chart.js';
 import {
-  Grid, Typography, Checkbox, IconButton, Tooltip, Divider,
-  Toolbar, MenuItem, Menu, ListItemIcon, ListItemText, Select, InputBase, LinearProgress, Table, TableHead, TableCell, TableBody, TableRow
+  Grid, Typography, IconButton, Tooltip, Divider,
+  Toolbar, MenuItem, Menu, ListItemIcon, ListItemText, Select, InputBase, LinearProgress, Table, TableHead, TableCell, TableBody, TableRow, colors, InputLabel
 } from '@material-ui/core';
-import { withStyles, lighten } from '@material-ui/core/styles';
+import { withStyles, lighten, createMuiTheme, MuiThemeProvider } from '@material-ui/core/styles';
 import { Skeleton } from '@material-ui/lab';
 import {
-  Face, Group, AttachMoney, Add, Remove, Publish,
+  Face, Group, AttachMoney, Add, Publish,
   Delete, Clear, GetApp, ShowChart, MoreVert, InfoOutlined,
   ArrowUpward, ArrowDownward, Edit, Class, GTranslate, Description, EventAvailable, Today,
 } from '@material-ui/icons';
@@ -64,6 +64,16 @@ const useStyle = theme => ({
   }
 })
 
+const customColor = createMuiTheme({
+  palette: {
+    primary: {
+      main: colors.purple[500],
+      light: colors.purple[300],
+      dark: colors.purple[700]
+    }
+  }
+})
+
 class General extends React.Component {
   constructor(props) {
     super(props)
@@ -82,6 +92,7 @@ class General extends React.Component {
       childrenFundTotalCount: 0,
       internalFundTotalCount: 0,
       // option for Bar chart
+      selectedPieChartType: 'Lớp',
       doughnutChartOptions: {
         responsive: true,
         maintainAspectRatio: false,
@@ -95,7 +106,7 @@ class General extends React.Component {
           display: true,
           position: 'bottom',
           fontSzie: 14,
-          text: 'Biểu đồ số lượng Thiếu nhi từng lớp'
+          text: 'Biểu đồ số lượng Thiếu nhi'
         },
         legend: {
           display: true,
@@ -212,6 +223,8 @@ class General extends React.Component {
       isOpenDocumentActionMenu: null,
       // type of dialog
       typeofDialog: '',
+      typeofAction: '',
+      dialogContent: '',
       // for snackBar
       snackbarMessage: '',
       snackbarType: 'success',
@@ -243,7 +256,7 @@ class General extends React.Component {
     this.getChildrenData()
     this.getMemberData()
     this.getFundData(this.state.selectedMonths)
-    this.getClassData()
+    this.getClassData('Lớp')
     this.getEventData()
     this.getDocumentData()
     this.getTumblrPost();
@@ -258,11 +271,11 @@ class General extends React.Component {
     if (this._ismounted) {
       this.setState({
         innerWidth: window.innerWidth,
-        innerHeight: window.innerHeight
+        innerHeight: window.innerHeight,
       });
       if (window.ChildrenFundChart) {
-        this.getFundData(6);
-        this.getClassData();
+        this.getFundData(this.state.selectedFundType);
+        this.getClassData(this.state.selectedPieChartType);
       }
     }
   }
@@ -424,11 +437,12 @@ class General extends React.Component {
     }
   }
 
-  getClassData = () => {
+  getClassData = (type) => {
     let classLabels = [];
     let classData = [];
     let unconfirmedData = 0;
     let colors = [];
+    let classesArr = [];
     if (this._ismounted === true) {
       return axios.get('/backend/children/count', { params: { condition: 'all' } })
         .then(res => {
@@ -438,7 +452,6 @@ class General extends React.Component {
         })
         .then(classes => {
           // Class modifications
-          let classesArr = [];
           let axiosRequests = [];
           classesArr = classes.data.data.filter(el => el.Value !== "Chung");
           this.setState({ classes: classesArr })
@@ -465,23 +478,64 @@ class General extends React.Component {
             if (index === 0) return nonData;
             else return '#' + (Math.random() * 0xFFFFFF << 0).toString(16);
           })
-          Chart.defaults.global.defaultFontColor = 'black'
-          let ctx = document.getElementById('chart');
-          window.ChildrenCountChart = new Chart(ctx, {
-            type: 'doughnut',
-            data: {
-              labels: classLabels,
-              datasets: [{
-                label: 'Sỉ số (em)',
-                data: classData,
-                backgroundColor: colors,
-                hoverBorderWidth: 5,
-                hoverBorderColor: colors
-              }]
-            },
-            options: this.state.doughnutChartOptions
 
-          });
+          if (type === 'Lớp') {
+            Chart.defaults.global.defaultFontColor = 'black'
+            let ctx = document.getElementById('chart');
+            window.ChildrenCountChart = new Chart(ctx, {
+              type: 'doughnut',
+              data: {
+                labels: classLabels,
+                datasets: [{
+                  label: 'Sỉ số (em)',
+                  data: classData,
+                  backgroundColor: colors,
+                  hoverBorderWidth: 5,
+                  hoverBorderColor: colors
+                }]
+              },
+              options: this.state.doughnutChartOptions
+            });
+          } else {
+            let dataByGroup = [],
+            classLabels = ['Ấu', 'Thiếu', 'Nghĩa', 'Hiệp'];
+            classLabels.forEach(group => {
+              classesArr = classesArr.filter(el => el.group === group);
+              
+              let requests = [];
+              classesArr.forEach(classEl => {
+                requests.push(axios.get('/backend/children/count', { params: { condition: classEl.ID } }))
+              })
+              axios.all(requests)
+                .then(res => {
+                  let total = 0;
+                  let classes = res.data.data;
+                  classes.forEach(cls => {
+                    total += cls
+                  })
+                  dataByGroup.push(total);
+                  unconfirmedData -= total;
+                })        
+            })
+            classLabels.unshift('Không có');
+            dataByGroup.unshift(unconfirmedData);
+            Chart.defaults.global.defaultFontColor = 'black'
+            let ctx = document.getElementById('chart');
+            window.ChildrenCountChart = new Chart(ctx, {
+              type: 'doughnut',
+              data: {
+                labels: classLabels,
+                datasets: [{
+                  label: 'Sỉ số (em)',
+                  data: dataByGroup,
+                  backgroundColor: ['#2f2f2f', '#76ff03', '#3d5afe', '#ffea00', '#795548'],
+                  hoverBorderWidth: 5,
+                  hoverBorderColor: ['#2f2f2f', '#76ff03', '#3d5afe', '#ffea00', '#795548']
+                }]
+              },
+              options: this.state.doughnutChartOptions
+            });
+          }
         })
         .catch(err => {
           console.log(err)
@@ -697,8 +751,9 @@ class General extends React.Component {
     }
   }
 
-  createNewClass = (className) => {
+  createNewClass = (classInformation) => {
     this.setState({ isButtonDisabled: true, isLoading: true })
+    let className = classInformation.class;
     let classID = '';
     let classNameSplit = className.split(' ');
     for (let i = 0; i < classNameSplit.length - 1; i++) {
@@ -708,6 +763,7 @@ class General extends React.Component {
     const newClass = {
       'ID': this.removeVietnameseLetter(classID),
       'Value': this.capitalizeWord(className),
+      'group': classInformation.group,
       'path': `/dashboard/${classID}`
     }
 
@@ -717,8 +773,9 @@ class General extends React.Component {
           this.setState({
             isButtonDisabled: false,
             isOpenAddClassForm: false,
+            selectedPieChartType: 'Lớp',
           })
-          this.getClassData();
+          this.getClassData('Lớp');
         }
       })
       .catch(err => {
@@ -738,6 +795,38 @@ class General extends React.Component {
             isButtonDisabled: false
           })
         }
+      })
+  }
+
+  editClass = (classData) => {
+    this.setState({ isButtonDisabled: true, isLoading: true })
+    let className = classData.class;
+    let classID = '';
+    let classNameSplit = className.split(' ');
+    for (let i = 0; i < classNameSplit.length - 1; i++) {
+      classID += classNameSplit[i].charAt(0).toUpperCase();
+    };
+    classID += classNameSplit[classNameSplit.length - 1].toUpperCase();
+    const classInformation = {
+      'ID': this.removeVietnameseLetter(classID),
+      'Value': this.capitalizeWord(className),
+      'group': classData.group,
+      'path': `/dashboard/${classID}`
+    }
+
+    return axios.put(`/backend/class/update/${classData._id}`, classInformation)
+      .then(res => {
+        if (res.data.code === 'I001') {
+          this.setState({
+            isButtonDisabled: false,
+            isOpenAddClassForm: false,
+            selectedPieChartType: 'Lớp',
+          })
+          this.getClassData('Lớp');
+        }
+      })
+      .catch(err => {
+        console.log(err)
       })
   }
 
@@ -792,6 +881,49 @@ class General extends React.Component {
     }
   }
 
+  editFund = (fundData) => {
+    this.setState({ isButtonDisabled: true, isLoading: true })
+    const fundInformation = {
+      'date': fundData.date,
+      'title': fundData.title,
+      'price': fundData.price
+    }
+    switch (this.state.selectedFundType) {
+      case 'QTN':
+        return axios.put(`/backend/children-fund/update/${fundData._id}`, fundInformation)
+          .then(res => {
+            if (res.data.code === 'I001') {
+              this.setState({
+                isButtonDisabled: false,
+                isOpenAddFundForm: false,
+                selectedFundType: 'QTN'
+              })
+              return this.getFundData(6);
+            }
+          })
+          .catch(err => {
+            console.log(err)
+          })
+      case 'QR':
+        return axios.put(`/backend/internal-fund/update/${fundData._id}`, fundInformation)
+          .then(res => {
+            if (res.data.code === 'I001') {
+              this.setState({
+                isButtonDisabled: false,
+                isOpenAddFundForm: false,
+                selectedFundType: 'QTN'
+              })
+              return this.getFundData(6);
+            }
+          })
+          .catch(err => {
+            console.log(err)
+          })
+      default:
+        return null
+    }
+  }
+
   createNewEvent = (event) => {
     this.setState({ isButtonDisabled: true, isLoading: true })
 
@@ -811,6 +943,33 @@ class General extends React.Component {
           snackerBarStatus: true,
           snackbarType: 'error',
           snackbarMessage: 'Đã có lỗi từ máy chủ',
+          isButtonDisabled: false
+        })
+      })
+  }
+
+  editEvent = (eventData) => {
+    this.setState({ isButtonDisabled: true, isLoading: true })
+    const eventInformation = {
+      'date': eventData.date,
+      'content': eventData.content
+    }
+
+    return axios.put(`/backend/event/update/${eventData._id}`, eventInformation)
+      .then(res => {
+        if (res.data.code === 'I001') {
+          this.setState({
+            isButtonDisabled: false,
+            isOpenAddEventForm: false,
+          })
+          this.getEventData();
+        }
+      })
+      .catch(err => {
+        this.setState({
+          snackerBarStatus: true,
+          snackbarType: 'error',
+          snackbarMessage: 'Đã có lỗi khi chỉnh sửa sự kiện',
           isButtonDisabled: false
         })
       })
@@ -919,6 +1078,13 @@ class General extends React.Component {
     result[type] = e.target.value;
     this.setState(result)
     this.getFundData(e.target.value)
+  }
+
+  handleChangePieChart = (e, type) => {
+    let result = {};
+    result[type] = e.target.value;
+    this.setState(result)
+    this.getClassData(e.target.value)
   }
 
   render = () => {
@@ -1083,15 +1249,18 @@ class General extends React.Component {
                         <Typography variant="subtitle1"><div className={classes.circleStyle} style={{ backgroundColor: '#ff5722' }} />Quỹ Nội bộ</Typography>
                       </div>
                       <div style={{ flex: 1 }} />
-                      <Select
-                        value={this.state.selectedMonths}
-                        onChange={(e) => this.handleChangeMonth(e, 'selectedMonths')}
-                        input={<InputBase />}
-                        style={{ justifyContent: 'right' }}>
-                        <MenuItem value={6}>6 tháng</MenuItem>
-                        <MenuItem value={9}>9 tháng</MenuItem>
-                        <MenuItem value={12}>12 tháng</MenuItem>
-                      </Select>
+                      <div>
+                        <Typography variant='subtitle1'>Hiển thị: </Typography>
+                        <Select
+                          value={this.state.selectedMonths}
+                          onChange={(e) => this.handleChangeMonth(e, 'selectedMonths')}
+                          input={<InputBase />}
+                          style={{ justifyContent: 'right' }}>
+                          <MenuItem value={6}>6 tháng</MenuItem>
+                          <MenuItem value={9}>9 tháng</MenuItem>
+                          <MenuItem value={12}>12 tháng</MenuItem>
+                        </Select>
+                      </div>
                     </Toolbar>
                     <canvas id='childrenFund' />
                   </div>
@@ -1150,6 +1319,7 @@ class General extends React.Component {
                           this.setState({
                             isOpenAddFundForm: true,
                             typeofDialog: 'fund',
+                            typeofAction: 'create',
                             isOpenFundActionMenu: null
                           })
                         }}>
@@ -1191,27 +1361,53 @@ class General extends React.Component {
                         {
                           icon: () => { return <Edit style={{ color: '#ff9800' }} /> },
                           tooltip: 'Chỉnh sửa',
-                          onClick: () => {
-                            alert('Clicked')
+                          onClick: (e, rowData) => {
+                            this.setState({
+                              isOpenAddFundForm: true,
+                              typeofDialog: 'fund',
+                              typeofAction: 'edit',
+                              dialogContent: rowData,
+                            })
                           }
                         },
                         {
                           icon: () => { return <Clear style={{ color: 'red' }} /> },
                           tooltip: 'Xóa',
                           onClick: (e, rowData) => {
-                            return axios.delete(`/backend/children-fund/delete/${rowData._id}`)
-                              .then(res => {
-                                if (res.data.code === 'I001') {
-                                  this.getFundData(6)
-                                }
-                              })
-                              .catch(err => {
-                                this.setState({
-                                  snackerBarStatus: true,
-                                  snackbarType: 'error',
-                                  snackbarMessage: 'Đã có lỗi từ máy chủ. Không thể xóa!',
-                                })
-                              })
+                            switch (this.state.selectedFundType) {
+                              case 'QTN':
+                                return axios.delete(`/backend/children-fund/delete/${rowData._id}`)
+                                  .then(res => {
+                                    if (res.data.code === 'I001') {
+                                      this.setState({ selectedFundType: 'QTN' })
+                                      this.getFundData(6)
+                                    }
+                                  })
+                                  .catch(err => {
+                                    this.setState({
+                                      snackerBarStatus: true,
+                                      snackbarType: 'error',
+                                      snackbarMessage: 'Đã có lỗi từ máy chủ. Không thể xóa!',
+                                    })
+                                  })
+                              case 'QR':
+                                return axios.delete(`/backend/internal-fund/delete/${rowData._id}`)
+                                  .then(res => {
+                                    if (res.data.code === 'I001') {
+                                      this.setState({ selectedFundType: 'QTN' })
+                                      this.getFundData(6)
+                                    }
+                                  })
+                                  .catch(err => {
+                                    this.setState({
+                                      snackerBarStatus: true,
+                                      snackbarType: 'error',
+                                      snackbarMessage: 'Đã có lỗi từ máy chủ. Không thể xóa!',
+                                    })
+                                  })
+                              default:
+                                return null
+                            }
                           }
                         }
                       ]}
@@ -1219,9 +1415,13 @@ class General extends React.Component {
                     <DialogForm
                       open={this.state.isOpenAddFundForm}
                       dialogType={this.state.typeofDialog}
+                      dialogAction={this.state.typeofAction}
+                      dialogContent={this.state.dialogContent}
                       callback={this.callbackFundTable}
                       func={this.createNewFund}
+                      editFunc={this.editFund}
                       disabled={this.state.isButtonDisabled}
+                      resetSelectedRow={(callback) => this.setState({ dialogContent: callback })}
                       style={{ color: '#ff9800' }} />
                   </div>
                 </div>
@@ -1339,6 +1539,7 @@ class General extends React.Component {
                           this.setState({
                             isOpenAddEventForm: true,
                             typeofDialog: 'event',
+                            typeofAction: 'create',
                             isOpenEventActionMenu: null
                           })
                         }}>
@@ -1352,10 +1553,6 @@ class General extends React.Component {
                             .then(res => {
                               if (res.data.code === 'I001') {
                                 this.setState({
-                                  childrenTotalCount: 0,
-                                  userTotalCount: 0,
-                                  childrenFundTotalCount: 0,
-                                  internalFundTotalCount: 0,
                                   isOpenEventActionMenu: null,
                                 })
                                 this.getEventData();
@@ -1381,92 +1578,99 @@ class General extends React.Component {
                   </Toolbar>
                   <Divider />
                   <div style={{ marginTop: '1em', overflow: 'auto' }}>
-                    <MaterialTable
-                      icons={tableIcons}
-                      data={this.state.events}
-                      columns={[
-                        {
-                          title: 'Ngày',
-                          field: 'date',
-                        },
-                        {
-                          title: 'Nội dung',
-                          field: 'content',
-                          cellStyle: { minWidth: 220 }
-                        }
-                      ]}
-                      options={{
-                        paging: false,
-                        sorting: false,
-                        grouping: false,
-                        headerStyle: {
-                          position: 'sticky',
-                          top: 0,
-                          color: '#9c27b0',
-                          fontSize: 15
-                        },
-                        search: false,
-                        maxBodyHeight: '10em',
-                        minBodyHeight: '10em',
-                        showTitle: false,
-                        toolbar: false,
-                        header: false,
-                      }}
-                      localization={{
-                        body: {
-                          emptyDataSourceMessage: 'Không có dữ liệu!'
-                        },
-                        header: {
-                          actions: 'Hoàn thành'
-                        }
-                      }}
-                      actions={[
-                        {
-                          icon: '',
-                          tooltip: 'Hoàn thành',
-                          onClick: (e, rowData) => {
-                            return axios.post(`/backend/event/update-by-id/${rowData._id}`)
-                              .then(res => {
-                                if (res.data.code === 'I001') {
-                                  this.setState({
-                                    childrenTotalCount: 0,
-                                    userTotalCount: 0,
-                                    childrenFundTotalCount: 0,
-                                    internalFundTotalCount: 0,
-                                  })
-                                  this.getEventData();
-                                }
-                              })
-                              .catch(err => {
-                                console.log(err)
-                                this.setState({
-                                  snackerBarStatus: true,
-                                  snackbarType: 'error',
-                                  snackbarMessage: 'Đã có lỗi từ máy chủ',
-                                  isButtonDisabled: false,
-                                  isLoading: false,
-                                })
-                              })
+                    <MuiThemeProvider theme={customColor}>
+                      <MaterialTable
+                        icons={tableIcons}
+                        data={this.state.events}
+                        columns={[
+                          {
+                            title: 'Ngày',
+                            field: 'date',
+                          },
+                          {
+                            title: 'Nội dung',
+                            field: 'content',
+                            cellStyle: { minWidth: 220 }
                           }
-                        },
-                      ]}
-                      components={{
-                        Action: props => (
-                          <Tooltip title="Đánh dấu hoàn thành">
-                            <Checkbox
-                              checked={props.data.isChecked}
-                              disabled={props.data.isChecked}
-                              onChange={(e) => props.action.onClick(e, props.data)} />
-                          </Tooltip>
-                        )
-                      }}
-                    />
+                        ]}
+                        options={{
+                          paging: false,
+                          sorting: false,
+                          grouping: false,
+                          headerStyle: {
+                            position: 'sticky',
+                            top: 0,
+                            color: '#9c27b0',
+                            fontSize: 15
+                          },
+                          search: false,
+                          maxBodyHeight: '10em',
+                          minBodyHeight: '10em',
+                          showTitle: false,
+                          toolbar: false,
+                          header: false,
+                          selection: true,
+                          selectionProps: rowData => ({
+                            checked: rowData.isChecked,
+                            color: 'primary'
+                          }),
+                          rowStyle: rowData => ({
+                            backgroundColor: rowData.isChecked ? lighten('#9c27b0', 0.8) : ''
+                          })
+                        }}
+                        onSelectionChange={(row, rowData) => {
+                          return axios.post(`/backend/event/set-confirmed/${rowData._id}`, { 'isChecked': !rowData.isChecked })
+                            .then(res => {
+                              if (res.data.code === 'I001') {
+                                this.getEventData();
+                              }
+                            })
+                            .catch(err => {
+                              console.log(err)
+                              this.setState({
+                                snackerBarStatus: true,
+                                snackbarType: 'error',
+                                snackbarMessage: 'Đã có lỗi từ máy chủ',
+                                isButtonDisabled: false,
+                                isLoading: false,
+                              })
+                            })
+                        }}
+                        localization={{
+                          body: {
+                            emptyDataSourceMessage: 'Không có dữ liệu!'
+                          },
+                          header: {
+                            actions: 'Hoàn thành'
+                          }
+                        }}
+                        actions={[
+                          {
+                            icon: () => { return <Edit style={{ color: '#9c27b0' }} /> },
+                            tooltip: 'Chỉnh sửa',
+                            position: 'row',
+                            onClick: (e, rowData) => {
+                              this.setState({
+                                isOpenAddEventForm: true,
+                                typeofDialog: 'event',
+                                typeofAction: 'edit',
+                                dialogContent: rowData
+                              })
+                            }
+                          },
+                        ]}
+                      />
+                    </MuiThemeProvider>
                     <DialogForm
                       open={this.state.isOpenAddEventForm}
                       dialogType={this.state.typeofDialog}
+                      dialogAction={this.state.typeofAction}
+                      dialogContent={this.state.dialogContent}
                       callback={this.callbackEventTable}
                       func={this.createNewEvent}
+                      editFunc={this.editEvent}
                       disabled={this.state.isButtonDisabled}
+                      resetSelectedRow={(callback) => this.setState({ dialogContent: callback })}
                       style={{ color: '#9c27b0' }} />
                   </div>
                 </div>
@@ -1491,7 +1695,7 @@ class General extends React.Component {
                     </div>
                   </Toolbar>
                   <Divider />
-                  <Table padding='none' style={{marginRight: '1em'}}>
+                  <Table padding='none' style={{ marginRight: '1em' }}>
                     <TableHead>
                       <TableRow>
                         {this.state.weekdayShort.map(day => {
@@ -1556,6 +1760,7 @@ class General extends React.Component {
                           this.setState({
                             isOpenAddClassForm: true,
                             typeofDialog: 'class',
+                            typeofAction: 'create',
                             isOpenClassActionMenu: null
                           })
                         }}>
@@ -1566,12 +1771,20 @@ class General extends React.Component {
                   </Toolbar>
                   <Divider />
                   <Grid container spacing={2} style={{ marginTop: '1em' }}>
-                    <Grid item xs={12} md={6} lg={8}>
+                    <Grid item xs={12} md={6} lg={7}>
+                      <InputLabel shrink>Hiển thị biểu đồ theo</InputLabel>
+                      <Select
+                        value={this.state.selectedPieChartType}
+                        onChange={(e) => this.handleChangePieChart(e, 'selectedPieChartType')}
+                        input={<InputBase />}>
+                        <MenuItem value='Lớp'>Lớp</MenuItem>
+                        <MenuItem value='Khối'>Khối</MenuItem>
+                      </Select>
                       <div style={{ height: '28em' }}>
                         <canvas id='chart' />
                       </div>
                     </Grid>
-                    <Grid item xs={12} md={6} lg={4}>
+                    <Grid item xs={12} md={6} lg={5}>
                       <div style={{ overflow: 'auto' }}>
                         <MaterialTable
                           icons={tableIcons}
@@ -1602,19 +1815,28 @@ class General extends React.Component {
                           }}
                           actions={[
                             {
-                              icon: () => { return <Remove style={{ color: 'red' }} /> },
+                              icon: () => { return <Edit style={{ color: '#2196f3' }} /> },
+                              tooltip: 'Chỉnh sửa',
+                              onClick: (e, rowData) => {
+                                this.setState({
+                                  isOpenAddClassForm: true,
+                                  typeofAction: 'edit',
+                                  dialogContent: rowData,
+                                  typeofDialog: 'class'
+                                })
+                              }
+                            },
+                            {
+                              icon: () => { return <Clear style={{ color: 'red' }} /> },
                               tooltip: 'Xóa',
                               onClick: (e, rowData) => {
                                 return axios.delete(`/backend/class/delete/by-id/${rowData.ID}`)
                                   .then(res => {
                                     if (res.data.code === 'I001') {
                                       this.setState({
-                                        childrenTotalCount: 0,
-                                        userTotalCount: 0,
-                                        childrenFundTotalCount: 0,
-                                        internalFundTotalCount: 0,
+                                        selectedPieChartType: 'Lớp',
                                       })
-                                      this.getClassData();
+                                      this.getClassData('Lớp');
                                     }
                                   })
                                   .catch(err => {
@@ -1644,9 +1866,13 @@ class General extends React.Component {
                         <DialogForm
                           open={this.state.isOpenAddClassForm}
                           dialogType={this.state.typeofDialog}
+                          dialogAction={this.state.typeofAction}
+                          dialogContent={this.state.dialogContent}
                           callback={this.callbackClassTable}
                           func={this.createNewClass}
+                          editFunc={this.editClass}
                           disabled={this.state.isButtonDisabled}
+                          resetSelectedRow={(callback) => this.setState({ dialogContent: callback })}
                           style={{ color: '#2196f3' }} />
                       </div>
                     </Grid>

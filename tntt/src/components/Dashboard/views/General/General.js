@@ -256,7 +256,7 @@ class General extends React.Component {
     this.getChildrenData()
     this.getMemberData()
     this.getFundData(this.state.selectedMonths)
-    this.getClassData('Lớp')
+    this.getClassData(this.state.selectedPieChartType)
     this.getEventData()
     this.getDocumentData()
     this.getTumblrPost();
@@ -274,7 +274,7 @@ class General extends React.Component {
         innerHeight: window.innerHeight,
       });
       if (window.ChildrenFundChart) {
-        this.getFundData(this.state.selectedFundType);
+        this.getFundData(this.state.selectedMonths);
         this.getClassData(this.state.selectedPieChartType);
       }
     }
@@ -441,13 +441,14 @@ class General extends React.Component {
     let classLabels = [];
     let classData = [];
     let unconfirmedData = 0;
+    let allChildren = 0;
     let colors = [];
     let classesArr = [];
     if (this._ismounted === true) {
       return axios.get('/backend/children/count', { params: { condition: 'all' } })
         .then(res => {
           unconfirmedData = res.data.data
-
+          allChildren = res.data.data
           return axios.get('/backend/class/all')
         })
         .then(classes => {
@@ -498,43 +499,57 @@ class General extends React.Component {
             });
           } else {
             let dataByGroup = [],
-            classLabels = ['Ấu', 'Thiếu', 'Nghĩa', 'Hiệp'];
-            classLabels.forEach(group => {
-              classesArr = classesArr.filter(el => el.group === group);
-              
-              let requests = [];
-              classesArr.forEach(classEl => {
-                requests.push(axios.get('/backend/children/count', { params: { condition: classEl.ID } }))
-              })
-              axios.all(requests)
-                .then(res => {
-                  let total = 0;
-                  let classes = res.data.data;
-                  classes.forEach(cls => {
-                    total += cls
+            classLabels = ['Chưa có ngành' ,'Ấu', 'Thiếu', 'Nghĩa', 'Hiệp'];
+            let itemPerPage = 10;
+            let requests = [];
+            let childrenData = [];
+            for (let i = 0; i < allChildren/itemPerPage; i++) {
+              requests.push(axios.get(`/backend/children/all/${i}`, {
+                params: {
+                  itemPerPage: itemPerPage,
+                  class: 'all',
+                  search: null
+                }
+              }))
+            }
+            return axios.all(requests)
+              .then(results => {
+                requests = []; 
+                results.forEach(res => {
+                  res.data.data.forEach(child => {
+                    childrenData.push(child)
                   })
-                  dataByGroup.push(total);
-                  unconfirmedData -= total;
-                })        
-            })
-            classLabels.unshift('Không có');
-            dataByGroup.unshift(unconfirmedData);
-            Chart.defaults.global.defaultFontColor = 'black'
-            let ctx = document.getElementById('chart');
-            window.ChildrenCountChart = new Chart(ctx, {
-              type: 'doughnut',
-              data: {
-                labels: classLabels,
-                datasets: [{
-                  label: 'Sỉ số (em)',
-                  data: dataByGroup,
-                  backgroundColor: ['#2f2f2f', '#76ff03', '#3d5afe', '#ffea00', '#795548'],
-                  hoverBorderWidth: 5,
-                  hoverBorderColor: ['#2f2f2f', '#76ff03', '#3d5afe', '#ffea00', '#795548']
-                }]
-              },
-              options: this.state.doughnutChartOptions
-            });
+                })
+                for(let i = 0; i < childrenData.length; i++) {
+                  for(let j = 0; j < classesArr.length; j++) {
+                    if(childrenData[i].class === classesArr[j].ID) childrenData[i].group = classesArr[j].group;
+                  }
+                }
+                let chartData = [
+                  childrenData.filter(el => el.group === '').length,
+                  childrenData.filter(el => el.group === 'Ấu').length,
+                  childrenData.filter(el => el.group === 'Thiếu').length,
+                  childrenData.filter(el => el.group === 'Nghĩa').length,
+                  childrenData.filter(el => el.group === 'Hiệp').length,
+                ];
+                Chart.defaults.global.defaultFontColor = 'black'
+                let ctx = document.getElementById('chart');
+                window.ChildrenCountChart = new Chart(ctx, {
+                  type: 'doughnut',
+                  data: {
+                    labels: classLabels,
+                    datasets: [{
+                      label: 'Sỉ số (em)',
+                      data: chartData,
+                      backgroundColor: ['#2f2f2f', '#76ff03', '#3d5afe', '#ffea00', '#795548'],
+                      hoverBorderWidth: 5,
+                      hoverBorderColor: ['#2f2f2f', '#76ff03', '#3d5afe', '#ffea00', '#795548']
+                    }]
+                  },
+                  options: this.state.doughnutChartOptions
+                });
+              })
+              .catch(err => console.log(err))
           }
         })
         .catch(err => {
@@ -773,9 +788,8 @@ class General extends React.Component {
           this.setState({
             isButtonDisabled: false,
             isOpenAddClassForm: false,
-            selectedPieChartType: 'Lớp',
           })
-          this.getClassData('Lớp');
+          this.getClassData(this.state.selectedPieChartType);
         }
       })
       .catch(err => {
@@ -822,7 +836,7 @@ class General extends React.Component {
             isOpenAddClassForm: false,
             selectedPieChartType: 'Lớp',
           })
-          this.getClassData('Lớp');
+          this.getClassData(this.state.selectedPieChartType);
         }
       })
       .catch(err => {
@@ -843,7 +857,7 @@ class General extends React.Component {
               isOpenAddFundForm: false,
               selectedFundType: 'QTN'
             })
-            this.getFundData(6);
+            this.getFundData(this.state.selectedMonths);
           }
         })
         .catch(err => {
@@ -866,7 +880,7 @@ class General extends React.Component {
               isOpenAddFundForm: false,
               selectedFundType: 'QTN'
             })
-            this.getFundData(6);
+            this.getFundData(this.state.selectedMonths);
           }
         })
         .catch(err => {
@@ -898,7 +912,7 @@ class General extends React.Component {
                 isOpenAddFundForm: false,
                 selectedFundType: 'QTN'
               })
-              return this.getFundData(6);
+              return this.getFundData(this.state.selectedMonths);
             }
           })
           .catch(err => {
@@ -913,7 +927,7 @@ class General extends React.Component {
                 isOpenAddFundForm: false,
                 selectedFundType: 'QTN'
               })
-              return this.getFundData(6);
+              return this.getFundData(this.state.selectedMonths);
             }
           })
           .catch(err => {
@@ -1291,7 +1305,7 @@ class General extends React.Component {
                     <div style={{ flex: 1 }} />
                     <div>
                       <Typography variant="h5" style={{ textAlign: 'right' }}>Quỹ</Typography>
-                      <Typography variant="subtitle2" style={{ textAlign: 'right' }}>Nhật ký thu/chi quỹ</Typography>
+                      <Typography variant="subtitle2" style={{ textAlign: 'right' }}>Nhật ký</Typography>
                     </div>
                     <Tooltip title="Chỉnh sửa">
                       <IconButton onClick={(e) => { this.setState({ isOpenFundActionMenu: e.target }) }} >
@@ -1380,7 +1394,7 @@ class General extends React.Component {
                                   .then(res => {
                                     if (res.data.code === 'I001') {
                                       this.setState({ selectedFundType: 'QTN' })
-                                      this.getFundData(6)
+                                      this.getFundData(this.state.selectedMonths)
                                     }
                                   })
                                   .catch(err => {
@@ -1395,7 +1409,7 @@ class General extends React.Component {
                                   .then(res => {
                                     if (res.data.code === 'I001') {
                                       this.setState({ selectedFundType: 'QTN' })
-                                      this.getFundData(6)
+                                      this.getFundData(this.state.selectedMonths)
                                     }
                                   })
                                   .catch(err => {
@@ -1833,10 +1847,7 @@ class General extends React.Component {
                                 return axios.delete(`/backend/class/delete/by-id/${rowData.ID}`)
                                   .then(res => {
                                     if (res.data.code === 'I001') {
-                                      this.setState({
-                                        selectedPieChartType: 'Lớp',
-                                      })
-                                      this.getClassData('Lớp');
+                                      this.getClassData(this.state.selectedPieChartType);
                                     }
                                   })
                                   .catch(err => {

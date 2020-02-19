@@ -5,14 +5,14 @@ import AnimatedNumber from 'animated-number-react';
 import Chart from 'chart.js';
 import {
   Grid, Typography, IconButton, Tooltip, Divider,
-  Toolbar, MenuItem, Menu, ListItemIcon, ListItemText, Select, InputBase, LinearProgress, Table, TableHead, TableCell, TableBody, TableRow, colors, InputLabel
+  Toolbar, MenuItem, Menu, ListItemIcon, ListItemText, Select, InputBase, LinearProgress, Table, TableHead, TableCell, TableBody, TableRow, colors, InputLabel, Chip, Drawer, Slide, Paper, TextField
 } from '@material-ui/core';
 import { withStyles, lighten, createMuiTheme, MuiThemeProvider } from '@material-ui/core/styles';
 import { Skeleton } from '@material-ui/lab';
 import {
   Face, Group, AttachMoney, Add, Publish,
   Delete, Clear, GetApp, ShowChart, MoreVert, InfoOutlined,
-  ArrowUpward, ArrowDownward, Edit, Class, GTranslate, Description, EventAvailable, Today,
+  ArrowUpward, ArrowDownward, Edit, Class, GTranslate, Description, EventAvailable, Today, KeyboardArrowLeft, KeyboardArrowRight, InsertDriveFile,
 } from '@material-ui/icons';
 import MaterialTable from 'material-table';
 import _ from 'lodash';
@@ -84,6 +84,8 @@ class General extends React.Component {
       innerHeight: 0,
       // General
       currentTime: moment().format('DD/MM/YYYY'),
+      currentTimeInMonthFormat: moment().format('MM/YYYY'),
+      monthCount: 0,
       username: localStorage.getItem('username'),
       duration: 1000,
       // Report results
@@ -109,8 +111,7 @@ class General extends React.Component {
           text: 'Biểu đồ số lượng Thiếu nhi'
         },
         legend: {
-          display: true,
-          position: 'left'
+          display: false,
         },
       },
       lineChartOptions: {
@@ -168,6 +169,11 @@ class General extends React.Component {
         {
           title: 'Tên lớp',
           field: 'Value'
+        },
+        {
+          title: '',
+          field: 'colorChip',
+          render: rowData => <Chip style={{ backgroundColor: rowData.colorChip }} />
         }
       ],
       selectedClassRows: [],
@@ -221,6 +227,9 @@ class General extends React.Component {
       // for Documents Table
       documents: [],
       isOpenDocumentActionMenu: null,
+      isOpenExpansionPanel: false,
+      selectedDocumentId: '',
+      selectedDocumentData: {},
       // type of dialog
       typeofDialog: '',
       typeofAction: '',
@@ -251,7 +260,7 @@ class General extends React.Component {
     this._ismounted = true;
     this.updateWindowDimensions();
     this.displayTime();
-    this.displayCalendar();
+    this.displayCalendar(this.state.monthCount);
     window.addEventListener("resize", this.updateWindowDimensions.bind(this));
     this.getChildrenData()
     this.getMemberData()
@@ -265,6 +274,24 @@ class General extends React.Component {
   componentWillUnmount = () => {
     window.removeEventListener("resize", this.updateWindowDimensions.bind(this));
     this._ismounted = false;
+  }
+
+  componentDidUpdate = (prevProps, prevState) => {
+    if (this._ismounted) {
+      if (this.state.monthCount !== prevState.monthCount) {
+        this.displayCalendar(this.state.monthCount)
+      }
+      if (this.state.selectedDocumentId !== prevState.selectedDocumentId && this.state.selectedDocumentId !== '') {
+        return axios.get(`/backend/document/by-id/${this.state.selectedDocumentId}`)
+          .then(res => {
+            const docDetail = res.data.data[0];
+            this.setState({ selectedDocumentData: docDetail })
+          })
+          .catch(err => {
+            console.log(err)
+          })
+      }
+    }
   }
 
   updateWindowDimensions() {
@@ -343,16 +370,17 @@ class General extends React.Component {
     }
   }
 
-  displayCalendar = () => {
+  displayCalendar = (number) => {
     if (this._ismounted === true) {
-      let firstDay = moment().startOf('month').format('d');
+      let month = moment().subtract(number, 'months');
+      let firstDay = month.startOf('month').format('d');
       let blanks = [];
       let daysInMonth = [];
       for (let i = 0; i < firstDay; i++) {
         blanks.push(<TableCell key={i + Math.floor(Math.random() * 100000)} style={{ fontSize: 11, textAlign: 'center' }}>{''}</TableCell>);
       }
-      for (let d = 1; d <= moment().daysInMonth(); d++) {
-        if (d === Number(moment().format('D'))) daysInMonth.push(<TableCell key={d} style={{ fontSize: 11, textAlign: 'center', color: 'white', backgroundColor: '#9c27b0' }}>{d}</TableCell>);
+      for (let d = 1; d <= month.daysInMonth(); d++) {
+        if (d === Number(moment().format('D'))) daysInMonth.push(<TableCell key={d} style={{ fontSize: 11, textAlign: 'center', color: 'white', backgroundColor: lighten('#9c27b0', 0.7) }}>{d}</TableCell>);
         else daysInMonth.push(<TableCell key={d} style={{ fontSize: 11, textAlign: 'center' }}>{d}</TableCell>);
       }
       let totalSlot = [...blanks, ...daysInMonth];
@@ -372,6 +400,7 @@ class General extends React.Component {
       this.setState({
         weekdayShort: moment.weekdaysShort(),
         calendarContent: dayArr,
+        currentTimeInMonthFormat: moment().subtract(number, 'months').format('MM/YYYY')
       })
     }
   }
@@ -455,7 +484,7 @@ class General extends React.Component {
           // Class modifications
           let axiosRequests = [];
           classesArr = classes.data.data.filter(el => el.Value !== "Chung");
-          this.setState({ classes: classesArr })
+
           classesArr.forEach(classEl => {
             classLabels.push(classEl.ID);
             axiosRequests.push(axios.get('/backend/children/count', { params: { condition: classEl.ID } }))
@@ -479,7 +508,6 @@ class General extends React.Component {
             if (index === 0) return nonData;
             else return '#' + (Math.random() * 0xFFFFFF << 0).toString(16);
           })
-
           if (type === 'Lớp') {
             Chart.defaults.global.defaultFontColor = 'black'
             let ctx = document.getElementById('chart');
@@ -497,13 +525,37 @@ class General extends React.Component {
               },
               options: this.state.doughnutChartOptions
             });
+            colors.shift()
+            colors.forEach((color, i, colors) => {
+              classesArr[i].colorChip = color
+            })
+            this.setState({ classes: classesArr })
           } else {
+            classesArr.forEach(data => {
+              switch (data.group) {
+                case 'Ấu':
+                  data.colorChip = '#76ff03';
+                  break;
+                case 'Thiếu':
+                  data.colorChip = '#3d5afe';
+                  break;
+                case 'Nghĩa':
+                  data.colorChip = '#ffea00';
+                  break;
+                case 'Hiệp':
+                  data.colorChip = '#795548';
+                  break;
+                default:
+                  return null;
+              }
+            })
+            this.setState({ classes: classesArr })
             let dataByGroup = [],
-            classLabels = ['Chưa có ngành' ,'Ấu', 'Thiếu', 'Nghĩa', 'Hiệp'];
+              classLabels = ['Chưa có ngành', 'Ấu', 'Thiếu', 'Nghĩa', 'Hiệp'];
             let itemPerPage = 10;
             let requests = [];
             let childrenData = [];
-            for (let i = 0; i < allChildren/itemPerPage; i++) {
+            for (let i = 0; i < allChildren / itemPerPage; i++) {
               requests.push(axios.get(`/backend/children/all/${i}`, {
                 params: {
                   itemPerPage: itemPerPage,
@@ -514,18 +566,18 @@ class General extends React.Component {
             }
             return axios.all(requests)
               .then(results => {
-                requests = []; 
+                requests = [];
                 results.forEach(res => {
                   res.data.data.forEach(child => {
                     childrenData.push(child)
                   })
                 })
-                for(let i = 0; i < childrenData.length; i++) {
-                  for(let j = 0; j < classesArr.length; j++) {
-                    if(childrenData[i].class === classesArr[j].ID) childrenData[i].group = classesArr[j].group;
+                for (let i = 0; i < childrenData.length; i++) {
+                  for (let j = 0; j < classesArr.length; j++) {
+                    if (childrenData[i].class === classesArr[j].ID) childrenData[i].group = classesArr[j].group;
                   }
                 }
-                let chartData = [
+                dataByGroup = [
                   childrenData.filter(el => el.group === '').length,
                   childrenData.filter(el => el.group === 'Ấu').length,
                   childrenData.filter(el => el.group === 'Thiếu').length,
@@ -540,7 +592,7 @@ class General extends React.Component {
                     labels: classLabels,
                     datasets: [{
                       label: 'Sỉ số (em)',
-                      data: chartData,
+                      data: dataByGroup,
                       backgroundColor: ['#2f2f2f', '#76ff03', '#3d5afe', '#ffea00', '#795548'],
                       hoverBorderWidth: 5,
                       hoverBorderColor: ['#2f2f2f', '#76ff03', '#3d5afe', '#ffea00', '#795548']
@@ -549,7 +601,7 @@ class General extends React.Component {
                   options: this.state.doughnutChartOptions
                 });
               })
-              .catch(err => console.log(err))
+              .catch(err => console.log(err));
           }
         })
         .catch(err => {
@@ -746,16 +798,10 @@ class General extends React.Component {
     if (this._ismounted === true) {
       return axios.get('/backend/database/tumblr/posts')
         .then(res => {
-          // Tumblr post
-          // let div = document.getElementById('content')
-          // div.innerHTML = res.data.data.content;
-          // div.removeChild(document.querySelector('h2'));
-          // End of Tumblr post
-
           this.setState({
             tumblrImageURL: res.data.data.img,
             tumblrImagePage: res.data.data.url,
-            tumbleContent: res.data.data.content,
+            tumbleContent: res.data.data.content.split('\n')[4],
             isTumblrLoading: false,
           })
         })
@@ -1099,6 +1145,10 @@ class General extends React.Component {
     result[type] = e.target.value;
     this.setState(result)
     this.getClassData(e.target.value)
+  }
+
+  handleChangeCalendarView = (number) => {
+    this.setState({ monthCount: this.state.monthCount + number })
   }
 
   render = () => {
@@ -1691,7 +1741,12 @@ class General extends React.Component {
               }
             />
             <Report
-              icon={<Today className={classes.icon} />}
+              icon={
+                <div align='center'>
+                  <Today className={classes.icon} style={{ marginTop: '1em' }} />
+                  <Typography variant='subtitle1' style={{ color: 'white', marginTop: '-1em' }}>{this.state.currentTimeInMonthFormat}</Typography>
+                </div>
+              }
               style={{
                 marginTop: '2em',
                 background: 'linear-gradient(to bottom right, #ce93d8, #9c27b0)',
@@ -1702,7 +1757,13 @@ class General extends React.Component {
               children={
                 <div style={(this.state.innerWidth < 500) ? { height: 'auto' } : { height: '14em' }}>
                   <Toolbar disableGutters={true}>
-                    <div style={{ flex: 1, marginLeft: '7em' }} />
+                    <Tooltip title='Tháng trước'>
+                      <IconButton size='small' style={{ marginLeft: '6em' }} onClick={() => this.handleChangeCalendarView(1)}><KeyboardArrowLeft /></IconButton>
+                    </Tooltip>
+                    <Tooltip title='Tháng sau'>
+                      <IconButton size='small' onClick={() => this.handleChangeCalendarView(-1)}><KeyboardArrowRight /></IconButton>
+                    </Tooltip>
+                    <div style={{ flex: 1 }} />
                     <div>
                       <Typography variant="h5" style={{ textAlign: 'right' }}>{this.state.currentDisplayTime}</Typography>
                       <Typography variant="subtitle2" style={{ textAlign: 'right' }}>{this.state.currentDisplayDate}</Typography>
@@ -1741,7 +1802,7 @@ class General extends React.Component {
                 width: '6em'
               }}
               children={
-                <div style={(this.state.innerWidth < 500) ? { height: 'auto' } : { height: '35em' }}>
+                <div style={(this.state.innerWidth < 800) ? { height: 'auto' } : { height: '35em' }}>
                   <Toolbar disableGutters>
                     <div style={{ flex: 1, marginLeft: '7em' }} />
                     <div>
@@ -1902,7 +1963,7 @@ class General extends React.Component {
                 marginBottom: '-4em',
               }}
               children={
-                <div style={(this.state.innerWidth < 500) ? { height: 'auto' } : { height: '20em' }}>
+                <div style={(this.state.innerWidth < 800) ? { height: 'auto' } : { height: '20em' }}>
                   <Toolbar disableGutters={true}>
                     <div style={{ flex: 1, marginLeft: '7em' }} />
                     <div>
@@ -1913,7 +1974,7 @@ class General extends React.Component {
                   <Divider />
                   <div style={{ marginTop: '1em' }}>
                     <Grid container spacing={2}>
-                      <Grid item xs={12} md={12} lg={6}>
+                      <Grid item xs={12} md={5} lg={6}>
                         {(this.state.isTumblrLoading) ?
                           <Skeleton variant="rect" width='100%' height={240} /> :
                           <img
@@ -1922,7 +1983,7 @@ class General extends React.Component {
                             className={classes.image}
                             onClick={() => window.open(`https://${this.state.tumblrImagePage}`, '_blank')} />}
                       </Grid>
-                      <Grid item xs={12} md={12} lg={6}>
+                      <Grid item xs={12} md={7} lg={6}>
                         {(this.state.isTumblrLoading) ?
                           (<div>
                             <Skeleton variant="text" height={15} />
@@ -1998,10 +2059,16 @@ class General extends React.Component {
                     </Menu>
                   </Toolbar>
                   <Divider />
-                  <div style={{ marginTop: '1em', overflow: 'auto' }}>
+                  <div id='drawer-container' style={{ marginTop: '1em', overflow: 'auto', position: 'relative' }}>
                     <MaterialTable
                       icons={tableIcons}
                       data={this.state.documents}
+                      onRowClick={(e, rowData) => {
+                        this.setState({
+                          isOpenExpansionPanel: true,
+                          selectedDocumentId: rowData._id
+                        })
+                      }}
                       columns={[
                         {
                           title: 'Tên tài liệu',
@@ -2010,11 +2077,7 @@ class General extends React.Component {
                         {
                           title: 'Người đăng tải',
                           field: 'username',
-                        },
-                        {
-                          title: 'Chỉnh sửa lần cuối',
-                          field: 'date'
-                        },
+                        }
                       ]}
                       options={{
                         paging: false,
@@ -2105,6 +2168,60 @@ class General extends React.Component {
                         }
                       ]}
                     />
+                    <Drawer
+                      open={this.state.isOpenExpansionPanel}
+                      anchor='left'
+                      variant='temporary'
+                      PaperProps={{ style: { position: 'absolute' } }}
+                      BackdropProps={{ style: { position: 'absolute' } }}
+                      ModalProps={{
+                        container: document.getElementById('drawer-container'),
+                        style: { position: 'absolute', overflow: 'hidden' }
+                      }}
+                      style={{ width: 240 }}
+                      onClose={() => this.setState({ isOpenExpansionPanel: false, selectedDocumentId: '' })} >
+                      <InsertDriveFile style={{ width: '3em', height: '3em', alignItems: 'center' }} />
+                      <Grid container spacing={1} alignItems="flex-end">
+                        <Grid item >
+                          <Typography variant='subtitle1'>Tên file</Typography>
+                        </Grid>
+                        <Grid item>
+                          <TextField value={this.state.selectedDocumentData.filename} />
+                        </Grid>
+                      </Grid>
+                      <Grid container spacing={1} alignItems="flex-end">
+                        <Grid item >
+                          <Typography variant='caption'>Ngày đăng</Typography>
+                        </Grid>
+                        <Grid item>
+                          <TextField value={this.state.selectedDocumentData.date} />
+                        </Grid>
+                      </Grid>
+                      <Grid container spacing={1} alignItems="flex-end">
+                        <Grid item >
+                          <Typography variant='caption'>Chỉnh sửa lần cuối</Typography>
+                        </Grid>
+                        <Grid item>
+                          <TextField value={this.state.selectedDocumentData.modifiedDate} />
+                        </Grid>
+                      </Grid>
+                      <Grid container spacing={1} alignItems="flex-end">
+                        <Grid item >
+                          <Typography variant='caption'>Chủ sở hữu</Typography>
+                        </Grid>
+                        <Grid item>
+                          <TextField value={this.state.selectedDocumentData.username} />
+                        </Grid>
+                      </Grid>
+                      <Grid container spacing={1} alignItems="flex-end">
+                        <Grid item >
+                          <Typography variant='caption'>Kích thước</Typography>
+                        </Grid>
+                        <Grid item>
+                          <TextField value={this.state.selectedDocumentData.size} />
+                        </Grid>
+                      </Grid>
+                    </Drawer>
                   </div>
                 </div>
               }

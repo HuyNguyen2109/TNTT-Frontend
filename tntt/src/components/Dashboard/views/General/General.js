@@ -5,7 +5,10 @@ import AnimatedNumber from 'animated-number-react';
 import Chart from 'chart.js';
 import {
   Grid, Typography, IconButton, Tooltip, Divider,
-  Toolbar, MenuItem, Menu, ListItemIcon, ListItemText, Select, InputBase, LinearProgress, Table, TableHead, TableCell, TableBody, TableRow, colors, InputLabel, Chip, Drawer, Slide, Paper, TextField
+  Toolbar, MenuItem, Menu, ListItemIcon, ListItemText, Select, 
+  InputBase, LinearProgress, Table, TableHead, TableCell, 
+  TableBody, TableRow, colors, InputLabel, Chip, Drawer, Slide, Paper, TextField,
+  InputAdornment
 } from '@material-ui/core';
 import { withStyles, lighten, createMuiTheme, MuiThemeProvider } from '@material-ui/core/styles';
 import { Skeleton } from '@material-ui/lab';
@@ -13,6 +16,7 @@ import {
   Face, Group, AttachMoney, Add, Publish,
   Delete, Clear, GetApp, ShowChart, MoreVert, InfoOutlined,
   ArrowUpward, ArrowDownward, Edit, Class, GTranslate, Description, EventAvailable, Today, KeyboardArrowLeft, KeyboardArrowRight, InsertDriveFile,
+  Title, DateRange, Person, Speed, Check
 } from '@material-ui/icons';
 import MaterialTable from 'material-table';
 import _ from 'lodash';
@@ -61,7 +65,19 @@ const useStyle = theme => ({
   },
   barColorPrimary: {
     backgroundColor: '#ff9800',
-  }
+  },
+  drawerIcon: {
+    width: '3em',
+    height: '3em'
+  },
+  customInput: {
+    '& label.Mui-focused': { color: '#e91e63' },
+    '& label.Mui-disabled': {color: '#000000'},
+    '& input.Mui-disabled': {color: '#000000'},
+    '& .MuiInput-underline:after': {
+      borderBottomColor: '#e91e63',
+    },
+  },
 })
 
 const customColor = createMuiTheme({
@@ -229,7 +245,12 @@ class General extends React.Component {
       isOpenDocumentActionMenu: null,
       isOpenExpansionPanel: false,
       selectedDocumentId: '',
-      selectedDocumentData: {},
+      documentName: '',
+      documentDate: '',
+      documentModifiedDate: '',
+      documentUser: '',
+      documentSize: '',
+      isRename: false,
       // type of dialog
       typeofDialog: '',
       typeofAction: '',
@@ -285,7 +306,13 @@ class General extends React.Component {
         return axios.get(`/backend/document/by-id/${this.state.selectedDocumentId}`)
           .then(res => {
             const docDetail = res.data.data[0];
-            this.setState({ selectedDocumentData: docDetail })
+            this.setState({ 
+              documentName: docDetail.filename,
+              documentDate: moment(docDetail.date).format('DD/MM/YYYY hh:mm:ss'),
+              documentModifiedDate: moment(docDetail.modifiedDate).format('DD/MM/YYYY hh:mm:ss'),
+              documentUser: docDetail.username,
+              documentSize: docDetail.size
+            })
           })
           .catch(err => {
             console.log(err)
@@ -314,6 +341,14 @@ class General extends React.Component {
     else {
       return Number(value).toFixed(0) + ' ' + type;
     }
+  }
+
+  formatFileSize = (size) => {
+    if(size < 1024) return `${size} B`;
+    else if(size >= 1024 && size < 1024*1024) return `${Math.round(size/1024)} KB`;
+    else if(size >= 1024*1024 && size < 1024*1024*1024) return `${Math.round(size/1024*1024)} MB`;
+    else if(size >= 1024*1024*1024 && size < 1024*1024*1024*1024) return `${Math.round(size/1024*1024*1024)} GB`;
+    else return `${size}`
   }
 
   capitalizeWord = (text) => {
@@ -1963,7 +1998,7 @@ class General extends React.Component {
                 marginBottom: '-4em',
               }}
               children={
-                <div style={(this.state.innerWidth < 800) ? { height: 'auto' } : { height: '20em' }}>
+                <div style={(this.state.innerWidth < 800) ? { height: 'auto' } : { height: '50em' }}>
                   <Toolbar disableGutters={true}>
                     <div style={{ flex: 1, marginLeft: '7em' }} />
                     <div>
@@ -1974,7 +2009,7 @@ class General extends React.Component {
                   <Divider />
                   <div style={{ marginTop: '1em' }}>
                     <Grid container spacing={2}>
-                      <Grid item xs={12} md={5} lg={6}>
+                      <Grid item xs={12}>
                         {(this.state.isTumblrLoading) ?
                           <Skeleton variant="rect" width='100%' height={240} /> :
                           <img
@@ -1983,7 +2018,7 @@ class General extends React.Component {
                             className={classes.image}
                             onClick={() => window.open(`https://${this.state.tumblrImagePage}`, '_blank')} />}
                       </Grid>
-                      <Grid item xs={12} md={7} lg={6}>
+                      <Grid item xs={12}>
                         {(this.state.isTumblrLoading) ?
                           (<div>
                             <Skeleton variant="text" height={15} />
@@ -1998,7 +2033,7 @@ class General extends React.Component {
                             <Skeleton variant="text" height={15} />
                           </div>) :
                           <div
-                            style={{ overflowX: 'auto', height: '15em' }}
+                            style={{ overflowX: 'auto', height: '45em' }}
                             id='content'
                             dangerouslySetInnerHTML={{ __html: this.state.tumbleContent }} />}
                       </Grid>
@@ -2018,7 +2053,7 @@ class General extends React.Component {
                 marginBottom: '-4em',
               }}
               children={
-                <div style={(this.state.innerWidth < 500) ? { height: 'auto' } : { height: '20em' }}>
+                <div style={(this.state.innerWidth < 500) ? { height: 'auto' } : { height: '50em' }}>
                   <Toolbar disableGutters>
                     <div style={{ flex: 1, marginLeft: '7em' }} />
                     <div>
@@ -2089,8 +2124,8 @@ class General extends React.Component {
                           fontSize: 15
                         },
                         search: false,
-                        maxBodyHeight: '15em',
-                        minBodyHeight: '15em',
+                        maxBodyHeight: '45em',
+                        minBodyHeight: '45em',
                         toolbar: false,
                         showTitle: false,
                       }}
@@ -2102,30 +2137,163 @@ class General extends React.Component {
                           actions: ''
                         }
                       }}
-                      actions={[
-                        {
-                          icon: () => { return <Edit style={{ color: '#e91e63' }} /> },
-                          tooltip: 'Đổi tên',
-                          onClick: (e, rowData) => {
-                            alert('Clicked!')
+                    />
+                    <Drawer
+                      open={this.state.isOpenExpansionPanel}
+                      anchor='left'
+                      variant='temporary'
+                      PaperProps={{ style: { position: 'absolute' } }}
+                      BackdropProps={{ style: { position: 'absolute' } }}
+                      ModalProps={{
+                        container: document.getElementById('drawer-container'),
+                        style: { position: 'absolute', overflow: 'hidden' }
+                      }}
+                      onClose={() => this.setState({ isOpenExpansionPanel: false, selectedDocumentId: '', isRename: false })} >
+                      <div align='center' style={{margin: '1em'}}>
+                        <div>
+                          {(this.state.documentName.includes('.xls') > -1 || this.state.documentName.includes('.xlsx') > -1)?
+                            (<InsertDriveFile className={classes.drawerIcon} style={{color: 'green'}} />) : null
                           }
-                        },
-                        {
-                          icon: () => { return <GetApp style={{ color: 'green' }} /> },
-                          tooltip: 'Tải xuống',
-                          onClick: (e, rowData) => {
-                            return axios.get(`/backend/document/download/by-id/${rowData._id}`)
-                              .then(res => {
+                        </div>
+                        <div>
+                          <TextField
+                            className={classes.customInput} 
+                            margin='normal'
+                            label='Tên' 
+                            size='small'
+                            autoFocus={(this.state.isRename)? true : false}
+                            disabled={(this.state.isRename)? false : true} 
+                            value={this.state.documentName}
+                            onChange={(e) => {
+                              this.setState({ 
+                                documentName: e.target.value,
+                                documentModified: moment().format('YYYY-MM-DD hh:mm:ss')
+                              })
+                            }}
+                            InputProps={{
+                              startAdornment: (
+                                <InputAdornment position='start'>
+                                  <Title style={{color: 'black'}}/>
+                                </InputAdornment> 
+                              ),
+                              endAdornment: (
+                                (this.state.isRename)?
+                                (
+                                  <InputAdornment posision='end'>
+                                    <Tooltip title='Xác nhận'>
+                                      <IconButton onClick={() => alert('Clicked')}>
+                                        <Check style={{color: 'green'}} />
+                                      </IconButton>
+                                    </Tooltip>
+                                  </InputAdornment>
+                                ) : null
+                              ),
+                              disableUnderline: (this.state.isRename)? false : true
+                            }} />
+                        </div>
+                        <div>
+                          <TextField
+                            className={classes.customInput} 
+                            margin='normal'
+                            label='Ngày đăng tải' 
+                            size='small'
+                            disabled 
+                            value={this.state.documentDate}
+                            InputProps={{
+                              startAdornment: (
+                                <InputAdornment position='start'>
+                                  <DateRange style={{color: 'black'}}/>
+                                </InputAdornment> 
+                              ),
+                              disableUnderline: true
+                            }} />
+                        </div>
+                        <div>
+                          <TextField
+                            className={classes.customInput}
+                            margin='normal'
+                            label='Chỉnh sửa lần cuối'  
+                            size='small'
+                            disabled 
+                            value={this.state.documentModifiedDate}
+                            InputProps={{
+                              startAdornment: (
+                                <InputAdornment position='start'>
+                                  <EventAvailable style={{color: 'black'}}/>
+                                </InputAdornment> 
+                              ),
+                              disableUnderline: true
+                            }} />
+                        </div>
+                        <div>
+                          <TextField
+                            className={classes.customInput}
+                            margin='normal'
+                            label='Chủ sở hữu'  
+                            size='small'
+                            disabled 
+                            value={this.state.documentUser}
+                            InputProps={{
+                              startAdornment: (
+                                <InputAdornment position='start'>
+                                  <Person style={{color: 'black'}}/>
+                                </InputAdornment> 
+                              ),
+                              disableUnderline: true
+                            }} />
+                        </div>
+                        <div>
+                          <TextField
+                            className={classes.customInput}
+                            margin='normal'
+                            label='Kích thước'  
+                            size='small'
+                            disabled
+                            value={`${this.formatFileSize(Number(this.state.documentSize))} (${this.state.documentSize} B)`}
+                            InputProps={{
+                              startAdornment: (
+                                <InputAdornment position='start'>
+                                  <Speed style={{color: 'black'}}/>
+                                </InputAdornment> 
+                              ),
+                              disableUnderline: true
+                            }} />
+                        </div>
+                      </div>
+                      <div style={{flexGrow: 1}} />
+                      <Toolbar disableGutters >
+                        {(!this.state.isRename)? 
+                          (
+                            <Tooltip title='Đổi tên'>
+                              <IconButton onClick={() => this.setState({isRename: true})}>
+                                <Edit style={{color: '#e91e63'}}/>
+                              </IconButton>
+                            </Tooltip>
+                          ) : 
+                          (
+                            <Tooltip title='Hủy bỏ'>
+                              <IconButton onClick={() => this.setState({isRename: false})}>
+                                <Clear style={{color: 'red'}}/>
+                              </IconButton>
+                            </Tooltip>
+                          )
+                        }
+                        <Tooltip title='Tải xuống'>
+                          <IconButton onClick={() => {
+                            return axios.get(`/backend/document/download/by-id/${this.state.selectedDocumentId}`)
+                              .then(res => {                         
+                                let data = new Blob([new Uint8Array(res.data.data.data)], {type: `${res.headers['content-type']}`})
+                                let csvURL = window.URL.createObjectURL(data);
                                 let link = document.createElement('a');
-                                link.href = res.data.data;
-                                link.setAttribute('download', rowData.filename);
+                                link.href = csvURL;
+                                link.setAttribute('download', this.state.documentName);
                                 link.click();
                               })
                               .then(() => {
                                 this.setState({
-                                  snackerBarStatus: true,
-                                  snackbarType: 'success',
-                                  snackbarMessage: 'Tải xuống thành công',
+                                  isRename: false,
+                                  selectedDocumentId: '',
+                                  isOpenExpansionPanel: false
                                 })
                               })
                               .catch(err => {
@@ -2137,14 +2305,13 @@ class General extends React.Component {
                                   isLoading: false,
                                 })
                               })
-                          }
-                        },
-                        {
-                          icon: () => { return <Clear style={{ color: 'red' }} /> },
-                          tooltip: 'Xóa tài liệu',
-                          onClick: (e, rowData) => {
-
-                            return axios.delete(`/backend/document/delete-by-id/${rowData._id}`)
+                          }}>
+                            <GetApp style={{color: '#e91e63'}}/>
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title='Xóa'>
+                          <IconButton onClick={() => {
+                            return axios.delete(`/backend/document/delete-by-id/${this.state.selectedDocumentId}`)
                               .then(res => {
                                 if (res.data.code === 'I001') {
                                   this.getDocumentData();
@@ -2152,6 +2319,9 @@ class General extends React.Component {
                                     snackerBarStatus: true,
                                     snackbarType: 'success',
                                     snackbarMessage: 'Xóa tài liệu thành công',
+                                    isRename: false,
+                                    selectedDocumentId: '',
+                                    isOpenExpansionPanel: false
                                   })
                                 }
                               })
@@ -2164,63 +2334,11 @@ class General extends React.Component {
                                   isLoading: false,
                                 })
                               })
-                          }
-                        }
-                      ]}
-                    />
-                    <Drawer
-                      open={this.state.isOpenExpansionPanel}
-                      anchor='left'
-                      variant='temporary'
-                      PaperProps={{ style: { position: 'absolute' } }}
-                      BackdropProps={{ style: { position: 'absolute' } }}
-                      ModalProps={{
-                        container: document.getElementById('drawer-container'),
-                        style: { position: 'absolute', overflow: 'hidden' }
-                      }}
-                      style={{ width: 240 }}
-                      onClose={() => this.setState({ isOpenExpansionPanel: false, selectedDocumentId: '' })} >
-                      <InsertDriveFile style={{ width: '3em', height: '3em', alignItems: 'center' }} />
-                      <Grid container spacing={1} alignItems="flex-end">
-                        <Grid item >
-                          <Typography variant='subtitle1'>Tên file</Typography>
-                        </Grid>
-                        <Grid item>
-                          <TextField value={this.state.selectedDocumentData.filename} />
-                        </Grid>
-                      </Grid>
-                      <Grid container spacing={1} alignItems="flex-end">
-                        <Grid item >
-                          <Typography variant='caption'>Ngày đăng</Typography>
-                        </Grid>
-                        <Grid item>
-                          <TextField value={this.state.selectedDocumentData.date} />
-                        </Grid>
-                      </Grid>
-                      <Grid container spacing={1} alignItems="flex-end">
-                        <Grid item >
-                          <Typography variant='caption'>Chỉnh sửa lần cuối</Typography>
-                        </Grid>
-                        <Grid item>
-                          <TextField value={this.state.selectedDocumentData.modifiedDate} />
-                        </Grid>
-                      </Grid>
-                      <Grid container spacing={1} alignItems="flex-end">
-                        <Grid item >
-                          <Typography variant='caption'>Chủ sở hữu</Typography>
-                        </Grid>
-                        <Grid item>
-                          <TextField value={this.state.selectedDocumentData.username} />
-                        </Grid>
-                      </Grid>
-                      <Grid container spacing={1} alignItems="flex-end">
-                        <Grid item >
-                          <Typography variant='caption'>Kích thước</Typography>
-                        </Grid>
-                        <Grid item>
-                          <TextField value={this.state.selectedDocumentData.size} />
-                        </Grid>
-                      </Grid>
+                          }}>
+                            <Delete style={{color: 'red'}}/>
+                          </IconButton>
+                        </Tooltip>
+                      </Toolbar>
                     </Drawer>
                   </div>
                 </div>

@@ -5,18 +5,19 @@ import AnimatedNumber from 'animated-number-react';
 import Chart from 'chart.js';
 import {
   Grid, Typography, IconButton, Tooltip, Divider,
-  Toolbar, MenuItem, Menu, ListItemIcon, ListItemText, Select, 
-  InputBase, LinearProgress, Table, TableHead, TableCell, 
-  TableBody, TableRow, colors, InputLabel, Chip, Drawer, Slide, Paper, TextField,
-  InputAdornment
+  Toolbar, MenuItem, Menu, ListItemIcon, ListItemText, Select,
+  InputBase, LinearProgress, Table, TableHead, TableCell,
+  TableBody, TableRow, colors, InputLabel, Chip, Drawer, TextField,
+  InputAdornment,
+  Icon
 } from '@material-ui/core';
 import { withStyles, lighten, createMuiTheme, MuiThemeProvider } from '@material-ui/core/styles';
 import { Skeleton } from '@material-ui/lab';
 import {
   Face, Group, AttachMoney, Add, Publish,
   Delete, Clear, GetApp, ShowChart, MoreVert, InfoOutlined,
-  ArrowUpward, ArrowDownward, Edit, Class, GTranslate, Description, EventAvailable, Today, KeyboardArrowLeft, KeyboardArrowRight, InsertDriveFile,
-  Title, DateRange, Person, Speed, Check
+  ArrowUpward, ArrowDownward, Edit, Class, GTranslate, Description, EventAvailable, Today, KeyboardArrowLeft, KeyboardArrowRight,
+  Title, DateRange, Person, Speed, Check,
 } from '@material-ui/icons';
 import MaterialTable from 'material-table';
 import _ from 'lodash';
@@ -26,6 +27,11 @@ import Report from './components/Report'
 import DialogForm from './components/Dialog';
 import SnackDialog from '../../../SnackerBar';
 import 'moment/locale/vi';
+
+const googleDocs = '/icons8-google-docs-72.png'
+const googleSheets = '/icons8-google-sheets-72.png'
+const googleSlides = '/icons8-google-slides-72.png'
+const googlePdf = '/icons8-pdf-72.png'
 
 const useStyle = theme => ({
   root: {},
@@ -70,10 +76,15 @@ const useStyle = theme => ({
     width: '3em',
     height: '3em'
   },
+  documentIconTile: {
+    width: '3em',
+    height: '3em'
+  },
   customInput: {
     '& label.Mui-focused': { color: '#e91e63' },
-    '& label.Mui-disabled': {color: '#000000'},
-    '& input.Mui-disabled': {color: '#000000'},
+    '& label.Mui-disabled': { color: '#000000' },
+    '& input.Mui-disabled': { color: '#000000' },
+    '& textarea.Mui-disabled': { color: '#000000' },
     '& .MuiInput-underline:after': {
       borderBottomColor: '#e91e63',
     },
@@ -285,7 +296,7 @@ class General extends React.Component {
     window.addEventListener("resize", this.updateWindowDimensions.bind(this));
     this.getChildrenData()
     this.getMemberData()
-    this.getFundData(this.state.selectedMonths)
+    this.getFundData(this.state.selectedMonths, this.state.selectedFundType)
     this.getClassData(this.state.selectedPieChartType)
     this.getEventData()
     this.getDocumentData()
@@ -306,7 +317,7 @@ class General extends React.Component {
         return axios.get(`/backend/document/by-id/${this.state.selectedDocumentId}`)
           .then(res => {
             const docDetail = res.data.data[0];
-            this.setState({ 
+            this.setState({
               documentName: docDetail.filename,
               documentDate: moment(docDetail.date).format('DD/MM/YYYY hh:mm:ss'),
               documentModifiedDate: moment(docDetail.modifiedDate).format('DD/MM/YYYY hh:mm:ss'),
@@ -328,7 +339,7 @@ class General extends React.Component {
         innerHeight: window.innerHeight,
       });
       if (window.ChildrenFundChart) {
-        this.getFundData(this.state.selectedMonths);
+        this.getFundData(this.state.selectedMonths, this.selectedFundType);
         this.getClassData(this.state.selectedPieChartType);
       }
     }
@@ -344,10 +355,10 @@ class General extends React.Component {
   }
 
   formatFileSize = (size) => {
-    if(size < 1024) return `${size} B`;
-    else if(size >= 1024 && size < 1024*1024) return `${Math.round(size/1024)} KB`;
-    else if(size >= 1024*1024 && size < 1024*1024*1024) return `${Math.round(size/1024*1024)} MB`;
-    else if(size >= 1024*1024*1024 && size < 1024*1024*1024*1024) return `${Math.round(size/1024*1024*1024)} GB`;
+    if (size < 1024) return `${size} B`;
+    else if (size >= 1024 && size < 1024 * 1024) return `${Math.round(size / 1024)} KB`;
+    else if (size >= 1024 * 1024 && size < 1024 * 1024 * 1024) return `${Math.round(size / 1024 * 1024)} MB`;
+    else if (size >= 1024 * 1024 * 1024 && size < 1024 * 1024 * 1024 * 1024) return `${Math.round(size / 1024 * 1024 * 1024)} GB`;
     else return `${size}`
   }
 
@@ -590,7 +601,8 @@ class General extends React.Component {
             let itemPerPage = 10;
             let requests = [];
             let childrenData = [];
-            for (let i = 0; i < allChildren / itemPerPage; i++) {
+            let numberOfPage = (allChildren > itemPerPage)? allChildren / itemPerPage : 1
+            for (let i = 0; i < numberOfPage; i++) {
               requests.push(axios.get(`/backend/children/all/${i}`, {
                 params: {
                   itemPerPage: itemPerPage,
@@ -645,8 +657,10 @@ class General extends React.Component {
     }
   }
 
-  getFundData = (numberOfMonths) => {
+  getFundData = (numberOfMonths, selectedFundType) => {
     if (this._ismounted === true) {
+      let childrenFundArr = [];
+      let internalFundArr = [];
       let months = [];
       let n = 0;
       while (n < numberOfMonths) {
@@ -654,6 +668,16 @@ class General extends React.Component {
         n += 1;
       }
       months = months.reverse()
+      months.forEach(month => {
+        childrenFundArr.push({
+          'month': month,
+          'data': 0
+        })
+        internalFundArr.push({
+          'month': month,
+          'data': 0
+        })
+      })
 
       return axios.all([
         axios.get('/backend/children-fund/all'),
@@ -664,17 +688,14 @@ class General extends React.Component {
           responses.forEach(response => {
             dataResponses.push(response.data.data)
           })
-          // get 6 previous months from now
-
           // Funds modifications
           let totalFunds = 0;
           let allFunds = dataResponses[0];
-          let fundData = [];
           let totalImport = 0;
           let totalExport = 0;
           let totalInternalImport = 0;
           let totalInternalExport = 0;
-          allFunds = _.sortBy(allFunds, fund => fund.date);
+          allFunds = _.sortBy(allFunds, fund => {return fund.date});
           allFunds.forEach(fund => {
             fund.date = (fund.date === '') ? '' : moment(fund.date).format('DD/MM/YYYY');
             totalFunds += fund.price;
@@ -689,7 +710,6 @@ class General extends React.Component {
           // Internal Fund modifications
           let totalInternalFund = 0;
           let allInternalFunds = dataResponses[1];
-          let internalFundData = [];
           allInternalFunds = _.sortBy(allInternalFunds, fund => fund.date);
           allInternalFunds.forEach(fund => {
             fund.date = (fund.date === '') ? '' : moment(fund.date).format('DD/MM/YYYY');
@@ -719,56 +739,36 @@ class General extends React.Component {
               'data': keys[1]
             })
           })
-          for (let i = 0; i < months.length; i++) {
-            if (transformChildrenFundArr[i] === undefined) {
-              fundData.unshift(0)
-            }
-            else {
-              let priceDetail = 0;
-              transformChildrenFundArr[i].data.forEach(key => {
+          childrenFundArr.forEach(detail => {
+            if(transformChildrenFundArr.map(fund => {return fund.key}).indexOf(detail.month) > -1) {
+              detail.data = _.sumBy(transformChildrenFundArr[transformChildrenFundArr.map(fund => {return fund.key}).indexOf(detail.month)].data, key => {
                 if (key.price.indexOf('tr') > -1) {
-                  return priceDetail += Number(key.price.replace('tr', ''))
+                  return Number(key.price.replace('tr', ''))
                 }
                 else if (key.price.indexOf('ng') > -1) {
-                  return priceDetail += Number(key.price.replace('ng', '')) * 1000 / 1000000
+                  return Number(key.price.replace('ng', '')) * 1000 / 1000000
                 }
-                else return priceDetail += Number(key.price)
+                else return Number(key.price)
               })
-              fundData.push(priceDetail.toFixed(1));
-            };
-
-            if (transformInternalFundArr[i] === undefined) {
-              internalFundData.unshift(0)
             }
-            else {
-              let priceDetail = 0;
-              transformInternalFundArr[i].data.forEach(key => {
+          })
+          internalFundArr.forEach(detail => {
+            if(transformInternalFundArr.map(fund => {return fund.key}).indexOf(detail.month) > -1) {
+              detail.data = _.sumBy(transformInternalFundArr[transformInternalFundArr.map(fund => {return fund.key}).indexOf(detail.month)].data, key => {
                 if (key.price.indexOf('tr') > -1) {
-                  return priceDetail += Number(key.price.replace('tr', ''))
+                  return Number(key.price.replace('tr', ''))
                 }
                 else if (key.price.indexOf('ng') > -1) {
-                  return priceDetail += Number(key.price.replace('ng', '')) * 1000 / 1000000
+                  return Number(key.price.replace('ng', '')) * 1000 / 1000000
                 }
-                else return priceDetail += Number(key.price)
+                else return Number(key.price)
               })
-              internalFundData.push(priceDetail.toFixed(1));
             }
-          }
-
-          let fundDataAfterCalculated = [];
-          let internalFundDataAfterCalculated = [];
-          for (let i = 0; i < fundData.length; i++) {
-            fundData[i] = Number(fundData[i]);
-            fundDataAfterCalculated.push(_.sum(fundData.slice(0, i + 1)));
-          }
-          for (let i = 0; i < internalFundData.length; i++) {
-            internalFundData[i] = Number(internalFundData[i]);
-            internalFundDataAfterCalculated.push(_.sum(internalFundData.slice(0, i + 1)));
-          }
+          })
 
           this.setState({
-            fundDifference: Number(fundDataAfterCalculated[fundDataAfterCalculated.length - 1]) - Number(fundDataAfterCalculated[fundDataAfterCalculated.length - 2]),
-            internalFundDifferences: Number(internalFundDataAfterCalculated[internalFundDataAfterCalculated.length - 1] - Number(internalFundDataAfterCalculated[internalFundDataAfterCalculated.length - 2]))
+            fundDifference: 123,
+            internalFundDifferences: 123
           })
 
           if (window.ChildrenFundChart) {
@@ -779,10 +779,10 @@ class General extends React.Component {
           window.ChildrenFundChart = new Chart(ctx, {
             type: 'line',
             data: {
-              labels: months,
+              labels: childrenFundArr.map((data, i, childrenFundArr) => {return data.month}),
               datasets: [{
                 label: 'Quỹ Thiếu Nhi (triệu)',
-                data: fundDataAfterCalculated,
+                data: childrenFundArr.map((data, i, childrenFundArr) => {return _.sumBy(childrenFundArr.slice(0, i+1), el => {return el.data})}),
                 borderColor: 'rgba(76,175,80,0.9)',
                 backgroundColor: 'rgba(76,175,80,0.1)',
                 hoverBackgroundColor: 'rgba(76,175,80,0.9)',
@@ -795,7 +795,7 @@ class General extends React.Component {
                 clip: 50
               }, {
                 label: 'Quỹ Nội bộ (triệu)',
-                data: internalFundDataAfterCalculated,
+                data: internalFundArr.map((data, i, internalFundArr) => {return _.sumBy(internalFundArr.slice(0, i+1), el => {return el.data})}),
                 borderColor: 'rgba(255,87,34,0.9)',
                 backgroundColor: 'rgba(255,87,34,0.1)',
                 hoverBackgroundColor: 'rgba(255,87,34,0.9)',
@@ -814,7 +814,7 @@ class General extends React.Component {
           this.setState({
             childrenFundTotalCount: totalFunds,
             internalFundTotalCount: totalInternalFund,
-            childrenFunds: allFunds,
+            childrenFunds: (selectedFundType === 'QTN')? allFunds : allInternalFunds,
             totalImport: totalImport,
             totalExport: totalExport,
             subtractChildrenFund: totalImport - Math.abs(totalExport),
@@ -936,9 +936,8 @@ class General extends React.Component {
             this.setState({
               isButtonDisabled: false,
               isOpenAddFundForm: false,
-              selectedFundType: 'QTN'
             })
-            this.getFundData(this.state.selectedMonths);
+            this.getFundData(this.state.selectedMonths, this.state.selectedFundType);
           }
         })
         .catch(err => {
@@ -959,9 +958,8 @@ class General extends React.Component {
             this.setState({
               isButtonDisabled: false,
               isOpenAddFundForm: false,
-              selectedFundType: 'QTN'
             })
-            this.getFundData(this.state.selectedMonths);
+            this.getFundData(this.state.selectedMonths, this.state.selectedFundType);
           }
         })
         .catch(err => {
@@ -991,9 +989,8 @@ class General extends React.Component {
               this.setState({
                 isButtonDisabled: false,
                 isOpenAddFundForm: false,
-                selectedFundType: 'QTN'
               })
-              return this.getFundData(this.state.selectedMonths);
+              return this.getFundData(this.state.selectedMonths, this.state.selectedFundType);
             }
           })
           .catch(err => {
@@ -1006,9 +1003,8 @@ class General extends React.Component {
               this.setState({
                 isButtonDisabled: false,
                 isOpenAddFundForm: false,
-                selectedFundType: 'QTN'
               })
-              return this.getFundData(this.state.selectedMonths);
+              return this.getFundData(this.state.selectedMonths, this.state.selectedFundType);
             }
           })
           .catch(err => {
@@ -1110,6 +1106,37 @@ class General extends React.Component {
       })
   }
 
+  renameDocument = () => {
+    const documentDetail = {
+      'filename': this.state.documentName,
+      'modifiedDate': moment().format('YYYY-MM-DD hh:mm:ss')
+    }
+    return axios.put(`/backend/document/rename/${this.state.selectedDocumentId}`, documentDetail)
+      .then(res => {
+        if (res.data.code === 'I001') {
+          this.setState({
+            snackerBarStatus: true,
+            snackbarType: 'success',
+            snackbarMessage: 'Tài liệu đã được đổi tên',
+            isOpenExpansionPanel: false,
+            isRename: false,
+            selectedDocumentId: ''
+          })
+          this.getDocumentData();
+        }
+      })
+      .catch(err => {
+        console.log(err)
+        this.setState({
+          snackerBarStatus: true,
+          snackbarType: 'error',
+          snackbarMessage: 'Đã có lỗi từ máy chủ',
+          isButtonDisabled: false,
+          isLoading: false,
+        })
+      })
+  }
+
   callbackClassTable = (callback) => {
     this.setState({
       isOpenAddClassForm: callback
@@ -1140,39 +1167,16 @@ class General extends React.Component {
     const result = {};
     let data = e.target.value;
     result[type] = data;
-    result['childrenFunds'] = [];
     this.setState(result);
-    if (e.target.value === 'QTN') {
-      return axios.get('/backend/children-fund/all')
-        .then(res => {
-          let allFunds = res.data.data;
-          allFunds = _.sortBy(allFunds, fund => fund.date);
-          allFunds.forEach(fund => {
-            fund.date = (fund.date === '') ? '' : moment(fund.date).format('DD/MM/YYYY');
-            fund.price = this.priceFormat(fund.price);
-          })
-          this.setState({ childrenFunds: allFunds })
-        })
-    }
-    else {
-      return axios.get('/backend/internal-fund/all')
-        .then(res => {
-          let allFunds = res.data.data;
-          allFunds = _.sortBy(allFunds, fund => fund.date);
-          allFunds.forEach(fund => {
-            fund.date = (fund.date === '') ? '' : moment(fund.date).format('DD/MM/YYYY');
-            fund.price = this.priceFormat(fund.price);
-          })
-          this.setState({ childrenFunds: allFunds })
-        })
-    }
+    console.log(data)
+    this.getFundData(this.state.selectedMonths, data)
   }
 
   handleChangeMonth = (e, type) => {
     let result = {};
     result[type] = e.target.value;
     this.setState(result)
-    this.getFundData(e.target.value)
+    this.getFundData(e.target.value, this.state.selectedFundType)
   }
 
   handleChangePieChart = (e, type) => {
@@ -1190,8 +1194,8 @@ class General extends React.Component {
     const { classes } = this.props;
 
     return (
-      <div>
-        <Grid container className={classes.container} spacing={3}>
+      <div style={(this.state.innerWidth < 700) ? { padding: 0 } : { padding: '1em' }}>
+        <Grid container className={classes.container} spacing={3} >
           <Grid item xs={12} md={6} lg={3}>
             <Report
               icon={<Face className={classes.icon} />}
@@ -1478,8 +1482,7 @@ class General extends React.Component {
                                 return axios.delete(`/backend/children-fund/delete/${rowData._id}`)
                                   .then(res => {
                                     if (res.data.code === 'I001') {
-                                      this.setState({ selectedFundType: 'QTN' })
-                                      this.getFundData(this.state.selectedMonths)
+                                      this.getFundData(this.state.selectedMonths, this.state.selectedFundType)
                                     }
                                   })
                                   .catch(err => {
@@ -1493,8 +1496,7 @@ class General extends React.Component {
                                 return axios.delete(`/backend/internal-fund/delete/${rowData._id}`)
                                   .then(res => {
                                     if (res.data.code === 'I001') {
-                                      this.setState({ selectedFundType: 'QTN' })
-                                      this.getFundData(this.state.selectedMonths)
+                                      this.getFundData(this.state.selectedMonths, this.state.selectedFundType)
                                     }
                                   })
                                   .catch(err => {
@@ -1998,7 +2000,7 @@ class General extends React.Component {
                 marginBottom: '-4em',
               }}
               children={
-                <div style={(this.state.innerWidth < 800) ? { height: 'auto' } : { height: '50em' }}>
+                <div style={(this.state.innerWidth < 800) ? { height: 'auto' } : { height: '38em' }}>
                   <Toolbar disableGutters={true}>
                     <div style={{ flex: 1, marginLeft: '7em' }} />
                     <div>
@@ -2009,7 +2011,7 @@ class General extends React.Component {
                   <Divider />
                   <div style={{ marginTop: '1em' }}>
                     <Grid container spacing={2}>
-                      <Grid item xs={12}>
+                      <Grid item xs={12} md={4} lg={5}>
                         {(this.state.isTumblrLoading) ?
                           <Skeleton variant="rect" width='100%' height={240} /> :
                           <img
@@ -2018,7 +2020,7 @@ class General extends React.Component {
                             className={classes.image}
                             onClick={() => window.open(`https://${this.state.tumblrImagePage}`, '_blank')} />}
                       </Grid>
-                      <Grid item xs={12}>
+                      <Grid item xs={12} md={8} lg={7}>
                         {(this.state.isTumblrLoading) ?
                           (<div>
                             <Skeleton variant="text" height={15} />
@@ -2053,7 +2055,7 @@ class General extends React.Component {
                 marginBottom: '-4em',
               }}
               children={
-                <div style={(this.state.innerWidth < 500) ? { height: 'auto' } : { height: '50em' }}>
+                <div style={(this.state.innerWidth < 500) ? { height: 'auto' } : { height: '38em' }}>
                   <Toolbar disableGutters>
                     <div style={{ flex: 1, marginLeft: '7em' }} />
                     <div>
@@ -2094,50 +2096,56 @@ class General extends React.Component {
                     </Menu>
                   </Toolbar>
                   <Divider />
-                  <div id='drawer-container' style={{ marginTop: '1em', overflow: 'auto', position: 'relative' }}>
-                    <MaterialTable
-                      icons={tableIcons}
-                      data={this.state.documents}
-                      onRowClick={(e, rowData) => {
-                        this.setState({
-                          isOpenExpansionPanel: true,
-                          selectedDocumentId: rowData._id
-                        })
-                      }}
-                      columns={[
-                        {
-                          title: 'Tên tài liệu',
-                          field: 'filename'
-                        },
-                        {
-                          title: 'Người đăng tải',
-                          field: 'username',
-                        }
-                      ]}
-                      options={{
-                        paging: false,
-                        sorting: false,
-                        headerStyle: {
-                          position: 'sticky',
-                          top: 0,
-                          color: '#e91e63',
-                          fontSize: 15
-                        },
-                        search: false,
-                        maxBodyHeight: '45em',
-                        minBodyHeight: '45em',
-                        toolbar: false,
-                        showTitle: false,
-                      }}
-                      localization={{
-                        body: {
-                          emptyDataSourceMessage: 'Không có dữ liệu!'
-                        },
-                        header: {
-                          actions: ''
-                        }
-                      }}
-                    />
+                  <div id='drawer-container' style={{ marginTop: '1em', overflowY: 'auto', overflowX: 'hidden', position: 'relative', height: '33em' }}>
+                    {(this.state.documents.length === 0) ?
+                      (
+                        <div align='center'>
+                          <Typography variant='subtitle1'>Hiện không có dữ liệu</Typography>
+                        </div>
+                      ) :
+                      (
+                        <Grid container spacing={2}>
+                          {this.state.documents.map(doc => (
+                            <Grid item xs={6} sm={4} md={3} lg={3} key={doc._id}>
+                              <div align='center'>
+                                <div>
+                                  <IconButton onClick={() => {
+                                    this.setState({
+                                      isOpenExpansionPanel: true,
+                                      selectedDocumentId: doc._id
+                                    })
+                                  }}>
+                                    {(doc.filename.includes('.xlsx') || doc.filename.includes('.xls')) ?
+                                      (<Icon className={classes.documentIconTile}>
+                                        <img src={googleSheets} alt='' />
+                                      </Icon>) :
+                                      ((doc.filename.includes('.docx') || doc.filename.includes('.doc')) ?
+                                        (<Icon className={classes.documentIconTile}>
+                                          <img src={googleDocs} alt='' />
+                                        </Icon>) :
+                                        ((doc.filename.includes('.pptx') || doc.filename.includes('.ppt')) ?
+                                          (<Icon className={classes.documentIconTile}>
+                                            <img src={googleSlides} alt='' />
+                                          </Icon>) :
+                                          ((doc.filename.includes('.pdf')) ?
+                                            (<Icon className={classes.documentIconTile}>
+                                              <img src={googlePdf} alt='' />
+                                            </Icon>) :
+                                            (<Description className={classes.documentIconTile} style={{ color: 'grey' }} />))))
+                                    }
+                                  </IconButton>
+                                </div>
+                                <div>
+                                  <Chip
+                                    label={doc.filename}
+                                    key={doc._id} size='small'
+                                    style={{ display: 'flex' }} />
+                                </div>
+                              </div>
+                            </Grid>
+                          ))}
+                        </Grid>
+                      )}
                     <Drawer
                       open={this.state.isOpenExpansionPanel}
                       anchor='left'
@@ -2149,61 +2157,75 @@ class General extends React.Component {
                         style: { position: 'absolute', overflow: 'hidden' }
                       }}
                       onClose={() => this.setState({ isOpenExpansionPanel: false, selectedDocumentId: '', isRename: false })} >
-                      <div align='center' style={{margin: '1em'}}>
+                      <div align='center' style={{ margin: '1em' }}>
                         <div>
-                          {(this.state.documentName.includes('.xls') > -1 || this.state.documentName.includes('.xlsx') > -1)?
-                            (<InsertDriveFile className={classes.drawerIcon} style={{color: 'green'}} />) : null
+                          {(this.state.documentName.includes('.xlsx') || this.state.documentName.includes('.xls')) ?
+                            (<Icon className={classes.documentIconTile}>
+                              <img src={googleSheets} alt='' />
+                            </Icon>) :
+                            ((this.state.documentName.includes('.docx') || this.state.documentName.includes('.doc')) ?
+                              (<Icon className={classes.documentIconTile}>
+                                <img src={googleDocs} alt='' />
+                              </Icon>) :
+                              ((this.state.documentName.includes('.pptx') || this.state.documentName.includes('.ppt')) ?
+                                (<Icon className={classes.documentIconTile}>
+                                  <img src={googleSlides} alt='' />
+                                </Icon>) :
+                                ((this.state.documentName.includes('.pdf')) ?
+                                  (<Icon className={classes.documentIconTile}>
+                                    <img src={googlePdf} alt='' />
+                                  </Icon>) :
+                                  (<Description className={classes.documentIconTile} style={{ color: 'grey' }} />))))
                           }
                         </div>
                         <div>
                           <TextField
-                            className={classes.customInput} 
+                            className={classes.customInput}
                             margin='normal'
-                            label='Tên' 
+                            label='Tên'
                             size='small'
-                            autoFocus={(this.state.isRename)? true : false}
-                            disabled={(this.state.isRename)? false : true} 
+                            autoFocus={(this.state.isRename) ? true : false}
+                            disabled={(this.state.isRename) ? false : true}
                             value={this.state.documentName}
                             onChange={(e) => {
-                              this.setState({ 
+                              this.setState({
                                 documentName: e.target.value,
-                                documentModified: moment().format('YYYY-MM-DD hh:mm:ss')
                               })
                             }}
                             InputProps={{
                               startAdornment: (
                                 <InputAdornment position='start'>
-                                  <Title style={{color: 'black'}}/>
-                                </InputAdornment> 
+                                  <Title style={{ color: 'black' }} />
+                                </InputAdornment>
                               ),
                               endAdornment: (
-                                (this.state.isRename)?
-                                (
-                                  <InputAdornment posision='end'>
-                                    <Tooltip title='Xác nhận'>
-                                      <IconButton onClick={() => alert('Clicked')}>
-                                        <Check style={{color: 'green'}} />
-                                      </IconButton>
-                                    </Tooltip>
-                                  </InputAdornment>
-                                ) : null
+                                (this.state.isRename) ?
+                                  (
+                                    <InputAdornment posision='end'>
+                                      <Tooltip title='Xác nhận'>
+                                        <IconButton onClick={this.renameDocument}>
+                                          <Check style={{ color: 'green' }} />
+                                        </IconButton>
+                                      </Tooltip>
+                                    </InputAdornment>
+                                  ) : null
                               ),
-                              disableUnderline: (this.state.isRename)? false : true
+                              disableUnderline: (this.state.isRename) ? false : true
                             }} />
                         </div>
                         <div>
                           <TextField
-                            className={classes.customInput} 
+                            className={classes.customInput}
                             margin='normal'
-                            label='Ngày đăng tải' 
+                            label='Ngày đăng tải'
                             size='small'
-                            disabled 
+                            disabled
                             value={this.state.documentDate}
                             InputProps={{
                               startAdornment: (
                                 <InputAdornment position='start'>
-                                  <DateRange style={{color: 'black'}}/>
-                                </InputAdornment> 
+                                  <DateRange style={{ color: 'black' }} />
+                                </InputAdornment>
                               ),
                               disableUnderline: true
                             }} />
@@ -2212,15 +2234,15 @@ class General extends React.Component {
                           <TextField
                             className={classes.customInput}
                             margin='normal'
-                            label='Chỉnh sửa lần cuối'  
+                            label='Chỉnh sửa lần cuối'
                             size='small'
-                            disabled 
+                            disabled
                             value={this.state.documentModifiedDate}
                             InputProps={{
                               startAdornment: (
                                 <InputAdornment position='start'>
-                                  <EventAvailable style={{color: 'black'}}/>
-                                </InputAdornment> 
+                                  <EventAvailable style={{ color: 'black' }} />
+                                </InputAdornment>
                               ),
                               disableUnderline: true
                             }} />
@@ -2229,15 +2251,15 @@ class General extends React.Component {
                           <TextField
                             className={classes.customInput}
                             margin='normal'
-                            label='Chủ sở hữu'  
+                            label='Chủ sở hữu'
                             size='small'
-                            disabled 
+                            disabled
                             value={this.state.documentUser}
                             InputProps={{
                               startAdornment: (
                                 <InputAdornment position='start'>
-                                  <Person style={{color: 'black'}}/>
-                                </InputAdornment> 
+                                  <Person style={{ color: 'black' }} />
+                                </InputAdornment>
                               ),
                               disableUnderline: true
                             }} />
@@ -2246,99 +2268,112 @@ class General extends React.Component {
                           <TextField
                             className={classes.customInput}
                             margin='normal'
-                            label='Kích thước'  
+                            label='Kích thước'
                             size='small'
                             disabled
                             value={`${this.formatFileSize(Number(this.state.documentSize))} (${this.state.documentSize} B)`}
                             InputProps={{
                               startAdornment: (
                                 <InputAdornment position='start'>
-                                  <Speed style={{color: 'black'}}/>
-                                </InputAdornment> 
+                                  <Speed style={{ color: 'black' }} />
+                                </InputAdornment>
                               ),
                               disableUnderline: true
                             }} />
                         </div>
-                      </div>
-                      <div style={{flexGrow: 1}} />
-                      <Toolbar disableGutters >
-                        {(!this.state.isRename)? 
-                          (
-                            <Tooltip title='Đổi tên'>
-                              <IconButton onClick={() => this.setState({isRename: true})}>
-                                <Edit style={{color: '#e91e63'}}/>
-                              </IconButton>
-                            </Tooltip>
-                          ) : 
-                          (
-                            <Tooltip title='Hủy bỏ'>
-                              <IconButton onClick={() => this.setState({isRename: false})}>
-                                <Clear style={{color: 'red'}}/>
-                              </IconButton>
-                            </Tooltip>
-                          )
-                        }
-                        <Tooltip title='Tải xuống'>
-                          <IconButton onClick={() => {
-                            return axios.get(`/backend/document/download/by-id/${this.state.selectedDocumentId}`)
-                              .then(res => {                         
-                                let data = new Blob([new Uint8Array(res.data.data.data)], {type: `${res.headers['content-type']}`})
-                                let csvURL = window.URL.createObjectURL(data);
-                                let link = document.createElement('a');
-                                link.href = csvURL;
-                                link.setAttribute('download', this.state.documentName);
-                                link.click();
+                        <div style={{ flex: 1 }} />
+                        <Toolbar disableGutters >
+                          <div style={{ flex: 1 }} />
+                          {(!this.state.isRename) ?
+                            (
+                              <Tooltip title='Đổi tên'>
+                                <IconButton onClick={() => this.setState({ isRename: true })}>
+                                  <Edit style={{ color: '#e91e63' }} />
+                                </IconButton>
+                              </Tooltip>
+                            ) :
+                            (
+                              <Tooltip title='Hủy bỏ'>
+                                <IconButton onClick={() => this.setState({ isRename: false })}>
+                                  <Clear style={{ color: 'red' }} />
+                                </IconButton>
+                              </Tooltip>
+                            )
+                          }
+                          <Tooltip title='Tải xuống'>
+                            <IconButton onClick={() => {
+                              return axios.get(`/backend/document/download/by-id/${this.state.selectedDocumentId}`, {
+                                responseType: 'blob'
                               })
-                              .then(() => {
-                                this.setState({
-                                  isRename: false,
-                                  selectedDocumentId: '',
-                                  isOpenExpansionPanel: false
+                                .then(res => {
+                                  let data = new Blob([res.data], { type: `${res.headers['content-type']}` })
+                                  let csvURL = window.URL.createObjectURL(data);
+                                  let link = document.createElement('a');
+                                  link.href = csvURL;
+                                  link.setAttribute('download', this.state.documentName);
+                                  link.click();
                                 })
-                              })
-                              .catch(err => {
-                                console.log(err)
-                                this.setState({
-                                  snackerBarStatus: true,
-                                  snackbarType: 'error',
-                                  snackbarMessage: 'Đã có lỗi trong quá trình tải xuống',
-                                  isLoading: false,
-                                })
-                              })
-                          }}>
-                            <GetApp style={{color: '#e91e63'}}/>
-                          </IconButton>
-                        </Tooltip>
-                        <Tooltip title='Xóa'>
-                          <IconButton onClick={() => {
-                            return axios.delete(`/backend/document/delete-by-id/${this.state.selectedDocumentId}`)
-                              .then(res => {
-                                if (res.data.code === 'I001') {
-                                  this.getDocumentData();
+                                .then(() => {
                                   this.setState({
-                                    snackerBarStatus: true,
-                                    snackbarType: 'success',
-                                    snackbarMessage: 'Xóa tài liệu thành công',
                                     isRename: false,
                                     selectedDocumentId: '',
                                     isOpenExpansionPanel: false
                                   })
-                                }
-                              })
-                              .catch(err => {
-                                console.log(err)
-                                this.setState({
-                                  snackerBarStatus: true,
-                                  snackbarType: 'error',
-                                  snackbarMessage: 'Đã có lỗi trong quá trình xóa tài liệu',
-                                  isLoading: false,
                                 })
-                              })
-                          }}>
-                            <Delete style={{color: 'red'}}/>
-                          </IconButton>
-                        </Tooltip>
-                      </Toolbar>
+                                .catch(err => {
+                                  console.log(err)
+                                  this.setState({
+                                    snackerBarStatus: true,
+                                    snackbarType: 'error',
+                                    snackbarMessage: 'Đã có lỗi trong quá trình tải xuống',
+                                    isLoading: false,
+                                  })
+                                })
+                            }}>
+                              {(this.state.documentName.includes('.xlsx') || this.state.documentName.includes('.xls')) ?
+                                (<GetApp style={{ color: 'green' }} />) :
+                                ((this.state.documentName.includes('.docx') || this.state.documentName.includes('.doc')) ?
+                                  (<GetApp style={{ color: 'blue' }} />) :
+                                  ((this.state.documentName.includes('.pptx') || this.state.documentName.includes('.ppt')) ?
+                                    (<GetApp style={{ color: 'orange' }} />) :
+                                    ((this.state.documentName.includes('.pdf')) ?
+                                      (<GetApp style={{ color: 'red' }} />) :
+                                      (<GetApp style={{ color: 'black' }} />))))}
+
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title='Xóa'>
+                            <IconButton onClick={() => {
+                              return axios.delete(`/backend/document/delete-by-id/${this.state.selectedDocumentId}`)
+                                .then(res => {
+                                  if (res.data.code === 'I001') {
+                                    this.getDocumentData();
+                                    this.setState({
+                                      snackerBarStatus: true,
+                                      snackbarType: 'success',
+                                      snackbarMessage: 'Xóa tài liệu thành công',
+                                      isRename: false,
+                                      selectedDocumentId: '',
+                                      isOpenExpansionPanel: false
+                                    })
+                                  }
+                                })
+                                .catch(err => {
+                                  console.log(err)
+                                  this.setState({
+                                    snackerBarStatus: true,
+                                    snackbarType: 'error',
+                                    snackbarMessage: 'Đã có lỗi trong quá trình xóa tài liệu',
+                                    isLoading: false,
+                                  })
+                                })
+                            }}>
+                              <Delete style={{ color: 'red' }} />
+                            </IconButton>
+                          </Tooltip>
+                          <div style={{ flex: 1 }} />
+                        </Toolbar>
+                      </div>
                     </Drawer>
                   </div>
                 </div>

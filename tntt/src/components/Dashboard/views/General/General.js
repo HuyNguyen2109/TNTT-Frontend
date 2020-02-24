@@ -17,7 +17,7 @@ import {
   Face, Group, AttachMoney, Add, Publish,
   Delete, Clear, GetApp, ShowChart, MoreVert, InfoOutlined,
   ArrowUpward, ArrowDownward, Edit, Class, GTranslate, Description, EventAvailable, Today, KeyboardArrowLeft, KeyboardArrowRight,
-  Title, DateRange, Person, Speed, Check,
+  Title, DateRange, Person, Speed, Check, Update,
 } from '@material-ui/icons';
 import MaterialTable from 'material-table';
 import _ from 'lodash';
@@ -114,7 +114,7 @@ class General extends React.Component {
       currentTimeInMonthFormat: moment().format('MM/YYYY'),
       monthCount: 0,
       username: localStorage.getItem('username'),
-      duration: 1000,
+      duration: 300,
       // Report results
       childrenTotalCount: 0,
       userTotalCount: 0,
@@ -126,7 +126,7 @@ class General extends React.Component {
         responsive: true,
         maintainAspectRatio: false,
         animation: {
-          duration: 200
+          duration: 300
         },
         layout: {
           padding: 2
@@ -144,7 +144,7 @@ class General extends React.Component {
       lineChartOptions: {
         responsive: true,
         animation: {
-          duration: 1000
+          duration: 300
         },
         maintainAspectRatio: false,
         scales: {
@@ -277,6 +277,7 @@ class General extends React.Component {
       tumblrImagePage: '',
       tumbleContent: '',
       isTumblrLoading: true,
+      tumblrBodyHeight: '18em',
       //for calendar
       currentDisplayTime: '',
       currentDisplayDate: moment().locale('vi').format('dddd, DD MMMM YYYY'),
@@ -767,8 +768,8 @@ class General extends React.Component {
           })
 
           this.setState({
-            fundDifference: 123,
-            internalFundDifferences: 123
+            fundDifference: _.sumBy(childrenFundArr, el => { return el.data}) - _.sumBy(childrenFundArr.slice(0, childrenFundArr.length - 1), el => { return el.data}),
+            internalFundDifferences: _.sumBy(internalFundArr, el => { return el.data}) - _.sumBy(internalFundArr.slice(0, internalFundArr.length - 1), el => { return el.data})
           })
 
           if (window.ChildrenFundChart) {
@@ -836,7 +837,7 @@ class General extends React.Component {
           this.setState({
             tumblrImageURL: res.data.data.img,
             tumblrImagePage: res.data.data.url,
-            tumbleContent: res.data.data.content.split('\n')[4],
+            tumbleContent: res.data.data.content,
             isTumblrLoading: false,
           })
         })
@@ -1196,7 +1197,7 @@ class General extends React.Component {
     return (
       <div style={(this.state.innerWidth < 700) ? { padding: 0 } : { padding: '1em' }}>
         <Grid container className={classes.container} spacing={3} >
-          <Grid item xs={12} md={6} lg={3}>
+          <Grid item xs={12} md={6} lg={6} xl={3}>
             <Report
               icon={<Face className={classes.icon} />}
               children={
@@ -1215,7 +1216,7 @@ class General extends React.Component {
                   <Typography variant='body1' style={{
                     textAlign: 'left',
                     paddingTop: '1em'
-                  }}>{'Cập nhật: ' + this.state.currentTime}</Typography>
+                  }}><Update style={{fontSize: '18px', marginRight: '2px'}} />{'Cập nhật: ' + this.state.currentTime}</Typography>
                 </div>
               }
               style={{
@@ -1226,7 +1227,7 @@ class General extends React.Component {
               }}
             />
           </Grid>
-          <Grid item xs={12} md={6} lg={3}>
+          <Grid item xs={12} md={6} lg={6} xl={3}>
             <Report
               icon={<Group className={classes.icon} />}
               children={
@@ -1245,7 +1246,7 @@ class General extends React.Component {
                   <Typography variant='body1' style={{
                     textAlign: 'left',
                     paddingTop: '1em'
-                  }}>{'Cập nhật: ' + this.state.currentTime}</Typography>
+                  }}><Update style={{fontSize: '18px', marginRight: '2px'}} />{'Cập nhật: ' + this.state.currentTime}</Typography>
                 </div>
               }
               style={{
@@ -1256,7 +1257,7 @@ class General extends React.Component {
               }}
             />
           </Grid>
-          <Grid item xs={12} md={6} lg={3}>
+          <Grid item xs={12} md={6} lg={6} xl={3}>
             <Report
               icon={<AttachMoney className={classes.icon} />}
               children={
@@ -1276,8 +1277,8 @@ class General extends React.Component {
                     textAlign: 'left',
                     paddingTop: '1em'
                   }}>{(this.state.fundDifference >= 0) ?
-                    <ArrowUpward style={{ color: 'green', fontSize: '12px' }} /> :
-                    <ArrowDownward style={{ color: 'red', fontSize: '12px' }} />}
+                    <ArrowUpward style={{ color: 'green', fontSize: '18px' }} /> :
+                    <ArrowDownward style={{ color: 'red', fontSize: '18px' }} />}
                     {(Math.abs(Number(this.state.fundDifference)) > 0 && Math.abs(Number(this.state.fundDifference)) < 1) ?
                       Math.abs(Number(this.state.fundDifference).toFixed(1)) + 'ng ' : Math.abs(Number(this.state.fundDifference).toFixed(1)) + 'tr '}
                     so với tháng trước</Typography>
@@ -1291,7 +1292,7 @@ class General extends React.Component {
               }}
             />
           </Grid>
-          <Grid item xs={12} md={6} lg={3}>
+          <Grid item xs={12} md={6} lg={6} xl={3}>
             <Report
               icon={<AttachMoney className={classes.icon} />}
               children={
@@ -1311,8 +1312,8 @@ class General extends React.Component {
                     textAlign: 'left',
                     paddingTop: '1em'
                   }}>{(this.state.internalFundDifferences >= 0) ?
-                    <ArrowUpward style={{ color: 'green', fontSize: '12px' }} /> :
-                    <ArrowDownward style={{ color: 'red', fontSize: '12px' }} />}
+                    <ArrowUpward style={{ color: 'green', fontSize: '18px' }} /> :
+                    <ArrowDownward style={{ color: 'red', fontSize: '18px' }} />}
                     {(Math.abs(Number(this.state.internalFundDifferences)) > 0 && Math.abs(Number(this.state.internalFundDifferences)) < 1) ?
                       Math.abs(Number(this.state.internalFundDifferences).toFixed(1)) + 'ng ' : Math.abs(Number(this.state.internalFundDifferences).toFixed(1)) + 'tr '}
                     so với tháng trước</Typography>
@@ -1336,9 +1337,9 @@ class General extends React.Component {
                 marginBottom: '-4em',
               }}
               children={
-                <div style={(this.state.innerWidth < 500) ? { height: '37em' } : { height: '35em' }}>
+                <div style={(this.state.innerWidth <= 840) ? { height: '37em' } : { height: '35em' }}>
                   <Toolbar disableGutters={true}>
-                    <div style={{ flex: 1, marginLeft: '7em' }} />
+                    <div style={{ flex: 1, marginLeft: '6em' }} />
                     <div>
                       <Typography variant="h5" style={{ textAlign: 'right' }}>Quỹ</Typography>
                       <Typography variant="subtitle2" style={{ textAlign: 'right' }}>{`Biểu đồ thể hiện tình hình quỹ ${this.state.selectedMonths} tháng gần nhất`}</Typography>
@@ -1387,7 +1388,7 @@ class General extends React.Component {
                       value={this.state.selectedFundType}
                       onChange={(e) => this.handleChangeValue(e, 'selectedFundType')}
                       input={<InputBase />}
-                      style={{ marginLeft: '7em' }}>
+                      style={{ marginLeft: '6em' }}>
                       <MenuItem value='QTN'>Quỹ TN</MenuItem>
                       <MenuItem value='QR'>Quỹ nội bộ</MenuItem>
                     </Select>
@@ -1397,7 +1398,7 @@ class General extends React.Component {
                       <Typography variant="subtitle2" style={{ textAlign: 'right' }}>Nhật ký</Typography>
                     </div>
                     <Tooltip title="Chỉnh sửa">
-                      <IconButton onClick={(e) => { this.setState({ isOpenFundActionMenu: e.target }) }} >
+                      <IconButton onClick={(e) => { console.log(e.target); this.setState({ isOpenFundActionMenu: e.target }) }} >
                         <MoreVert />
                       </IconButton>
                     </Tooltip>
@@ -1540,7 +1541,7 @@ class General extends React.Component {
               children={
                 <div style={(this.state.innerWidth < 500) ? { height: 'auto' } : { height: '11em' }}>
                   <Toolbar disableGutters={true}>
-                    <div style={{ flex: 1, marginLeft: '7em' }} />
+                    <div style={{ flex: 1, marginLeft: '6em' }} />
                     <div>
                       <Typography variant="h5" style={{ textAlign: 'right' }}>{`Quỹ năm ${moment().subtract(1, 'years').format('YYYY')}`}</Typography>
                       <Typography variant="subtitle2" style={{ textAlign: 'right' }}>Tổng kết sơ bộ</Typography>
@@ -1609,10 +1610,10 @@ class General extends React.Component {
               children={
                 <div style={(this.state.innerWidth < 500) ? { height: 'auto' } : { height: '15em' }}>
                   <Toolbar disableGutters={true}>
-                    <div style={{ flex: 1, marginLeft: '7em' }} />
+                    <div style={{ flex: 1, marginLeft: '6em' }} />
                     <div>
                       <Typography variant="h5" style={{ textAlign: 'right' }}>Thông báo</Typography>
-                      <Typography variant="subtitle2" style={{ textAlign: 'right' }}>Sự kiện/Thông báo đến từ Xứ Đoàn</Typography>
+                      <Typography variant="subtitle2" style={{ textAlign: 'right' }}>Từ Xứ Đoàn</Typography>
                     </div>
                     <Tooltip title="Chỉnh sửa">
                       <IconButton onClick={(e) => { this.setState({ isOpenEventActionMenu: e.target }) }} >
@@ -1839,9 +1840,9 @@ class General extends React.Component {
                 width: '6em'
               }}
               children={
-                <div style={(this.state.innerWidth < 800) ? { height: 'auto' } : { height: '35em' }}>
+                <div style={(this.state.innerWidth <= 840) ? { height: 'auto' } : { height: '35em' }}>
                   <Toolbar disableGutters>
-                    <div style={{ flex: 1, marginLeft: '7em' }} />
+                    <div style={{ flex: 1, marginLeft: '6em' }} />
                     <div>
                       <Typography variant="h5" style={{ textAlign: 'right' }}>Lớp</Typography>
                       <Typography variant="subtitle2" style={{ textAlign: 'right' }}>Danh sách lớp và biểu đồ số lượng Thiếu nhi từng lớp</Typography>
@@ -2000,9 +2001,9 @@ class General extends React.Component {
                 marginBottom: '-4em',
               }}
               children={
-                <div style={(this.state.innerWidth < 800) ? { height: 'auto' } : { height: '38em' }}>
+                <div style={(this.state.innerWidth <= 840) ? { height: 'auto' } : { height: '38em' }}>
                   <Toolbar disableGutters={true}>
-                    <div style={{ flex: 1, marginLeft: '7em' }} />
+                    <div style={{ flex: 1, marginLeft: '6em' }} />
                     <div>
                       <Typography variant="h5" style={{ textAlign: 'right' }}>English corner</Typography>
                       <Typography variant="subtitle2" style={{ textAlign: 'right' }}>Trau dồi kiến thức Anh Ngữ thông qua Tin Mừng hằng ngày</Typography>
@@ -2011,7 +2012,8 @@ class General extends React.Component {
                   <Divider />
                   <div style={{ marginTop: '1em' }}>
                     <Grid container spacing={2}>
-                      <Grid item xs={12} md={4} lg={5}>
+                      <Grid item md lg/>
+                      <Grid item xs={12} md={4} lg={8}>
                         {(this.state.isTumblrLoading) ?
                           <Skeleton variant="rect" width='100%' height={240} /> :
                           <img
@@ -2020,22 +2022,16 @@ class General extends React.Component {
                             className={classes.image}
                             onClick={() => window.open(`https://${this.state.tumblrImagePage}`, '_blank')} />}
                       </Grid>
-                      <Grid item xs={12} md={8} lg={7}>
+                      <Grid item md lg/>
+                      <Grid item xs={12}>
                         {(this.state.isTumblrLoading) ?
                           (<div>
-                            <Skeleton variant="text" height={15} />
-                            <Skeleton variant="text" height={15} />
-                            <Skeleton variant="text" height={15} />
-                            <Skeleton variant="text" height={15} />
-                            <Skeleton variant="text" height={15} />
-                            <Skeleton variant="text" height={15} />
-                            <Skeleton variant="text" height={15} />
-                            <Skeleton variant="text" height={15} />
-                            <Skeleton variant="text" height={15} />
-                            <Skeleton variant="text" height={15} />
+                            {new Array(Number(this.state.tumblrBodyHeight.replace('em', ''))).fill(0).map((data, i) => (
+                              <Skeleton variant="text" height={15} key={i}/>
+                            ))}
                           </div>) :
                           <div
-                            style={{ overflowX: 'auto', height: '45em' }}
+                            style={{ overflowX: 'auto', height: this.state.tumblrBodyHeight }}
                             id='content'
                             dangerouslySetInnerHTML={{ __html: this.state.tumbleContent }} />}
                       </Grid>
@@ -2057,7 +2053,7 @@ class General extends React.Component {
               children={
                 <div style={(this.state.innerWidth < 500) ? { height: 'auto' } : { height: '38em' }}>
                   <Toolbar disableGutters>
-                    <div style={{ flex: 1, marginLeft: '7em' }} />
+                    <div style={{ flex: 1, marginLeft: '6em' }} />
                     <div>
                       <Typography variant="h5" style={{ textAlign: 'right' }}>Tài liệu Xứ đoàn</Typography>
                       <Typography variant="subtitle2" style={{ textAlign: 'right' }}>Lưu trữ các tài liệu chi tiết</Typography>

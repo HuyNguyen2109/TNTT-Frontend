@@ -87,32 +87,26 @@ class BasicInformation extends React.Component {
 
   componentDidUpdate = (prevProps) => {
     if (this.props.type === 'edit' && JSON.stringify(prevProps.selectedData) !== JSON.stringify(this.props.selectedData) && this.props.selectedData.name !== undefined) {
-      const name = this.props.selectedData.name
-  
-      return axios
-        .get(`/backend/children/by-name/${name}`)
-        .then(result => {
-          const data = result.data.data[0]
-          if(this._isMounted) {
-            this.setState({
-              newName: data.name,
-              newFatherName: data.father_name,
-              newMotherName: data.mother_name,
-              newBirthday: (data.birthday === '') ? this.state.newBirthday : moment(data.birthday).format(),
-              newDayOfBaptism: (data.day_of_baptism === '') ? this.state.newDayOfBaptism : moment(data.day_of_baptism).format(),
-              newDayofEucharist: (data.day_of_eucharist === '') ? this.state.newDayofEucharist : moment(data.day_of_eucharist).format(),
-              newDayofConfirmation: (data.day_of_confirmation === '') ? this.state.newDayofConfirmation : moment(data.day_of_confirmation).format(),
-              newAddress: data.address,
-              newGender: (data.male === 'x') ? "Nam" : "Nữ",
-              newContact: data.contact,
-              newClass: data.class,
-              newDiocese: data.diocese
-            });
-          }
-        })
-        .catch(err => {
-          console.log(err)
-        })
+      const birthday = `${this.props.selectedData.birthday.split('/')[2]}-${this.props.selectedData.birthday.split('/')[1]}-${this.props.selectedData.birthday.split('/')[0]}`;
+      const dayOfBaptism = `${this.props.selectedData.day_of_baptism.split('/')[2]}-${this.props.selectedData.day_of_baptism.split('/')[1]}-${this.props.selectedData.day_of_baptism.split('/')[0]}`;
+      const dayOfConfirmation = `${this.props.selectedData.day_of_confirmation.split('/')[2]}-${this.props.selectedData.day_of_confirmation.split('/')[1]}-${this.props.selectedData.day_of_confirmation.split('/')[0]}`;
+      const dayOfEucharist = `${this.props.selectedData.day_of_eucharist.split('/')[2]}-${this.props.selectedData.day_of_eucharist.split('/')[1]}-${this.props.selectedData.day_of_eucharist.split('/')[0]}`;
+      if(this._isMounted) {
+        this.setState({
+          newName: this.props.selectedData.name,
+          newFatherName: this.props.selectedData.father_name,
+          newMotherName: this.props.selectedData.mother_name,
+          newBirthday: (this.props.selectedData.birthday === '') ? this.state.newBirthday : moment(birthday).format(),
+          newDayOfBaptism: (this.props.selectedData.day_of_baptism === '') ? this.state.newDayOfBaptism : moment(dayOfBaptism).format(),
+          newDayofEucharist: (this.props.selectedData.day_of_eucharist === '') ? this.state.newDayofEucharist : moment(dayOfEucharist).format(),
+          newDayofConfirmation: (this.props.selectedData.day_of_confirmation === '') ? this.state.newDayofConfirmation : moment(dayOfConfirmation).format(),
+          newAddress: this.props.selectedData.address,
+          newGender: (this.props.selectedData.male === 'x') ? "Nam" : "Nữ",
+          newContact: this.props.selectedData.contact,
+          newClass: this.props.selectedData.class,
+          newDiocese: this.props.selectedData.diocese
+        });
+      }
     }
   }
 

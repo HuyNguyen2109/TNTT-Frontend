@@ -1,4 +1,4 @@
-import React, { createRef } from 'react';
+import React from 'react';
 import {
   withStyles,
   createMuiTheme,
@@ -21,6 +21,7 @@ import {
   LockOpen,
   LooksOne,
   LooksTwo,
+  MoreVert,
 } from '@material-ui/icons/';
 import {
   Paper,
@@ -33,6 +34,10 @@ import {
   TextField,
   MenuItem,
   Tooltip,
+  Menu,
+  ListItemIcon,
+  ListItemText,
+  IconButton
 } from '@material-ui/core';
 import {
   SpeedDial,
@@ -51,6 +56,11 @@ const useStyles = theme => ({
     padding: theme.spacing(3),
     width: '100%',
   },
+  rootSmallDevice: {
+    padding:0,
+    paddingBottom: theme.spacing(3),
+    width: '100%' 
+  },
   content: {
     padding: theme.spacing(4),
     width: '100%',
@@ -58,7 +68,6 @@ const useStyles = theme => ({
   inner: {
     overflow: 'auto',
     marginTop: theme.spacing(3),
-    maxHeight: 400
   },
   nameContainer: {
     padding: theme.spacing(2)
@@ -159,7 +168,7 @@ class Dashboard extends React.Component {
       records: [],
       classes: [],
       currentClass: 'Chung',
-      selectedClass: 'all',
+      selectedClass: '',
       itemPerPage: 10,
       tablePage: 0,
       selectedRecord: {},
@@ -238,20 +247,18 @@ class Dashboard extends React.Component {
         }
       ],
       isSpeedDialOpen: false,
+      isOpenActionMenu: null,
     };
 
     this.updateWindowDimensions = this.updateWindowDimensions.bind(this);
-    this.myRef = createRef();
     this._isMounted = false;
   }
-
-  scrollToRef = () => this.myRef.current.scrollIntoView({ behavior: 'smooth' });
 
   componentDidMount = () => {
     this._isMounted = true;
     this.updateWindowDimensions();
     window.addEventListener("resize", this.updateWindowDimensions.bind(this));
-    return this.getData('all', this.state.tablePage, this.state.itemPerPage, null) && this.getNumberOfRecord('all') && this.getClasses();
+    return this.getData("", this.state.tablePage, this.state.itemPerPage, null) && this.getNumberOfRecord("") && this.getClasses();
   }
 
   componentWillUnmount = () => {
@@ -288,7 +295,7 @@ class Dashboard extends React.Component {
   }
 
   getNumberOfRecord = (className) => {
-    if (className !== 'all') {
+    if (className !== "") {
       const classID = className;
       return axios
         .get('/backend/children/count', {
@@ -326,7 +333,7 @@ class Dashboard extends React.Component {
       return axios
         .get('/backend/children/count', {
           params: {
-            condition: 'all'
+            condition: ""
           }
         })
         .then(result => {
@@ -387,7 +394,8 @@ class Dashboard extends React.Component {
       isLoadingData: true,
       tablePage: 0,
       itemPerPage: 10,
-      search: ''
+      search: '',
+      isOpenActionMenu: null
     });
 
     return this.getData(this.state.selectedClass, 0, 10, null) && this.getNumberOfRecord(this.state.selectedClass);
@@ -395,7 +403,8 @@ class Dashboard extends React.Component {
 
   postRestoreFile = () => {
     this.setState({
-      isLoadingData: true
+      isLoadingData: true,
+      isOpenActionMenu: null
     })
     const data = new FormData();
     data.append('files', this.state.restoreFile);
@@ -559,7 +568,6 @@ class Dashboard extends React.Component {
   }
 
   handleRowSelection = (e, rowData) => {
-    this.scrollToRef();
     this.setState({
       isExpansionButton: true,
       floatingFormType: 'edit',
@@ -614,14 +622,16 @@ class Dashboard extends React.Component {
   }
 
   handleExportData = () => {
+    this.setState({isOpenActionMenu: null});
     axios
       .get('/backend/children/export')
       .then(result => {
-        let data = new Blob([result.data.data], { type: 'text/csv;charset=utf-8;' });
+        console.log(result)
+        let data = new Blob([new Uint8Array(result.data.data)], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
         let csvURL = window.URL.createObjectURL(data);
         let link = document.createElement('a');
         link.href = csvURL;
-        link.setAttribute('download', `Bản sao TNTT-${moment().format('DDMMYYYYHHMMSS')}.csv`);
+        link.setAttribute('download', `Bản sao TNTT-${moment().format('DDMMYYYYHHMMSS')}.xlsx`);
         link.click();
       })
       .catch(err => {
@@ -634,12 +644,7 @@ class Dashboard extends React.Component {
       })
   }
 
-  handleRestoreData = () => {
-    document.getElementById('filePicker').click();
-  }
-
   handleFileChange = (e) => {
-    this.scrollToRef();
     const name = e.target.files[0].name;
     this.setState({
       restoreFileName: name,
@@ -671,9 +676,9 @@ class Dashboard extends React.Component {
   }
 
   handleSelectAll = () => {
-    this.scrollToRef();
     this.setState({
-      selectedRows: this.state.records
+      selectedRows: this.state.records,
+      isOpenActionMenu: null
     })
   }
 
@@ -693,9 +698,9 @@ class Dashboard extends React.Component {
     })
     this.getData(e.target.value, 0, this.state.itemPerPage, null);
     this.getNumberOfRecord(e.target.value)
-
+    let className= (e.target.value === "")? "all" : e.target.value;
     return axios
-      .get(`/backend/class/by-id/${e.target.value}`)
+      .get(`/backend/class/by-id/${className}`)
       .then(res => {
         if (this._isMounted) {
           this.setState({
@@ -716,36 +721,44 @@ class Dashboard extends React.Component {
   toggleExpansionForm = () => {
     this.setState({
       isExpansionButton: !this.state.isExpansionButton,
-      floatingFormType: 'new'
+      floatingFormType: 'new',
+      isOpenActionMenu: null,
     })
-    this.scrollToRef();
   }
 
   render = () => {
     const { classes } = this.props;
 
     return (
-      <div className={(this.state.windowsWidth < 500) ? { padding: 0, width: '100%' } : classes.root}>
+      <div className={(this.state.windowsWidth < 500) ? classes.rootSmallDevice : classes.root}>
         <CustomHeader style={{
           background: this.state.themeColor,
           marginBottom: '-3em'
         }} title={(this.state.currentClass !== 'Chung') ? "Danh sách Thiếu Nhi - " + this.state.currentClass : "Danh sách Thiếu Nhi"}
           subtitle={
-            <div>
-              <Typography variant="subtitle2">Bảng chi tiết sơ yếu lí lịch, lớp, điểm và điểm danh cho từng em thiếu nhi</Typography>
-              <Toolbar variant="dense">
-                <Typography variant="subtitle2">Anh/Chị phụ trách</Typography>
-                {this.state.currentTeachers.map(people => (
-                  <Chip label={people.holyname + ' ' + people.fullname}
-                    key={people.holyname + ' ' + people.fullname}
-                    size="small"
-                    style={{ marginLeft: '5px', backgroundColor: '#4a148c', color: '#ffffff' }} />
-                ))}
-              </Toolbar>
-            </div>
+            <Toolbar disableGutters>
+              <div>
+                <Typography variant="subtitle2">Bảng chi tiết sơ yếu lí lịch, lớp, điểm và điểm danh cho từng em thiếu nhi</Typography>
+                <Toolbar variant="dense">
+                  <Typography variant="subtitle2">Anh/Chị phụ trách</Typography>
+                  {this.state.currentTeachers.map(people => (
+                    <Chip label={people.holyname + ' ' + people.fullname}
+                      key={people.holyname + ' ' + people.fullname}
+                      size="small"
+                      style={{ marginLeft: '5px', backgroundColor: '#4a148c', color: '#ffffff' }} />
+                  ))}
+                </Toolbar>
+              </div>
+              <div style={{ flex: 1 }} />
+              <Tooltip title='Chỉnh sửa'>
+                <IconButton onClick={(e) => this.setState({ isOpenActionMenu: e.target })}>
+                  <MoreVert style={{ color: 'white' }} />
+                </IconButton>
+              </Tooltip>
+            </Toolbar>
           } />
         <Paper className={classes.content} elevation={5}>
-          <div className={classes.inner}>
+          <div className={classes.inner} style={{ height: (this.state.windowsHeight - 300) }}>
             {/* Table */}
             <MaterialTable
               title={
@@ -767,7 +780,7 @@ class Dashboard extends React.Component {
                       }}
                     >
                       {this.state.classes.map(classEl => (
-                        <MenuItem key={classEl.ID} value={classEl.ID}>
+                        <MenuItem key={classEl.title} value={classEl.ID} name={classEl.title}>
                           {classEl.title}
                         </MenuItem>
                       ))}
@@ -781,7 +794,9 @@ class Dashboard extends React.Component {
               onChangePage={(page) => this.handleChangePage(page)}
               onChangeRowsPerPage={pageSize => this.handleChangeRowsPerPage(pageSize)}
               onSearchChange={(text) => this.handleSearchChange(text)}
-              onRowClick={(e, rowData) => this.handleRowSelection(e, rowData)}
+              onRowClick={(e, rowData) => {
+                this.handleRowSelection(e, rowData);
+              }}
               totalCount={this.state.numberOfRecord}
               isLoading={this.state.isLoadingData}
               page={this.state.tablePage}
@@ -817,12 +832,13 @@ class Dashboard extends React.Component {
                   fontSize: 15,
                 },
                 showTitle: true,
-                maxBodyHeight: '250px',
+                maxBodyHeight: this.state.windowsHeight - 418,
+                minBodyHeight: this.state.windowsHeight - 418,
                 search: true,
                 emptyRowsWhenPaging: false,
                 debounceInterval: 1500,
                 rowStyle: rowData => {
-                  if (this.state.selectedRows.indexOf(rowData) !== -1) {
+                  if (this.state.selectedRows.indexOf(rowData) !== -1 || rowData === this.state.selectedRecord) {
                     return { backgroundColor: '#e1bee7' }
                   }
                   return {};
@@ -830,44 +846,55 @@ class Dashboard extends React.Component {
               }}
               actions={[
                 {
-                  icon: () => { return <PersonAdd /> },
-                  tooltip: "Đăng ký thiếu nhi mới",
-                  isFreeAction: true,
-                  onClick: () => this.toggleExpansionForm()
-                },
-                {
-                  icon: () => { return <Cached /> },
-                  tooltip: "Cập nhật danh sách",
-                  isFreeAction: true,
-                  onClick: () => this.reloadData(),
-                },
-                {
-                  icon: () => { return <GetApp /> },
-                  tooltip: "Sao lưu toàn bộ danh sách",
-                  isFreeAction: true,
-                  hidden: (this.state.windowsWidth < 500) ? true : false,
-                  onClick: () => this.handleExportData(),
-                },
-                {
-                  icon: () => { return <Publish /> },
-                  tooltip: "Phục hồi danh sách",
-                  isFreeAction: true,
-                  hidden: (this.state.windowsWidth < 500) ? true : false,
-                  onClick: () => this.handleRestoreData(),
-                },
-                {
-                  icon: () => { return <PlaylistAddCheck /> },
-                  tooltip: "Chọn toàn bộ trang này",
-                  isFreeAction: true,
-                  onClick: () => this.handleSelectAll(),
-                },
-                {
                   icon: () => { return <Clear style={{ color: 'red' }} /> },
                   tooltip: 'Chọn xóa',
                   onClick: (e, rowData) => this.handleRowClick(e, rowData)
-                },
+                }
               ]}
+              components={{
+                Container: props => <Paper {...props} elevation={0} />
+              }}
             />
+            <Menu
+              anchorEl={this.state.isOpenActionMenu}
+              open={Boolean(this.state.isOpenActionMenu)}
+              onClose={() => { this.setState({ isOpenActionMenu: null }) }}
+              keepMounted
+              getContentAnchorEl={null}
+              anchorOrigin={{
+                vertical: 'bottom',
+                horizontal: 'center',
+              }}
+              transformOrigin={{
+                vertical: 'top',
+                horizontal: 'right',
+              }}
+            >
+              <MenuItem
+                onClick={this.toggleExpansionForm}
+              >
+                <ListItemIcon><PersonAdd /></ListItemIcon>
+                <ListItemText primary='Đăng ký mới' />
+              </MenuItem>
+              <MenuItem
+                onClick={this.reloadData}
+              >
+                <ListItemIcon><Cached /></ListItemIcon>
+                <ListItemText primary='Cập nhật'/>
+              </MenuItem>
+              <MenuItem
+                onClick={this.handleExportData}
+              >
+                <ListItemIcon><GetApp /></ListItemIcon>
+                <ListItemText primary='Xuất file (.xlsx)'/>
+              </MenuItem>
+              <MenuItem
+                onClick={this.handleSelectAll}
+              >
+                <ListItemIcon><PlaylistAddCheck /></ListItemIcon>
+                <ListItemText primary='Chọn toàn bộ trang này'/>
+              </MenuItem>
+            </Menu>
           </div>
           <Collapse in={(this.state.selectedRows.length > 0) ? true : false}>
             <Toolbar className={classes.chipsContainer}>
@@ -918,9 +945,7 @@ class Dashboard extends React.Component {
             selectedData={this.state.selectedRecord}
             updateStatus={this.handleStatusFromFloatingForm}
             resetSelectedRow={this.handleResetSelectedRow} />
-          <input id="filePicker" type="file" onChange={e => this.handleFileChange(e)} accept=".csv" style={{ 'display': 'none' }} />
         </Paper>
-        <div ref={this.myRef} />
         <SnackDialog
           variant={this.state.snackbarType}
           message={this.state.snackbarMessage}

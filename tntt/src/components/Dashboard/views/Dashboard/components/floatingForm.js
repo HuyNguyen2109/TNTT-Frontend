@@ -70,7 +70,7 @@ class FloatingForm extends React.Component {
   render = () => {
     const { classes, open, type } = this.props;
     return (
-      <Collapse in={open} className={classes.root} timeout='auto'>
+      <Collapse in={open} className={classes.root} timeout='auto' ref={this.props.refProps}>
         <Tabs value={this.state.value} onChange={(e, value) => this.handleChangeTab(e, value)} classes={{ indicator: classes.tab }}>
             <Tab label="Thông tin chung" {...this.a11yProps(0)} className={classes.tabSelected}/>
             <Tab label="Điểm & Điểm danh" {...this.a11yProps(1)} className={classes.tabSelected} disabled={(type === 'edit')? false : true}/>

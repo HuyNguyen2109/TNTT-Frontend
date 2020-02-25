@@ -314,7 +314,7 @@ class General extends React.Component {
       if (this.state.monthCount !== prevState.monthCount) {
         this.displayCalendar(this.state.monthCount)
       }
-      if (this.state.selectedDocumentId !== prevState.selectedDocumentId && this.state.selectedDocumentId !== '') {
+      if (this._ismounted && this.state.selectedDocumentId !== prevState.selectedDocumentId && this.state.selectedDocumentId !== '') {
         return axios.get(`/backend/document/by-id/${this.state.selectedDocumentId}`)
           .then(res => {
             const docDetail = res.data.data[0];
@@ -602,7 +602,7 @@ class General extends React.Component {
             let itemPerPage = 10;
             let requests = [];
             let childrenData = [];
-            let numberOfPage = (allChildren > itemPerPage)? allChildren / itemPerPage : 1
+            let numberOfPage = (allChildren > itemPerPage) ? allChildren / itemPerPage : 1
             for (let i = 0; i < numberOfPage; i++) {
               requests.push(axios.get(`/backend/children/all/${i}`, {
                 params: {
@@ -696,7 +696,7 @@ class General extends React.Component {
           let totalExport = 0;
           let totalInternalImport = 0;
           let totalInternalExport = 0;
-          allFunds = _.sortBy(allFunds, fund => {return fund.date});
+          allFunds = _.sortBy(allFunds, fund => { return fund.date });
           allFunds.forEach(fund => {
             fund.date = (fund.date === '') ? '' : moment(fund.date).format('DD/MM/YYYY');
             totalFunds += fund.price;
@@ -741,8 +741,8 @@ class General extends React.Component {
             })
           })
           childrenFundArr.forEach(detail => {
-            if(transformChildrenFundArr.map(fund => {return fund.key}).indexOf(detail.month) > -1) {
-              detail.data = _.sumBy(transformChildrenFundArr[transformChildrenFundArr.map(fund => {return fund.key}).indexOf(detail.month)].data, key => {
+            if (transformChildrenFundArr.map(fund => { return fund.key }).indexOf(detail.month) > -1) {
+              detail.data = _.sumBy(transformChildrenFundArr[transformChildrenFundArr.map(fund => { return fund.key }).indexOf(detail.month)].data, key => {
                 if (key.price.indexOf('tr') > -1) {
                   return Number(key.price.replace('tr', ''))
                 }
@@ -754,8 +754,8 @@ class General extends React.Component {
             }
           })
           internalFundArr.forEach(detail => {
-            if(transformInternalFundArr.map(fund => {return fund.key}).indexOf(detail.month) > -1) {
-              detail.data = _.sumBy(transformInternalFundArr[transformInternalFundArr.map(fund => {return fund.key}).indexOf(detail.month)].data, key => {
+            if (transformInternalFundArr.map(fund => { return fund.key }).indexOf(detail.month) > -1) {
+              detail.data = _.sumBy(transformInternalFundArr[transformInternalFundArr.map(fund => { return fund.key }).indexOf(detail.month)].data, key => {
                 if (key.price.indexOf('tr') > -1) {
                   return Number(key.price.replace('tr', ''))
                 }
@@ -768,8 +768,8 @@ class General extends React.Component {
           })
 
           this.setState({
-            fundDifference: _.sumBy(childrenFundArr, el => { return el.data}) - _.sumBy(childrenFundArr.slice(0, childrenFundArr.length - 1), el => { return el.data}),
-            internalFundDifferences: _.sumBy(internalFundArr, el => { return el.data}) - _.sumBy(internalFundArr.slice(0, internalFundArr.length - 1), el => { return el.data})
+            fundDifference: _.sumBy(childrenFundArr, el => { return el.data }) - _.sumBy(childrenFundArr.slice(0, childrenFundArr.length - 1), el => { return el.data }),
+            internalFundDifferences: _.sumBy(internalFundArr, el => { return el.data }) - _.sumBy(internalFundArr.slice(0, internalFundArr.length - 1), el => { return el.data })
           })
 
           if (window.ChildrenFundChart) {
@@ -780,10 +780,10 @@ class General extends React.Component {
           window.ChildrenFundChart = new Chart(ctx, {
             type: 'line',
             data: {
-              labels: childrenFundArr.map((data, i, childrenFundArr) => {return data.month}),
+              labels: childrenFundArr.map((data, i, childrenFundArr) => { return data.month }),
               datasets: [{
                 label: 'Quỹ Thiếu Nhi (triệu)',
-                data: childrenFundArr.map((data, i, childrenFundArr) => {return _.sumBy(childrenFundArr.slice(0, i+1), el => {return el.data})}),
+                data: childrenFundArr.map((data, i, childrenFundArr) => { return _.sumBy(childrenFundArr.slice(0, i + 1), el => { return el.data }) }),
                 borderColor: 'rgba(76,175,80,0.9)',
                 backgroundColor: 'rgba(76,175,80,0.1)',
                 hoverBackgroundColor: 'rgba(76,175,80,0.9)',
@@ -796,7 +796,7 @@ class General extends React.Component {
                 clip: 50
               }, {
                 label: 'Quỹ Nội bộ (triệu)',
-                data: internalFundArr.map((data, i, internalFundArr) => {return _.sumBy(internalFundArr.slice(0, i+1), el => {return el.data})}),
+                data: internalFundArr.map((data, i, internalFundArr) => { return _.sumBy(internalFundArr.slice(0, i + 1), el => { return el.data }) }),
                 borderColor: 'rgba(255,87,34,0.9)',
                 backgroundColor: 'rgba(255,87,34,0.1)',
                 hoverBackgroundColor: 'rgba(255,87,34,0.9)',
@@ -815,7 +815,7 @@ class General extends React.Component {
           this.setState({
             childrenFundTotalCount: totalFunds,
             internalFundTotalCount: totalInternalFund,
-            childrenFunds: (selectedFundType === 'QTN')? allFunds : allInternalFunds,
+            childrenFunds: (selectedFundType === 'QTN') ? allFunds : allInternalFunds,
             totalImport: totalImport,
             totalExport: totalExport,
             subtractChildrenFund: totalImport - Math.abs(totalExport),
@@ -1216,7 +1216,7 @@ class General extends React.Component {
                   <Typography variant='body1' style={{
                     textAlign: 'left',
                     paddingTop: '1em'
-                  }}><Update style={{fontSize: '18px', marginRight: '2px'}} />{'Cập nhật: ' + this.state.currentTime}</Typography>
+                  }}><Update style={{ fontSize: '18px', marginRight: '2px' }} />{'Cập nhật: ' + this.state.currentTime}</Typography>
                 </div>
               }
               style={{
@@ -1246,7 +1246,7 @@ class General extends React.Component {
                   <Typography variant='body1' style={{
                     textAlign: 'left',
                     paddingTop: '1em'
-                  }}><Update style={{fontSize: '18px', marginRight: '2px'}} />{'Cập nhật: ' + this.state.currentTime}</Typography>
+                  }}><Update style={{ fontSize: '18px', marginRight: '2px' }} />{'Cập nhật: ' + this.state.currentTime}</Typography>
                 </div>
               }
               style={{
@@ -2012,7 +2012,7 @@ class General extends React.Component {
                   <Divider />
                   <div style={{ marginTop: '1em' }}>
                     <Grid container spacing={2}>
-                      <Grid item md lg/>
+                      <Grid item md lg />
                       <Grid item xs={12} md={4} lg={8}>
                         {(this.state.isTumblrLoading) ?
                           <Skeleton variant="rect" width='100%' height={240} /> :
@@ -2022,12 +2022,12 @@ class General extends React.Component {
                             className={classes.image}
                             onClick={() => window.open(`https://${this.state.tumblrImagePage}`, '_blank')} />}
                       </Grid>
-                      <Grid item md lg/>
+                      <Grid item md lg />
                       <Grid item xs={12}>
                         {(this.state.isTumblrLoading) ?
                           (<div>
                             {new Array(Number(this.state.tumblrBodyHeight.replace('em', ''))).fill(0).map((data, i) => (
-                              <Skeleton variant="text" height={15} key={i}/>
+                              <Skeleton variant="text" height={15} key={i} />
                             ))}
                           </div>) :
                           <div
@@ -2310,11 +2310,13 @@ class General extends React.Component {
                                   link.click();
                                 })
                                 .then(() => {
-                                  this.setState({
-                                    isRename: false,
-                                    selectedDocumentId: '',
-                                    isOpenExpansionPanel: false
-                                  })
+                                  if (this._ismounted) {
+                                    this.setState({
+                                      isRename: false,
+                                      selectedDocumentId: '',
+                                      isOpenExpansionPanel: false
+                                    })
+                                  }
                                 })
                                 .catch(err => {
                                   console.log(err)

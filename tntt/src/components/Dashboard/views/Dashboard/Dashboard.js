@@ -16,7 +16,6 @@ import {
   PlaylistAddCheck,
   Cancel,
   GetApp,
-  Publish,
   Lock,
   LockOpen,
   LooksOne,
@@ -510,24 +509,12 @@ class Dashboard extends React.Component {
   }
 
   handleChangePage = (page) => {
-    if (this.state.selectedRows.length > 0) {
-      let ask = window.confirm('Bạn có chắc muốn hủy bỏ việc chọn lựa này?')
-      if (ask === true) {
-        this.setState({
-          selectedRows: [],
-          tablePage: page,
-          isLoadingData: true,
-        })
-        return (this.state.action === 'search') ? this.getData(this.state.selectedClass, page, this.state.itemPerPage, this.state.search) : this.getData(this.state.selectedClass, page, this.state.itemPerPage);
-      }
-    }
-    else {
-      this.setState({
-        tablePage: page,
-        isLoadingData: true,
-      })
-      return (this.state.action === 'search') ? this.getData(this.state.selectedClass, page, this.state.itemPerPage, this.state.search) : this.getData(this.state.selectedClass, page, this.state.itemPerPage);
-    }
+    console.log(this.state.selectedRows)
+    this.setState({
+      tablePage: page,
+      isLoadingData: true,
+    })
+    return (this.state.action === 'search') ? this.getData(this.state.selectedClass, page, this.state.itemPerPage, this.state.search) : this.getData(this.state.selectedClass, page, this.state.itemPerPage);
   }
 
   handleCallBackFloatingform = (callback) => {
@@ -624,10 +611,11 @@ class Dashboard extends React.Component {
   handleExportData = () => {
     this.setState({isOpenActionMenu: null});
     axios
-      .get('/backend/children/export')
+      .get('/backend/children/export', {
+        responseType: 'blob'
+      })
       .then(result => {
-        console.log(result)
-        let data = new Blob([new Uint8Array(result.data.data)], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        let data = new Blob([result.data], { type: result.headers['content-type'] });
         let csvURL = window.URL.createObjectURL(data);
         let link = document.createElement('a');
         link.href = csvURL;
@@ -660,19 +648,6 @@ class Dashboard extends React.Component {
     })
     let file = document.getElementById('filePicker');
     file.value = '';
-  }
-
-  handleRowClick = (e, rowData) => {
-    let joined;
-    if (this.state.selectedRows.includes(rowData) === true) {
-      joined = this.state.selectedRows.filter(o => o !== rowData);
-    }
-    else {
-      joined = this.state.selectedRows.concat(rowData);
-    }
-    this.setState({
-      selectedRows: joined,
-    })
   }
 
   handleSelectAll = () => {
@@ -790,7 +765,7 @@ class Dashboard extends React.Component {
               }
               icons={tableIcons}
               columns={this.state.materialColumn}
-              data={this.state.records}
+              data={this.state.records.map(row => this.state.selectedRows.find(selected => selected._id === row._id)? {...row, tableData: {checked: true}} : row)}
               onChangePage={(page) => this.handleChangePage(page)}
               onChangeRowsPerPage={pageSize => this.handleChangeRowsPerPage(pageSize)}
               onSearchChange={(text) => this.handleSearchChange(text)}
@@ -800,6 +775,10 @@ class Dashboard extends React.Component {
               totalCount={this.state.numberOfRecord}
               isLoading={this.state.isLoadingData}
               page={this.state.tablePage}
+              onSelectionChange={(rows, rowData) => {
+                if(this.state.selectedRows.includes(rowData)) this.setState({ selectedRows: this.state.selectedRows.filter(row => { return row !== rowData})})
+                else this.setState({ selectedRows: this.state.selectedRows.concat(rowData)})
+              }}
               localization={{
                 header: {
                   actions: ''
@@ -825,6 +804,7 @@ class Dashboard extends React.Component {
                 pageSize: this.state.itemPerPage,
                 paging: true,
                 sorting: false,
+                selection: true,
                 headerStyle: {
                   position: 'sticky',
                   top: 0,
@@ -838,19 +818,13 @@ class Dashboard extends React.Component {
                 emptyRowsWhenPaging: false,
                 debounceInterval: 1500,
                 rowStyle: rowData => {
-                  if (this.state.selectedRows.indexOf(rowData) !== -1 || rowData === this.state.selectedRecord) {
+                  if (this.state.selectedRows.indexOf(rowData) !== -1 || rowData === this.state.selectedRecord || rowData.tableData.checked === true) {
                     return { backgroundColor: '#e1bee7' }
                   }
                   return {};
                 }
               }}
-              actions={[
-                {
-                  icon: () => { return <Clear style={{ color: 'red' }} /> },
-                  tooltip: 'Chọn xóa',
-                  onClick: (e, rowData) => this.handleRowClick(e, rowData)
-                }
-              ]}
+              
               components={{
                 Container: props => <Paper {...props} elevation={0} />
               }}

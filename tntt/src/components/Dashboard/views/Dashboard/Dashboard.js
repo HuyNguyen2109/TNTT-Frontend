@@ -6,6 +6,7 @@ import {
 } from '@material-ui/core/styles';
 import axios from 'axios';
 import moment from 'moment';
+import _ from 'lodash';
 import {
   PersonAdd,
   Cached,
@@ -21,6 +22,10 @@ import {
   LooksOne,
   LooksTwo,
   MoreVert,
+  SelectAll,
+  Edit,
+  ReportProblemRounded,
+  Person
 } from '@material-ui/icons/';
 import {
   Paper,
@@ -36,7 +41,10 @@ import {
   Menu,
   ListItemIcon,
   ListItemText,
-  IconButton
+  IconButton,
+  colors,
+  Divider,
+  Card, CardHeader, CardContent, CardActions
 } from '@material-ui/core';
 import {
   SpeedDial,
@@ -77,9 +85,6 @@ const useStyles = theme => ({
   menu: {
     width: '100%'
   },
-  formButton: {
-    marginTop: theme.spacing(1),
-  },
   exportDialog: {
     padding: theme.spacing(4),
     width: '100%',
@@ -88,7 +93,6 @@ const useStyles = theme => ({
     flexGrow: 1
   },
   chipsContainer: {
-    backgroundColor: '#ff8a80',
     flexWrap: 'wrap',
     '& > *': {
       margin: theme.spacing(0.5),
@@ -140,10 +144,20 @@ const useStyles = theme => ({
 const colorChips = createMuiTheme({
   palette: {
     primary: {
-      500: '#67edcc'
+      500: colors.green[500]
     },
     secondary: {
-      A400: '#f7c6cb'
+      A400: colors.pink[500]
+    }
+  }
+})
+
+const customColor = createMuiTheme({
+  palette: {
+    primary: {
+      main: colors.purple[500],
+      light: colors.purple[300],
+      dark: colors.purple[700]
     }
   }
 })
@@ -209,10 +223,6 @@ class Dashboard extends React.Component {
       ],
       isLoadingData: true,
       action: 'view',
-
-      isUploadDialogOpen: false,
-      restoreFileName: '',
-      restoreFile: '',
 
       selectedRows: [],
 
@@ -400,36 +410,6 @@ class Dashboard extends React.Component {
     return this.getData(this.state.selectedClass, 0, 10, null) && this.getNumberOfRecord(this.state.selectedClass);
   }
 
-  postRestoreFile = () => {
-    this.setState({
-      isLoadingData: true,
-      isOpenActionMenu: null
-    })
-    const data = new FormData();
-    data.append('files', this.state.restoreFile);
-    return axios
-      .post('/backend/children/restore', data)
-      .then(res => {
-        if (res.data.code === "I001") {
-          this.reloadData();
-          this.handleCloseRestoreFile();
-          this.setState({
-            snackbarType: 'success',
-            snackerBarStatus: true,
-            snackbarMessage: 'Phục hồi dữ liệu thành công'
-          })
-        }
-      })
-      .catch(err => {
-        console.log(err)
-        this.setState({
-          snackbarType: 'error',
-          snackerBarStatus: true,
-          snackbarMessage: 'Đã có lỗi trong quá trình phục hồi dữ liệu'
-        })
-      })
-  }
-
   multipleDelete = () => {
     let childrenNames = []
     this.state.selectedRows.forEach(row => {
@@ -509,7 +489,6 @@ class Dashboard extends React.Component {
   }
 
   handleChangePage = (page) => {
-    console.log(this.state.selectedRows)
     this.setState({
       tablePage: page,
       isLoadingData: true,
@@ -632,15 +611,6 @@ class Dashboard extends React.Component {
       })
   }
 
-  handleFileChange = (e) => {
-    const name = e.target.files[0].name;
-    this.setState({
-      restoreFileName: name,
-      isUploadDialogOpen: true,
-      restoreFile: e.target.files[0]
-    });
-  }
-
   handleCloseRestoreFile = () => {
     this.setState({
       restoreFileName: '',
@@ -651,8 +621,10 @@ class Dashboard extends React.Component {
   }
 
   handleSelectAll = () => {
+    let arr = this.state.selectedRows.concat(this.state.records)
+    arr = _.uniqBy(arr, item => {return item._id})
     this.setState({
-      selectedRows: this.state.records,
+      selectedRows: arr,
       isOpenActionMenu: null
     })
   }
@@ -735,100 +707,128 @@ class Dashboard extends React.Component {
         <Paper className={classes.content} elevation={5}>
           <div className={classes.inner} style={{ height: (this.state.windowsHeight - 300) }}>
             {/* Table */}
-            <MaterialTable
-              title={
-                <Grid container spacing={1} alignItems="flex-end">
-                  <Grid item>
-                    <Typography variant="subtitle1">Lớp:</Typography>
-                  </Grid>
-                  <Grid item>
-                    <TextField
-                      select
-                      className={classes.customInput}
-                      value={this.state.selectedClass}
-                      onChange={e => this.handleClassChange(e, "selectedClass")}
-                      fullWidth
-                      SelectProps={{
-                        MenuProps: {
-                          className: classes.menu
-                        }
-                      }}
-                    >
-                      {this.state.classes.map(classEl => (
-                        <MenuItem key={classEl.title} value={classEl.ID} name={classEl.title}>
-                          {classEl.title}
-                        </MenuItem>
-                      ))}
-                    </TextField>
-                  </Grid>
-                </Grid>
-              }
-              icons={tableIcons}
-              columns={this.state.materialColumn}
-              data={this.state.records.map(row => this.state.selectedRows.find(selected => selected._id === row._id)? {...row, tableData: {checked: true}} : row)}
-              onChangePage={(page) => this.handleChangePage(page)}
-              onChangeRowsPerPage={pageSize => this.handleChangeRowsPerPage(pageSize)}
-              onSearchChange={(text) => this.handleSearchChange(text)}
-              onRowClick={(e, rowData) => {
-                this.handleRowSelection(e, rowData);
-              }}
-              totalCount={this.state.numberOfRecord}
-              isLoading={this.state.isLoadingData}
-              page={this.state.tablePage}
-              onSelectionChange={(rows, rowData) => {
-                if(this.state.selectedRows.includes(rowData)) this.setState({ selectedRows: this.state.selectedRows.filter(row => { return row !== rowData})})
-                else this.setState({ selectedRows: this.state.selectedRows.concat(rowData)})
-              }}
-              localization={{
-                header: {
-                  actions: ''
-                },
-                pagination: {
-                  previousTooltip: "Trang trước",
-                  nextTooltip: "Trang sau",
-                  firstTooltip: "Trang đầu",
-                  lastTooltip: "Trang cuối",
-                  labelRowsSelect: "Dòng"
-                },
-                body: {
-                  emptyDataSourceMessage: 'Không có dữ liệu!'
-                },
-                toolbar: {
-                  searchPlaceholder: 'Tìm kiếm...',
-                  searchTooltip: 'Tìm kiếm'
+            <MuiThemeProvider theme={customColor}>
+              <MaterialTable
+                title={
+                  <Toolbar disableGutters>
+                    <Grid container spacing={1} alignItems="flex-end">
+                      <Grid item>
+                        <Typography variant="subtitle1">Lớp:</Typography>
+                      </Grid>
+                      <Grid item>
+                        <TextField
+                          select
+                          className={classes.customInput}
+                          value={this.state.selectedClass}
+                          onChange={e => this.handleClassChange(e, "selectedClass")}
+                          fullWidth
+                          SelectProps={{
+                            MenuProps: {
+                              className: classes.menu
+                            }
+                          }}
+                        >
+                          {this.state.classes.map(classEl => (
+                            <MenuItem key={classEl.title} value={classEl.ID} name={classEl.title}>
+                              {classEl.title}
+                            </MenuItem>
+                          ))}
+                        </TextField>
+                      </Grid>
+                    </Grid>
+                    <Tooltip title='Chọn toàn bộ trang này'>
+                      <IconButton onClick={this.handleSelectAll}>
+                        <PlaylistAddCheck />
+                      </IconButton>
+                    </Tooltip>
+                  </Toolbar>
                 }
-              }}
-              options={{
-                showFirstLastPageButtons: true,
-                pageSizeOptions: [10, 25, 50],
-                pageSize: this.state.itemPerPage,
-                paging: true,
-                sorting: false,
-                selection: true,
-                headerStyle: {
-                  position: 'sticky',
-                  top: 0,
-                  color: '#9c27b0',
-                  fontSize: 15,
-                },
-                showTitle: true,
-                maxBodyHeight: this.state.windowsHeight - 418,
-                minBodyHeight: this.state.windowsHeight - 418,
-                search: true,
-                emptyRowsWhenPaging: false,
-                debounceInterval: 1500,
-                rowStyle: rowData => {
-                  if (this.state.selectedRows.indexOf(rowData) !== -1 || rowData === this.state.selectedRecord || rowData.tableData.checked === true) {
-                    return { backgroundColor: '#e1bee7' }
+                icons={tableIcons}
+                columns={this.state.materialColumn}
+                data={this.state.records.map(row => this.state.selectedRows.find(selected => selected._id === row._id)? {...row, tableData: {checked: true}} : {...row, tableData: {checked: false}})}
+                onChangePage={(page) => this.handleChangePage(page)}
+                onChangeRowsPerPage={pageSize => this.handleChangeRowsPerPage(pageSize)}
+                onSearchChange={(text) => this.handleSearchChange(text)}
+                totalCount={this.state.numberOfRecord}
+                isLoading={this.state.isLoadingData}
+                page={this.state.tablePage}
+                onSelectionChange={(rows, rowData) => {
+                  if(this.state.selectedRows.find(row => row._id === rowData._id)) {
+                    let arr = this.state.selectedRows.filter(row => row._id !== rowData._id)
+                    this.setState({selectedRows: arr})
                   }
-                  return {};
-                }
-              }}
-              
-              components={{
-                Container: props => <Paper {...props} elevation={0} />
-              }}
-            />
+                  else {
+                    this.setState({selectedRows: [...this.state.selectedRows, rowData]})
+                  }
+                }}
+                localization={{
+                  header: {
+                    actions: ''
+                  },
+                  pagination: {
+                    previousTooltip: "Trang trước",
+                    nextTooltip: "Trang sau",
+                    firstTooltip: "Trang đầu",
+                    lastTooltip: "Trang cuối",
+                    labelRowsSelect: "Dòng"
+                  },
+                  body: {
+                    emptyDataSourceMessage: 'Không có dữ liệu!'
+                  },
+                  toolbar: {
+                    searchPlaceholder: 'Tìm kiếm...',
+                    searchTooltip: 'Tìm kiếm'
+                  }
+                }}
+                options={{
+                  showFirstLastPageButtons: true,
+                  pageSizeOptions: [10, 25, 50],
+                  pageSize: this.state.itemPerPage,
+                  paging: true,
+                  sorting: false,
+                  selection: true,
+                  showSelectAllCheckbox: false,
+                  showTextRowsSelected: false,
+                  headerStyle: {
+                    position: 'sticky',
+                    top: 0,
+                    color: '#9c27b0',
+                    fontSize: 15,
+                  },
+                  showTitle: true,
+                  maxBodyHeight: this.state.windowsHeight - 418,
+                  minBodyHeight: this.state.windowsHeight - 418,
+                  search: true,
+                  emptyRowsWhenPaging: false,
+                  debounceInterval: 1500,
+                  actionsColumnIndex: -1,
+                  rowStyle: rowData => {
+                    if (this.state.selectedRows.indexOf(rowData) !== -1 || rowData.tableData.checked === true) {
+                      return { backgroundColor: '#e1bee7' }
+                    }
+                    else if(rowData._id === this.state.selectedRecord._id) {
+                      return { backgroundColor: '#6a1b9a', color: 'white'}
+                    }
+                    return {};
+                  },
+                  selectionProps: rowData => ({
+                    color: 'primary'
+                  }),
+                }}
+                
+                components={{
+                  Container: props => <Paper {...props} elevation={0} />
+                }}
+                actions={[
+                  {
+                    icon: () => {return <Edit style={{color: '#9c27b0'}}/>},
+                    tooltip: 'Chỉnh sửa',
+                    position: 'row',
+                    onClick: (e, rowData) => this.handleRowSelection(e, rowData)
+                  }
+                ]}
+              />
+            </MuiThemeProvider>
             <Menu
               anchorEl={this.state.isOpenActionMenu}
               open={Boolean(this.state.isOpenActionMenu)}
@@ -862,56 +862,54 @@ class Dashboard extends React.Component {
                 <ListItemIcon><GetApp /></ListItemIcon>
                 <ListItemText primary='Xuất file (.xlsx)'/>
               </MenuItem>
-              <MenuItem
-                onClick={this.handleSelectAll}
-              >
-                <ListItemIcon><PlaylistAddCheck /></ListItemIcon>
-                <ListItemText primary='Chọn toàn bộ trang này'/>
-              </MenuItem>
             </Menu>
           </div>
           <Collapse in={(this.state.selectedRows.length > 0) ? true : false}>
-            <Toolbar className={classes.chipsContainer}>
-              <Typography variant="subtitle1">Đã chọn: {this.state.selectedRows.length}</Typography>
-              {this.state.selectedRows.map(row => (
-                <MuiThemeProvider theme={colorChips} key={row.name}>
-                  <Chip label={row.name} size="small" color={(row.male === 'x') ? 'primary' : 'secondary'} />
-                </MuiThemeProvider>
-              ))}
-              <div className={classes.flexGrow} />
-              <Button
-                className={classes.formButton}
-                onClick={this.multipleDelete}
-                tooltip="Xóa tất cả"
-              ><Delete /></Button>
-              <Button
-                className={classes.formButton}
-                onClick={this.handleCancelAll}
-                tooltip="Xóa tất cả"
-              ><Cancel /></Button>
-            </Toolbar>
+            <div style={{border: `2px solid ${colors.purple[300]}`}}>
+              <Grid container spacing={1} style={{margin: 0, width: '100%'}}>
+                <Grid item xs={4} sm={2} md={2} lg={2}>
+                  <div align='center'>
+                    <ReportProblemRounded style={{width: '3em', height: '3em', color: 'red'}}/>
+                    <Typography variant="subtitle1">Xóa các dữ liệu được chọn</Typography>
+                  </div>
+                </Grid>
+                <Grid item xs={8} sm={10} md={10} lg={10}>
+                  <Card>
+                    <CardHeader title={'Đã chọn: '+this.state.selectedRows.length} />
+                    <CardContent className={classes.chipsContainer}>
+                      {this.state.selectedRows.map(row => (
+                        <MuiThemeProvider theme={colorChips} key={row.name}>
+                          <Chip
+                            icon={<Person />} 
+                            label={row.name} 
+                            size="small" 
+                            color={(row.male === 'x') ? 'primary' : 'secondary'} 
+                            deleteIcon={<Clear />}
+                            onDelete={() => {
+                              let arr = this.state.selectedRows.filter(selectedRow => selectedRow._id !== row._id)
+                              this.setState({selectedRows: arr})
+                            }}/>
+                        </MuiThemeProvider>
+                      ))}
+                    </CardContent>
+                    <CardActions>
+                      <Tooltip title='Xóa tất cả '>
+                        <IconButton
+                          onClick={this.multipleDelete}
+                          style={{marginLeft: 'auto'}}
+                          ><Delete /></IconButton>
+                      </Tooltip>
+                      <Tooltip title='Hủy'>
+                        <IconButton
+                          onClick={this.handleCancelAll}
+                        ><Clear /></IconButton>
+                      </Tooltip>
+                    </CardActions>
+                  </Card>
+                </Grid>
+              </Grid>
+            </div>
           </Collapse>
-          {(this.state.isUploadDialogOpen) ?
-            <Toolbar className={classes.exportDialog}>
-              <Typography variant="subtitle1" display="inline">
-                <InsertDriveFile fontSize="small" /> Bạn có muốn phục hồi CSDL từ tập tin "{this.state.restoreFileName}"?
-              </Typography>
-              <div className={classes.flexGrow} />
-              <Button
-                variant="contained"
-                color="primary"
-                className={classes.formButton}
-                style={{ marginRight: '1em' }}
-                onClick={this.postRestoreFile}
-              >
-                <Check /></Button>
-              <Button
-                variant="outlined"
-                color="primary"
-                className={classes.formButton}
-                onClick={() => this.handleCloseRestoreFile()}>
-                <Clear /></Button>
-            </Toolbar> : null}
           <FloatingForm
             open={this.state.isExpansionButton}
             callback={this.handleCallBackFloatingform}

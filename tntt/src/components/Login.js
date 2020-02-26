@@ -1,7 +1,8 @@
 import React from 'react';
 import axios from 'axios';
 import {
-  Avatar, Button, CssBaseline, TextField, FormControlLabel, Checkbox, Paper, Grid, Link, IconButton, InputAdornment, CircularProgress, Typography
+  Avatar, Button, CssBaseline, TextField, FormControlLabel, Checkbox, 
+  Paper, Grid, Link, IconButton, InputAdornment, CircularProgress, Typography
 } from '@material-ui/core'
 import { LockOutlined, Visibility, VisibilityOff } from '@material-ui/icons'
 import { withStyles } from '@material-ui/core/styles';
@@ -24,10 +25,10 @@ const useStyles = theme => ({
     backgroundPosition: 'center',
   },
   paper: {
-    position: 'absolute',
-    left: '50%',
+    padding: theme.spacing(4),
+    position: 'absolute', 
     top: '50%',
-    transform: 'translate(-50%, -50%)'
+    transform: 'translateY(-50%)',
   },
   avatar: {
     margin: theme.spacing(1),
@@ -275,8 +276,7 @@ class Signin extends React.Component {
     const { classes } = this.props;
 
     return (
-      <Grid container component="main" className={classes.root}>
-        <CssBaseline />
+      <Grid container className={classes.root}>
         <Grid item xs={false} sm={4} md={9} lg={5} className={classes.image} />
         <Grid item xs={12} sm={8} md={3} lg={7}>
           <div className={classes.paper}>

@@ -3,15 +3,22 @@ import { withStyles, MuiThemeProvider, createMuiTheme } from '@material-ui/core/
 import axios from 'axios';
 import moment from 'moment';
 import {
-  Paper, Collapse, Toolbar, Typography, Button, Chip, TextField, Grid, MenuItem
+  Paper, Collapse, Toolbar,
+  Typography, Chip, TextField,
+  Grid, MenuItem, Tooltip, IconButton,
+  Menu, ListItemIcon, ListItemText, colors,
+  Card, CardHeader, CardContent, CardActions,
 } from '@material-ui/core';
 
 import {
   Cached,
-  Cancel,
-  Clear,
   Delete,
   PersonAdd,
+  MoreVert,
+  Edit,
+  ReportProblemRounded,
+  Person,
+  Clear
 } from '@material-ui/icons';
 import MaterialTable from 'material-table';
 import tableIcons from '../Dashboard/components/tableIcon';
@@ -24,17 +31,19 @@ const useStyles = (theme) => ({
     padding: theme.spacing(3),
     width: '100%'
   },
+  masterforDevice: {
+    padding: 0,
+    width: '100%'
+  },
   root: {
     padding: theme.spacing(4),
     width: '100%'
   },
   content: {
-    marginTop: theme.spacing(1),
+    marginTop: theme.spacing(3),
     overflow: 'auto',
-    maxHeight: 500
   },
   chipsContainer: {
-    backgroundColor: '#ff8a80',
     flexWrap: 'wrap',
     '& > *': {
       margin: theme.spacing(0.5),
@@ -64,6 +73,16 @@ const colorChips = createMuiTheme({
     },
     secondary: {
       A400: '#f7c6cb'
+    }
+  }
+})
+
+const customColor = createMuiTheme({
+  palette: {
+    primary: {
+      main: colors.teal[500],
+      light: colors.teal[300],
+      dark: colors.teal[700]
     }
   }
 })
@@ -181,6 +200,7 @@ class UserList extends React.Component {
       isButtonDisabled: false,
       internalFunds: [],
       isLoadingFund: true,
+      isOpenActionMenu: null,
     };
   }
 
@@ -379,111 +399,170 @@ class UserList extends React.Component {
     const { classes } = this.props;
 
     return (
-      <div className={(this.state.windowWidth < 500) ? { padding: 0, width: '100%' } : classes.master}>
+      <div className={(this.state.windowWidth < 500) ? classes.masterforDevice : classes.master}>
         <CustomHeader style={{
           background: this.state.themeColor,
-        }} title="Danh sách thành viên"
-          subtitle="Bảng chi tiết các anh/chị/quý tu sĩ đang hoạt động trong Xứ Đoàn" />
+          marginBottom: '-3em'
+        }} title={
+          <div>
+            <Typography variant='h6'>Danh sách thành viên</Typography>
+            <Typography variant="subtitle2">Bảng chi tiết các anh/chị/quý tu sĩ đang hoạt động trong Xứ Đoàn</Typography>
+          </div>
+        }
+          subtitle={
+            <Toolbar disableGutters variant="dense">
+              <div style={{ flex: 1 }} />
+              <Tooltip title='Mở rộng'>
+                <IconButton onClick={(e) => this.setState({ isOpenActionMenu: e.target })}>
+                  <MoreVert style={{ color: 'white' }} />
+                </IconButton>
+              </Tooltip>
+            </Toolbar>
+          } />
         <Paper className={classes.root} elevation={5}>
-          <div className={classes.content}>
-            <MaterialTable
-              title={
-                <Grid container spacing={1} alignItems="flex-end">
-                  <Grid item>
-                    <Typography variant="subtitle1">Sinh nhật và bổn mạng:</Typography>
+          <div className={classes.content} style={{ height: (this.state.windowHeight - 332) }}>
+            <MuiThemeProvider theme={customColor}>
+              <MaterialTable
+                title={
+                  <Grid container spacing={1} alignItems="flex-end">
+                    <Grid item>
+                      <Typography variant="subtitle1">Sinh nhật và bổn mạng:</Typography>
+                    </Grid>
+                    <Grid item>
+                      <TextField
+                        select
+                        className={classes.customInput}
+                        value={this.state.selectedMonth}
+                        onChange={e => this.handleMonthChange(e, "selectedMonth")}
+                        fullWidth
+                        SelectProps={{
+                          MenuProps: {
+                            className: classes.menu
+                          }
+                        }}
+                      >
+                        {this.state.months.map(month => (
+                          <MenuItem key={month.title} value={month.value}>
+                            {month.title}
+                          </MenuItem>
+                        ))}
+                      </TextField>
+                    </Grid>
                   </Grid>
-                  <Grid item>
-                    <TextField
-                      select
-                      className={classes.customInput}
-                      value={this.state.selectedMonth}
-                      onChange={e => this.handleMonthChange(e, "selectedMonth")}
-                      fullWidth
-                      SelectProps={{
-                        MenuProps: {
-                          className: classes.menu
-                        }
-                      }}
-                    >
-                      {this.state.months.map(month => (
-                        <MenuItem key={month.title} value={month.value}>
-                          {month.title}
-                        </MenuItem>
-                      ))}
-                    </TextField>
-                  </Grid>
-                </Grid>
-              }
-              icons={tableIcons}
-              data={this.state.usersData}
-              columns={this.state.tableColumns}
-              isLoading={this.state.isLoadingData}
-              onRowClick={this.handleRowSelection}
-              options={{
-                paging: false,
-                sorting: false,
-                headerStyle: {
-                  position: 'sticky',
-                  top: 0,
-                  color: '#009688',
-                  fontSize: 15
-                },
-                search: true,
-                maxBodyHeight: '300px',
-                debounceInterval: 500,
-                rowStyle: rowData => {
-                  if (this.state.selectedRows.indexOf(rowData) !== -1) {
-                    return {
-                      backgroundColor: '#4db6ac'
-                    }
-                  }
-                  return {};
                 }
-              }}
-              localization={{
-                header: {
-                  actions: ''
-                },
-                body: {
-                  emptyDataSourceMessage: 'Không có dữ liệu!',
-                  addTooltip: 'Tạo tài khoản mới',
-                  editRow: {
-                    saveTooltip: 'Lưu',
-                    cancelTooltip: 'Hủy bỏ'
+                icons={tableIcons}
+                data={this.state.usersData.map(row => this.state.selectedRows.find(selected => selected._id === row._id) ? { ...row, tableData: { checked: true } } : { ...row, tableData: { checked: false } })}
+                columns={this.state.tableColumns}
+                isLoading={this.state.isLoadingData}
+                onSelectionChange={(rows, rowData) => {
+                  if (this.state.selectedRows.find(row => row._id === rowData._id)) {
+                    let arr = this.state.selectedRows.filter(row => row._id !== rowData._id)
+                    this.setState({ selectedRows: arr })
                   }
-                },
-                toolbar: {
-                  searchPlaceholder: 'Tìm kiếm...',
-                  searchTooltip: 'Nhập từ khóa để tìm kiếm'
-                },
-              }}
-              actions={[
-                {
-                  icon: () => { return <Cached /> },
-                  tooltip: "Cập nhật danh sách",
-                  isFreeAction: true,
-                  onClick: () => this.reloadData(),
-                },
-                {
-                  icon: () => { return <PersonAdd /> },
-                  isFreeAction: true,
-                  onClick: () => {
-                    this.setState({
-                      isOpeningUserFrom: true,
-                      typeOfForm: 'add',
-                    })
+                  else {
+                    this.setState({ selectedRows: [...this.state.selectedRows, rowData] })
+                  }
+                }}
+                options={{
+                  paging: false,
+                  sorting: false,
+                  selection: true,
+                  showSelectAllCheckbox: false,
+                  showTextRowsSelected: false,
+                  headerStyle: {
+                    position: 'sticky',
+                    top: 0,
+                    color: '#009688',
+                    fontSize: 15
                   },
-                  tooltip: 'Tạo tài khoản mới',
-                  disabled: (localStorage.getItem('type') === 'Admin') ? false : true
-                },
-                {
-                  icon: () => { return <Clear style={{ color: 'red' }} /> },
-                  tooltip: 'Chọn xóa',
-                  onClick: (e, rowData) => this.handleRowClick(e, rowData),
-                  hidden: (localStorage.getItem('type') === 'Admin') ? false : true
-                },
-              ]}
-            />
+                  search: true,
+                  maxBodyHeight: this.state.windowHeight - 397,
+                  minBodyHeight: this.state.windowHeight - 397,
+                  debounceInterval: 500,
+                  actionsColumnIndex: -1,
+                  rowStyle: rowData => {
+                    if (this.state.selectedRows.indexOf(rowData) !== -1 || rowData.tableData.checked === true) {
+                      return {
+                        backgroundColor: `${colors.teal[100]}`
+                      }
+                    }
+                    else if (rowData._id === this.state.selectedRecord._id) {
+                      return { backgroundColor: `${colors.teal[700]}`, color: 'white' }
+                    }
+                    return {};
+                  },
+                  selectionProps: rowData => ({
+                    color: 'primary'
+                  }),
+                }}
+                localization={{
+                  header: {
+                    actions: ''
+                  },
+                  body: {
+                    emptyDataSourceMessage: 'Không có dữ liệu!',
+                    addTooltip: 'Tạo tài khoản mới',
+                    editRow: {
+                      saveTooltip: 'Lưu',
+                      cancelTooltip: 'Hủy bỏ'
+                    }
+                  },
+                  toolbar: {
+                    searchPlaceholder: 'Tìm kiếm...',
+                    searchTooltip: 'Nhập từ khóa để tìm kiếm'
+                  },
+                }}
+                components={{
+                  Container: props => <Paper {...props} elevation={0} />
+                }}
+                actions={[
+                  {
+                    icon: () => { return <Edit style={{ color: '#009688' }} /> },
+                    tooltip: 'Chỉnh sửa',
+                    position: 'row',
+                    onClick: (e, rowData) => this.handleRowSelection(e, rowData),
+                    hidden: (localStorage.getItem('type') === 'Admin') ? false : true
+                  },
+                ]}
+              />
+            </MuiThemeProvider>
+            <Menu
+              anchorEl={this.state.isOpenActionMenu}
+              open={Boolean(this.state.isOpenActionMenu)}
+              onClose={() => { this.setState({ isOpenActionMenu: null }) }}
+              keepMounted
+              getContentAnchorEl={null}
+              anchorOrigin={{
+                vertical: 'bottom',
+                horizontal: 'center',
+              }}
+              transformOrigin={{
+                vertical: 'top',
+                horizontal: 'right',
+              }}
+            >
+              <MenuItem
+                onClick={() => {
+                  this.setState({
+                    isOpeningUserFrom: true,
+                    typeOfForm: 'add',
+                    isOpenActionMenu: null,
+                  })
+                }}
+                disabled={(localStorage.getItem('type') === 'Admin') ? false : true}
+              >
+                <ListItemIcon><PersonAdd /></ListItemIcon>
+                <ListItemText primary='Tạo tài khoản mới' />
+              </MenuItem>
+              <MenuItem
+                onClick={() => {
+                  this.reloadData()
+                  this.setState({ isOpenActionMenu: null })
+                }}>
+                <ListItemIcon><Cached /></ListItemIcon>
+                <ListItemText primary='Cập nhật danh sách' />
+              </MenuItem>
+            </Menu>
           </div>
           <UserForm
             open={this.state.isOpeningUserFrom}
@@ -493,25 +572,55 @@ class UserList extends React.Component {
             selectedData={this.state.selectedRecord}
             resetSelectedRow={this.handleResetSelectedRow} />
           <Collapse in={(this.state.selectedRows.length > 0) ? true : false}>
-            <Toolbar className={classes.chipsContainer}>
-              <Typography variant="subtitle1">Đã chọn: {this.state.selectedRows.length}</Typography>
-              {this.state.selectedRows.map(row => (
-                <MuiThemeProvider theme={colorChips} key={row.username}>
-                  <Chip label={row.fullname} size="small" color='primary' />
-                </MuiThemeProvider>
-              ))}
-              <div className={classes.flexGrow} />
-              <Button
-                className={classes.formButton}
-                onClick={this.multipleDelete}
-                tooltip="Xóa tất cả"
-              ><Delete /></Button>
-              <Button
-                className={classes.formButton}
-                onClick={this.handleCancelAll}
-                tooltip="Xóa tất cả"
-              ><Cancel /></Button>
-            </Toolbar>
+            <div style={{ border: `2px solid ${colors.teal[300]}` }}>
+              <Grid container spacing={1} style={{ margin: 0, width: '100%' }}>
+                <Grid item xs={4} sm={2} md={2} lg={2}>
+                  <div align='center'>
+                    <ReportProblemRounded style={{ width: '3em', height: '3em', color: 'red' }} />
+                    <Typography variant="subtitle1">Xóa các dữ liệu được chọn</Typography>
+                  </div>
+                </Grid>
+                <Grid item xs={8} sm={10} md={10} lg={10}>
+                  <Card>
+                    <CardHeader title={'Đã chọn: ' + this.state.selectedRows.length} />
+                    <CardContent className={classes.chipsContainer}>
+                      <Grid container spacing={1} style={{ margin: 0, width: '100%' }}>
+                        {this.state.selectedRows.map(row => (
+                          <Grid item xs={12} sm={6} md={4} lg={3} key={row.name}>
+                            <MuiThemeProvider theme={colorChips}>
+                              <Chip
+                                icon={<Person />}
+                                label={row.fullname}
+                                size="small"
+                                color='primary'
+                                onDelete={() => {
+                                  let arr = this.state.selectedRows.filter(selectedRow => selectedRow._id !== row._id)
+                                  this.setState({ selectedRows: arr })
+                                }}
+                                style={{ display: 'flex' }} />
+                            </MuiThemeProvider>
+                          </Grid>
+                        ))}
+                      </Grid>
+                    </CardContent>
+                    <CardActions>
+                      <Tooltip title='Xóa tất cả '>
+                        <IconButton
+                          onClick={this.multipleDelete}
+                          style={{ marginLeft: 'auto', color: 'red' }}
+                        ><Delete /></IconButton>
+                      </Tooltip>
+                      <Tooltip title='Hủy'>
+                        <IconButton
+                          onClick={this.handleCancelAll}
+                          style={{ color: `${colors.teal[300]}` }}
+                        ><Clear /></IconButton>
+                      </Tooltip>
+                    </CardActions>
+                  </Card>
+                </Grid>
+              </Grid>
+            </div>
           </Collapse>
         </Paper>
         <SnackDialog

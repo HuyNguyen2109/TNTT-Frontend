@@ -10,26 +10,21 @@ import _ from 'lodash';
 import {
   PersonAdd,
   Cached,
-  InsertDriveFile,
-  Check,
   Clear,
   Delete,
   PlaylistAddCheck,
-  Cancel,
   GetApp,
   Lock,
   LockOpen,
   LooksOne,
   LooksTwo,
   MoreVert,
-  SelectAll,
   Edit,
   ReportProblemRounded,
   Person
 } from '@material-ui/icons/';
 import {
   Paper,
-  Button,
   Typography,
   Toolbar,
   Chip,
@@ -43,14 +38,8 @@ import {
   ListItemText,
   IconButton,
   colors,
-  Divider,
-  Card, CardHeader, CardContent, CardActions
+  Card, CardHeader, CardContent, CardActions, Fab, Zoom
 } from '@material-ui/core';
-import {
-  SpeedDial,
-  SpeedDialAction,
-  SpeedDialIcon
-} from '@material-ui/lab'
 import MaterialTable from 'material-table';
 
 import FloatingForm from './components/floatingForm';
@@ -64,9 +53,9 @@ const useStyles = theme => ({
     width: '100%',
   },
   rootSmallDevice: {
-    padding:0,
+    padding: 0,
     paddingBottom: theme.spacing(3),
-    width: '100%' 
+    width: '100%'
   },
   content: {
     padding: theme.spacing(4),
@@ -236,27 +225,28 @@ class Dashboard extends React.Component {
       //for Speed dial
       actions: [
         {
-          icon: <LooksOne />,
+          icon: <LooksOne style={{ color: `${colors.purple[300]}` }} />,
           name: 'Khóa điểm HKI',
           keyword: 'HKI'
         },
         {
-          icon: <LooksTwo />,
+          icon: <LooksTwo style={{ color: `${colors.purple[300]}` }} />,
           name: 'Khóa điểm HKII',
           keyword: 'HKII'
         },
         {
-          icon: <Lock />,
+          icon: <Lock style={{ color: `${colors.purple[700]}` }} />,
           name: 'Khóa điểm cả năm',
           keyword: 'Final'
         },
         {
-          icon: <LockOpen />,
+          icon: <LockOpen style={{ color: 'red' }} />,
           name: 'Xóa toàn bộ điểm'
         }
       ],
       isSpeedDialOpen: false,
       isOpenActionMenu: null,
+      isOpenLockScoreMenu: null,
     };
 
     this.updateWindowDimensions = this.updateWindowDimensions.bind(this);
@@ -446,6 +436,7 @@ class Dashboard extends React.Component {
   }
 
   lockSemesterScores = (scoreType) => {
+    this.setState({isOpenLockScoreMenu: null})
     const typeInfo = {
       'type': scoreType,
       'class': this.state.selectedClass
@@ -468,6 +459,7 @@ class Dashboard extends React.Component {
   }
 
   resetScores = () => {
+    this.setState({isOpenLockScoreMenu: null})
     return axios
       .delete(`/backend/children/reset-scores/${this.state.selectedClass}`)
       .then(res => {
@@ -588,7 +580,7 @@ class Dashboard extends React.Component {
   }
 
   handleExportData = () => {
-    this.setState({isOpenActionMenu: null});
+    this.setState({ isOpenActionMenu: null });
     axios
       .get('/backend/children/export', {
         responseType: 'blob'
@@ -622,7 +614,7 @@ class Dashboard extends React.Component {
 
   handleSelectAll = () => {
     let arr = this.state.selectedRows.concat(this.state.records)
-    arr = _.uniqBy(arr, item => {return item._id})
+    arr = _.uniqBy(arr, item => { return item._id })
     this.setState({
       selectedRows: arr,
       isOpenActionMenu: null
@@ -645,7 +637,7 @@ class Dashboard extends React.Component {
     })
     this.getData(e.target.value, 0, this.state.itemPerPage, null);
     this.getNumberOfRecord(e.target.value)
-    let className= (e.target.value === "")? "all" : e.target.value;
+    let className = (e.target.value === "") ? "all" : e.target.value;
     return axios
       .get(`/backend/class/by-id/${className}`)
       .then(res => {
@@ -697,7 +689,7 @@ class Dashboard extends React.Component {
                 </Toolbar>
               </div>
               <div style={{ flex: 1 }} />
-              <Tooltip title='Chỉnh sửa'>
+              <Tooltip title='Mở rộng'>
                 <IconButton onClick={(e) => this.setState({ isOpenActionMenu: e.target })}>
                   <MoreVert style={{ color: 'white' }} />
                 </IconButton>
@@ -745,7 +737,7 @@ class Dashboard extends React.Component {
                 }
                 icons={tableIcons}
                 columns={this.state.materialColumn}
-                data={this.state.records.map(row => this.state.selectedRows.find(selected => selected._id === row._id)? {...row, tableData: {checked: true}} : {...row, tableData: {checked: false}})}
+                data={this.state.records.map(row => this.state.selectedRows.find(selected => selected._id === row._id) ? { ...row, tableData: { checked: true } } : { ...row, tableData: { checked: false } })}
                 onChangePage={(page) => this.handleChangePage(page)}
                 onChangeRowsPerPage={pageSize => this.handleChangeRowsPerPage(pageSize)}
                 onSearchChange={(text) => this.handleSearchChange(text)}
@@ -753,12 +745,12 @@ class Dashboard extends React.Component {
                 isLoading={this.state.isLoadingData}
                 page={this.state.tablePage}
                 onSelectionChange={(rows, rowData) => {
-                  if(this.state.selectedRows.find(row => row._id === rowData._id)) {
+                  if (this.state.selectedRows.find(row => row._id === rowData._id)) {
                     let arr = this.state.selectedRows.filter(row => row._id !== rowData._id)
-                    this.setState({selectedRows: arr})
+                    this.setState({ selectedRows: arr })
                   }
                   else {
-                    this.setState({selectedRows: [...this.state.selectedRows, rowData]})
+                    this.setState({ selectedRows: [...this.state.selectedRows, rowData] })
                   }
                 }}
                 localization={{
@@ -796,8 +788,8 @@ class Dashboard extends React.Component {
                     fontSize: 15,
                   },
                   showTitle: true,
-                  maxBodyHeight: this.state.windowsHeight - 418,
-                  minBodyHeight: this.state.windowsHeight - 418,
+                  maxBodyHeight: this.state.windowsHeight - 417,
+                  minBodyHeight: this.state.windowsHeight - 417,
                   search: true,
                   emptyRowsWhenPaging: false,
                   debounceInterval: 1500,
@@ -806,8 +798,8 @@ class Dashboard extends React.Component {
                     if (this.state.selectedRows.indexOf(rowData) !== -1 || rowData.tableData.checked === true) {
                       return { backgroundColor: '#e1bee7' }
                     }
-                    else if(rowData._id === this.state.selectedRecord._id) {
-                      return { backgroundColor: '#6a1b9a', color: 'white'}
+                    else if (rowData._id === this.state.selectedRecord._id) {
+                      return { backgroundColor: '#6a1b9a', color: 'white' }
                     }
                     return {};
                   },
@@ -815,13 +807,13 @@ class Dashboard extends React.Component {
                     color: 'primary'
                   }),
                 }}
-                
+
                 components={{
                   Container: props => <Paper {...props} elevation={0} />
                 }}
                 actions={[
                   {
-                    icon: () => {return <Edit style={{color: '#9c27b0'}}/>},
+                    icon: () => { return <Edit style={{ color: '#9c27b0' }} /> },
                     tooltip: 'Chỉnh sửa',
                     position: 'row',
                     onClick: (e, rowData) => this.handleRowSelection(e, rowData)
@@ -854,54 +846,60 @@ class Dashboard extends React.Component {
                 onClick={this.reloadData}
               >
                 <ListItemIcon><Cached /></ListItemIcon>
-                <ListItemText primary='Cập nhật'/>
+                <ListItemText primary='Cập nhật' />
               </MenuItem>
               <MenuItem
                 onClick={this.handleExportData}
               >
                 <ListItemIcon><GetApp /></ListItemIcon>
-                <ListItemText primary='Xuất file (.xlsx)'/>
+                <ListItemText primary='Xuất file (.xlsx)' />
               </MenuItem>
             </Menu>
           </div>
           <Collapse in={(this.state.selectedRows.length > 0) ? true : false}>
-            <div style={{border: `2px solid ${colors.purple[300]}`}}>
-              <Grid container spacing={1} style={{margin: 0, width: '100%'}}>
+            <div style={{ border: `2px solid ${colors.purple[300]}` }}>
+              <Grid container spacing={1} style={{ margin: 0, width: '100%' }}>
                 <Grid item xs={4} sm={2} md={2} lg={2}>
                   <div align='center'>
-                    <ReportProblemRounded style={{width: '3em', height: '3em', color: 'red'}}/>
+                    <ReportProblemRounded style={{ width: '3em', height: '3em', color: 'red' }} />
                     <Typography variant="subtitle1">Xóa các dữ liệu được chọn</Typography>
                   </div>
                 </Grid>
                 <Grid item xs={8} sm={10} md={10} lg={10}>
                   <Card>
-                    <CardHeader title={'Đã chọn: '+this.state.selectedRows.length} />
+                    <CardHeader title={'Đã chọn: ' + this.state.selectedRows.length} />
                     <CardContent className={classes.chipsContainer}>
-                      {this.state.selectedRows.map(row => (
-                        <MuiThemeProvider theme={colorChips} key={row.name}>
-                          <Chip
-                            icon={<Person />} 
-                            label={row.name} 
-                            size="small" 
-                            color={(row.male === 'x') ? 'primary' : 'secondary'} 
-                            deleteIcon={<Clear />}
-                            onDelete={() => {
-                              let arr = this.state.selectedRows.filter(selectedRow => selectedRow._id !== row._id)
-                              this.setState({selectedRows: arr})
-                            }}/>
-                        </MuiThemeProvider>
-                      ))}
+                      <Grid container spacing={1} style={{ margin: 0, width: '100%' }}>
+                        {this.state.selectedRows.map(row => (
+                          <Grid item xs={12} sm={6} md={4} lg={3} key={row.name}>
+                            <MuiThemeProvider theme={colorChips}>
+                              <Chip
+                                icon={<Person />}
+                                label={row.name}
+                                size="small"
+                                color={(row.male === 'x') ? 'primary' : 'secondary'}
+                                deleteIcon={<Clear />}
+                                onDelete={() => {
+                                  let arr = this.state.selectedRows.filter(selectedRow => selectedRow._id !== row._id)
+                                  this.setState({ selectedRows: arr })
+                                }}
+                                style={{ display: 'flex' }} />
+                            </MuiThemeProvider>
+                          </Grid>
+                        ))}
+                      </Grid>
                     </CardContent>
                     <CardActions>
                       <Tooltip title='Xóa tất cả '>
                         <IconButton
                           onClick={this.multipleDelete}
-                          style={{marginLeft: 'auto'}}
-                          ><Delete /></IconButton>
+                          style={{ marginLeft: 'auto', color: 'red' }}
+                        ><Delete /></IconButton>
                       </Tooltip>
                       <Tooltip title='Hủy'>
                         <IconButton
                           onClick={this.handleCancelAll}
+                          style={{ color: `${colors.purple[300]}` }}
                         ><Clear /></IconButton>
                       </Tooltip>
                     </CardActions>
@@ -926,39 +924,54 @@ class Dashboard extends React.Component {
           open={this.state.snackerBarStatus}
           type={this.state.floatingFormType}
         />
-        <Tooltip title="Khóa điểm" placement="left-end">
-          <SpeedDial
-            className={classes.speedDial}
-            ariaLabel="Lock Scores"
-            icon={<SpeedDialIcon icon={<Lock />} openIcon={<Clear />} />}
-            onClose={this.handleSpeedDialClose}
-            onOpen={this.handleSpeedDialOpen}
-            open={this.state.isSpeedDialOpen}
-            hidden={(this.state.currentClass !== 'Chung' && this.state.selectedClass === localStorage.getItem('currentClass')) ? false : true}
-            FabProps={{
-              className: classes.fabButton
+        <Zoom
+          in={(this.state.currentClass !== 'Chung' && this.state.selectedClass === localStorage.getItem('currentClass')) ? true : false}
+          style={{
+            transitionDelay: `0ms`,
+          }}
+          unmountOnExit
+        >
+          <Fab
+            variant='extended'
+            size='medium'
+            className={classes.fabButton}
+            style={{
+              position: 'fixed',
+              bottom: '1em',
+              right: '1em'
             }}
-            transitionDuration={0}
-          >
-            {this.state.actions.map(action => (
-              (action.name === 'Xóa toàn bộ điểm') ?
-                <SpeedDialAction
-                  className={classes.fabButtonError}
-                  disabled={(localStorage.getItem('type') === 'Admin') ? false : true}
-                  key={action.name}
-                  icon={action.icon}
-                  tooltipTitle={action.name}
-                  onClick={() => this.resetScores()} /> :
-                <SpeedDialAction
-                  className={classes.fabButtonSecondary}
-                  key={action.name}
-                  icon={action.icon}
-                  tooltipTitle={action.name}
-                  disabled={(this.state.currentClass !== 'Chung' && this.state.selectedClass === localStorage.getItem('currentClass')) ? false : true}
-                  onClick={() => this.lockSemesterScores(action.keyword)} />
-            ))}
-          </SpeedDial>
-        </Tooltip>
+            onClick={(e) => { this.setState({ isOpenLockScoreMenu: e.target }) }}>
+            <Lock style={{ marginRight: '5px' }} /> Khóa điểm
+        </Fab>
+        </Zoom>
+        <Menu
+          anchorEl={this.state.isOpenLockScoreMenu}
+          open={Boolean(this.state.isOpenLockScoreMenu)}
+          onClose={() => { this.setState({ isOpenLockScoreMenu: null }) }}
+          keepMounted
+          getContentAnchorEl={null}
+          anchorOrigin={{
+            vertical: 'top',
+            horizontal: 'center',
+          }}
+          transformOrigin={{
+            vertical: 'bottom',
+            horizontal: 'left',
+          }}
+        >
+          {this.state.actions.map(action => (
+            (action.name === 'Xóa toàn bộ điểm') ?
+              <MenuItem onClick={this.resetScores} key={action.name}>
+                <ListItemIcon>{action.icon}</ListItemIcon>
+                <ListItemText primary={action.name} />
+              </MenuItem>
+              :
+              <MenuItem onClick={() => this.lockSemesterScores(action.keyword)} key={action.name}>
+                <ListItemIcon>{action.icon}</ListItemIcon>
+                <ListItemText primary={action.name} />
+              </MenuItem>
+          ))}
+        </Menu>
       </div>
     );
   }

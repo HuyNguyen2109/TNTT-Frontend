@@ -334,6 +334,7 @@ class General extends React.Component {
   }
 
   updateWindowDimensions() {
+    console.log(window.innerWidth)
     if (this._ismounted) {
       this.setState({
         innerWidth: window.innerWidth,
@@ -454,7 +455,7 @@ class General extends React.Component {
 
   getChildrenData = () => {
     if (this._ismounted === true) {
-      return axios.get('/backend/children/count', { params: { condition: 'all' } })
+      return axios.get('/backend/children/count', { params: { condition: '' } })
         .then(res => {
           this.setState({ childrenTotalCount: res.data.data })
         })
@@ -521,7 +522,7 @@ class General extends React.Component {
     let colors = [];
     let classesArr = [];
     if (this._ismounted === true) {
-      return axios.get('/backend/children/count', { params: { condition: 'all' } })
+      return axios.get('/backend/children/count', { params: { condition: '' } })
         .then(res => {
           unconfirmedData = res.data.data
           allChildren = res.data.data
@@ -607,7 +608,7 @@ class General extends React.Component {
               requests.push(axios.get(`/backend/children/all/${i}`, {
                 params: {
                   itemPerPage: itemPerPage,
-                  class: 'all',
+                  class: '',
                   search: null
                 }
               }))
@@ -831,7 +832,7 @@ class General extends React.Component {
   }
 
   getTumblrPost = () => {
-    if (this._ismounted === true) {
+    if (this._ismounted) {
       return axios.get('/backend/database/tumblr/posts')
         .then(res => {
           this.setState({
@@ -2010,8 +2011,8 @@ class General extends React.Component {
                     </div>
                   </Toolbar>
                   <Divider />
-                  <div style={{ marginTop: '1em' }}>
-                    <Grid container spacing={2}>
+                  <div style={{ marginTop: '1em', overflowX: 'auto', height: this.state.innerWidth <= 840? 'auto' : '33em' }} >
+                    <Grid container spacing={2} style={{margin: 0, width: '100%'}}>
                       <Grid item md lg />
                       <Grid item xs={12} md={4} lg={8}>
                         {(this.state.isTumblrLoading) ?
@@ -2031,7 +2032,6 @@ class General extends React.Component {
                             ))}
                           </div>) :
                           <div
-                            style={{ overflowX: 'auto', height: this.state.tumblrBodyHeight }}
                             id='content'
                             dangerouslySetInnerHTML={{ __html: this.state.tumbleContent }} />}
                       </Grid>
@@ -2051,7 +2051,7 @@ class General extends React.Component {
                 marginBottom: '-4em',
               }}
               children={
-                <div style={(this.state.innerWidth < 500) ? { height: 'auto' } : { height: '38em' }}>
+                <div style={(this.state.innerWidth <= 840) ? { height: 'auto' } : { height: '38em' }}>
                   <Toolbar disableGutters>
                     <div style={{ flex: 1, marginLeft: '6em' }} />
                     <div>
@@ -2092,7 +2092,7 @@ class General extends React.Component {
                     </Menu>
                   </Toolbar>
                   <Divider />
-                  <div id='drawer-container' style={{ marginTop: '1em', overflowY: 'auto', overflowX: 'hidden', position: 'relative', height: '33em' }}>
+                  <div id='drawer-container' style={{ marginTop: '1em', overflowY: 'auto', overflowX: 'hidden', position: 'relative', height: this.state.innerWidth <= 840? 'auto' : '33em' }}>
                     {(this.state.documents.length === 0) ?
                       (
                         <div align='center'>
@@ -2100,7 +2100,7 @@ class General extends React.Component {
                         </div>
                       ) :
                       (
-                        <Grid container spacing={2}>
+                        <Grid container spacing={2} style={{margin: 0, width: '100%'}}>
                           {this.state.documents.map(doc => (
                             <Grid item xs={6} sm={4} md={3} lg={3} key={doc._id}>
                               <div align='center'>

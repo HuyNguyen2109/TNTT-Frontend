@@ -24,7 +24,7 @@ class Report extends React.Component {
 				subtitle=''
 				innerTitleStyle={{display: 'flex',  justifyContent:'center', alignItems:'center', height: '100%'}}
 				/>
-				<Paper elevation={1} className={classes.root}>
+				<Paper elevation={3} className={classes.root}>
 					{children}
 				</Paper>
 			</div>

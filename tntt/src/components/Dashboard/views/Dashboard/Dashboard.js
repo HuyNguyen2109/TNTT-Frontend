@@ -48,6 +48,11 @@ import SnackDialog from '../../../SnackerBar';
 import CustomHeader from '../../../Dashboard/components/CustomHeader/CustomHeader';
 
 const useStyles = theme => ({
+  '@global': {
+    body: {
+      backgroundColor: theme.palette.white
+    }
+  },
   root: {
     padding: theme.spacing(3),
     width: '100%',

@@ -6,6 +6,11 @@ import axios from 'axios';
 import { AccountProfile, AccountDetails, Password, Feedback } from './components';
 
 const useStyles = theme => ({
+  '@global': {
+    body: {
+      backgroundColor: theme.palette.white
+    }
+  },
   root: {
     padding: theme.spacing(3)
   }

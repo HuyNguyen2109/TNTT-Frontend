@@ -1,30 +1,19 @@
 import React from 'react';
 import axios from 'axios';
-import Avatar from '@material-ui/core/Avatar';
-import Button from '@material-ui/core/Button';
-import CssBaseline from '@material-ui/core/CssBaseline';
-import TextField from '@material-ui/core/TextField';
-import Link from '@material-ui/core/Link';
-import Grid from '@material-ui/core/Grid';
-import Box from '@material-ui/core/Box';
+import {
+  Avatar, Button, CssBaseline, TextField, Link, Grid, Box, Typography, Container, Dialog, DialogContent, DialogContentText, DialogTitle,
+  useMediaQuery, useTheme, MenuItem, CircularProgress, DialogActions, AppBar, Toolbar, colors, FormControlLabel, Checkbox
+} from '@material-ui/core';
 import PersonAddOutlinedIcon from '@material-ui/icons/PersonAddOutlined';
-import Typography from '@material-ui/core/Typography';
-import { withStyles } from '@material-ui/core/styles';
-import Container from '@material-ui/core/Container';
 import Copyright from './Copyright';
-
-import Dialog from '@material-ui/core/Dialog';
-import DialogActions from '@material-ui/core/DialogActions';
-import DialogContent from '@material-ui/core/DialogContent';
-import DialogContentText from '@material-ui/core/DialogContentText';
-import DialogTitle from '@material-ui/core/DialogTitle';
-import useMediaQuery from '@material-ui/core/useMediaQuery';
-import { useTheme } from '@material-ui/core/styles';
 import SnackDialog from './SnackerBar';
-
+import {
+  withStyles,
+  createMuiTheme,
+  MuiThemeProvider,
+  lighten
+} from '@material-ui/core/styles';
 import { Redirect } from 'react-router';
-import { MenuItem } from '@material-ui/core';
-import CircularProgress from '@material-ui/core/CircularProgress';
 
 import {
   MuiPickersUtilsProvider,
@@ -32,20 +21,40 @@ import {
 } from '@material-ui/pickers';
 import DateFnsUtils from '@date-io/date-fns';
 import moment from 'moment';
+import backgroundImg from '../img/background2.jpg'
+import { LockOpenOutlined } from '@material-ui/icons';
 
 const useStyles = theme => ({
   '@global': {
     body: {
-      backgroundImage: 'url(https://source.unsplash.com/random)',
-      backgroundRepeat: 'no-repeat',
-      backgroundSize: 'cover',
-      backgroundPosition: 'center',
-    },
+      backgroundColor: theme.palette.white
+    }
+  },
+  root: {
+    height: '100%',
+    margin: 0,
+    width: '100%',
+  },
+  background: {
+    backgroundImage: `url(${backgroundImg})`,
+    backgroundRepeat: 'no-repeat',
+    backgroundSize: 'cover',
+    backgroundPosition: 'center',
+  },
+  appBar: {
+    backgroundColor: `${lighten(colors.cyan[50], 0.7)}`,
+    height: '6em',
+  },
+  verticalCenterToolbar: {
+    position: 'relative',
+    top: '50%',
+    transform: 'translateY(-50%)'
   },
   container: {
-    backgroundColor: theme.palette.white,
-    padding: theme.spacing(2),
-    marginTop: theme.spacing(4)
+    position: 'relative',
+    top: '50%',
+    left: '50%', 
+    transform: 'translate(-50%, -50%)'
   },
   menu: {
     width: 80,
@@ -60,7 +69,7 @@ const useStyles = theme => ({
   },
   form: {
     width: '100%', // Fix IE 11 issue.
-    marginTop: theme.spacing(2)
+    padding: theme.spacing(4)
   },
   submit: {
     margin: theme.spacing(3, 0, 2),
@@ -70,7 +79,13 @@ const useStyles = theme => ({
   },
   processing: {
     margin: theme.spacing(1),
-  }
+  },
+  secondaryButton: {
+    '&:hover': {
+      backgroundColor: colors.cyan[500],
+      color: 'white'
+    }
+  },
 })
 
 const ResponsiveDialog = (props) => {
@@ -131,7 +146,32 @@ class Signup extends React.Component {
       snackerBarStatus: false,
       snackbarMessage: "",
       selectedEmailProvider: "@gmail.com",
-      isSignupClicked: false
+      isSignupClicked: false,
+      windowHeight: 0,
+      windowWidth: 0,
+      isAgreePolicies: false,
+    }
+    this.updateWindowDimensions = this.updateWindowDimensions.bind(this);
+    this._isMounted = false;
+  }
+
+  componentDidMount = () => {
+    this._isMounted = true;
+    this.updateWindowDimensions();
+    window.addEventListener("resize", this.updateWindowDimensions.bind(this));
+  }
+
+  componentWillUnmount = () => {
+    this._isMounted = false;
+    window.removeEventListener("resize", this.updateWindowDimensions.bind(this));
+  }
+
+  updateWindowDimensions() {
+    if (this._isMounted) {
+      this.setState({
+        windowWidth: window.innerWidth,
+        windowHeight: window.innerHeight,
+      });
     }
   }
 
@@ -139,7 +179,7 @@ class Signup extends React.Component {
     let data;
     if (type === 'email') {
       data = e.target.value.replace(/[^\w\s]/gi, "");
-    } else if (type === "selectedDate" || type === "selectedHolyDate"){
+    } else if (type === "selectedDate" || type === "selectedHolyDate") {
       data = e
     } else {
       data = e.target.value
@@ -234,189 +274,236 @@ class Signup extends React.Component {
     ];
 
     return (
-      <Container component="main" maxWidth="xs" className={classes.container}>
-        <CssBaseline />
-        <div className={classes.paper}>
-          <Avatar className={classes.avatar}>
-            <PersonAddOutlinedIcon />
-          </Avatar>
-          <Typography component="h1" variant="h5">
-            Đăng ký tài khoản
-        </Typography>
-          <form className={classes.form} noValidate>
-            <Grid container spacing={1}>
-              <Grid item xs={12}>
-                <TextField
-                  autoComplete="fname"
-                  name="holyName"
-                  variant="outlined"
-                  margin="dense"
-                  required
-                  fullWidth
-                  id="holyName"
-                  label="Tên Thánh"
-                  autoFocus
-                  value={this.state.holyName}
-                  onChange={e => this.handleFormChange(e, "holyName")}
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  autoComplete="fname"
-                  name="firstName"
-                  variant="outlined"
-                  margin="dense"
-                  required
-                  fullWidth
-                  id="firstName"
-                  label="Họ"
-                  value={this.state.firstName}
-                  onChange={e => this.handleFormChange(e, "firstName")}
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  variant="outlined"
-                  required
-                  fullWidth
-                  id="lastName"
-                  margin="dense"
-                  label="Tên"
-                  name="lastName"
-                  autoComplete="lname"
-                  value={this.state.lastName}
-                  onChange={e => this.handleFormChange(e, "lastName")}
-                />
-              </Grid>
-              <Grid item xs={12} sm={7}>
-                <TextField
-                  variant="outlined"
-                  required
-                  fullWidth
-                  id="email"
-                  label="Email"
-                  margin="dense"
-                  name="email"
-                  autoComplete="email"
-                  value={this.state.email}
-                  onChange={e => this.handleFormChange(e, "email")}
-                />
-              </Grid>
-              <Grid item xs={12} sm={5}>
-                <TextField
-                  variant="outlined"
-                  required
-                  select
-                  fullWidth
-                  id="email-provider"
-                  margin="dense"
-                  label="Nhà cung cấp email"
-                  name="email-provider"
-                  autoComplete="email"
-                  value={this.state.selectedEmailProvider}
-                  onChange={e => this.handleFormChange(e, "selectedEmailProvider")}
-                  SelectProps={{
-                    MenuProps: {
-                      className: classes.menu
-                    }
-                  }}
+      <Grid container spacing={0} className={classes.root}>
+        <Grid item xs={12} sm={12} md={6} lg={7}>
+          <AppBar position='static' elevation={0} className={classes.appBar}>
+            <Toolbar className={classes.verticalCenterToolbar}>
+              <Avatar
+                src='/logo.png'
+                style={(this.state.windowWidth < 500) ? { width: '2em', height: '2em', marginRight: '3px' } : { width: '3em', height: '3em', marginRight: '5px' }} />
+              <Typography variant={this.state.windowWidth < 500 ? 'subtitle1' : 'h5'} style={{ color: 'black' }}>Xứ đoàn Annê Lê Thị Thành</Typography>
+              <div style={{ flex: 1 }} />
+              <Link href="/" underline="none">
+                <Button
+                  size="small"
+                  color="primary"
+                  variant='outlined'
+                  className={classes.secondaryButton}
                 >
-                  {emailProviders.map(emailProvider => (
-                    <MenuItem key={emailProvider.value} value={emailProvider.value}>
-                      {emailProvider.value}
-                    </MenuItem>
-                  ))}
-                </TextField>
-              </Grid>
-              <Grid item xs={12} sm={4}>
-                <TextField
-                  variant="outlined"
-                  required
-                  fullWidth
-                  id="phone"
-                  margin="dense"
-                  label="Điện thoại"
-                  name="phone"
-                  value={this.state.phoneNumber}
-                  onChange={e => this.handleFormChange(e, "phoneNumber")}
-                />
-              </Grid>
-              <MuiPickersUtilsProvider utils={DateFnsUtils}>
-                <Grid item xs={12} sm={4}>
-                  <KeyboardDatePicker
-                    fullWidth
-                    format="dd/MM/yyyy"
-                    id="birthday"
-                    label="Ngày sinh"
+                  <LockOpenOutlined style={{ marginRight: '4px' }} color='inherit' fontSize='small' />
+                  Tôi đã có tài khoản</Button>
+              </Link>
+            </Toolbar>
+          </AppBar>
+          <div className={classes.container} style={(this.state.windowWidth <= 840) ? { padding: '1em' } : { padding: '4em' }}>
+            <Toolbar disableGutters>
+              <div style={{ flex: 1 }} />
+              <div align={this.state.windowWidth <= 840 ? 'center' : 'right'}>
+                <Avatar
+                  className={classes.avatar}
+                  style={(this.state.windowWidth < 500) ? { width: '3em', height: '3em', marginLeft: '3px' } : { width: '4em', height: '4em', marginLeft: '5px' }}>
+                  <PersonAddOutlinedIcon fontSize='large' style={{ color: 'white' }} />
+                </Avatar>
+                <Typography variant='h4' style={{ fontWeight: 'bold' }}>Đăng ký tài khoản mới</Typography>
+              </div>
+            </Toolbar>
+            <form className={classes.form}>
+              <Grid container spacing={1} style={{ margin: 0, width: '100%' }}>
+                <Grid item xs={12}>
+                  <TextField
+                    autoComplete="fname"
+                    name="holyName"
                     margin="dense"
-                    inputVariant="outlined"
-                    value={this.state.selectedDate}
-                    onChange={e => this.handleFormChange(e, "selectedDate")}
-                    KeyboardButtonProps={{
-                      'aria-label': 'change date',
-                    }} />
+                    required
+                    fullWidth
+                    id="holyName"
+                    label="Tên Thánh"
+                    autoFocus
+                    value={this.state.holyName}
+                    onChange={e => this.handleFormChange(e, "holyName")}
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    autoComplete="fname"
+                    name="firstName"
+                    margin="normal"
+                    required
+                    fullWidth
+                    id="firstName"
+                    label="Họ"
+                    value={this.state.firstName}
+                    onChange={e => this.handleFormChange(e, "firstName")}
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    required
+                    fullWidth
+                    id="lastName"
+                    margin="normal"
+                    label="Tên"
+                    name="lastName"
+                    autoComplete="lname"
+                    value={this.state.lastName}
+                    onChange={e => this.handleFormChange(e, "lastName")}
+                  />
+                </Grid>
+                <Grid item xs={12} sm={7}>
+                  <TextField
+                    required
+                    fullWidth
+                    id="email"
+                    label="Email"
+                    margin="normal"
+                    name="email"
+                    autoComplete="email"
+                    value={this.state.email}
+                    onChange={e => this.handleFormChange(e, "email")}
+                  />
+                </Grid>
+                <Grid item xs={12} sm={5}>
+                  <TextField
+                    required
+                    select
+                    fullWidth
+                    id="email-provider"
+                    margin="normal"
+                    label="Nhà cung cấp email"
+                    name="email-provider"
+                    autoComplete="email"
+                    value={this.state.selectedEmailProvider}
+                    onChange={e => this.handleFormChange(e, "selectedEmailProvider")}
+                    SelectProps={{
+                      MenuProps: {
+                        className: classes.menu
+                      }
+                    }}
+                  >
+                    {emailProviders.map(emailProvider => (
+                      <MenuItem key={emailProvider.value} value={emailProvider.value}>
+                        {emailProvider.value}
+                      </MenuItem>
+                    ))}
+                  </TextField>
                 </Grid>
                 <Grid item xs={12} sm={4}>
-                  <KeyboardDatePicker
+                  <TextField
+
+                    required
                     fullWidth
-                    inputVariant="outlined"
-                    format="dd/MM/yyyy"
-                    id="holy-birthday"
-                    margin="dense"
-                    label="Bổn mạng"
-                    value={this.state.selectedHolyDate}
-                    onChange={e => this.handleFormChange(e, "selectedHolyDate")}
-                    KeyboardButtonProps={{
-                      'aria-label': 'change date',
-                    }} />
+                    id="phone"
+                    margin="normal"
+                    label="Điện thoại"
+                    name="phone"
+                    value={this.state.phoneNumber}
+                    onChange={e => this.handleFormChange(e, "phoneNumber")}
+                  />
                 </Grid>
-              </MuiPickersUtilsProvider>
-            </Grid>
-            <Button
-              disabled={((this.state.holyName !== "" &&
-                this.state.firstName !== "" &&
-                this.state.lastName !== "" &&
-                this.state.email !== "" &&
-                this.state.phoneNumber !== "" &&
-                this.state.selectedDate !== this.state.defaultDate &&
-                this.state.selectedHolyDate !== this.state.defaultDate) && !this.state.isSignupClicked) ? false : true}
-              fullWidth
-              variant="contained"
-              color="primary"
-              margin="dense"
-              className={classes.submit}
-              onClick={e => this.validateAndSend(e)}
-            >
-              Đăng ký {(this.state.isSignupClicked) ? <CircularProgress className={classes.processing} size={15}></CircularProgress> : null}
-            </Button>
-            <Button
-              disabled={(this.state.isSignupClicked === false) ? false : true}
-              fullWidth
-              variant="outlined"
-              color="primary"
-              className={classes.cancel}
-              onClick={this.clearAllData}
-            >
-              Xóa
-            </Button>
-            <SnackDialog variant="error" message={this.state.snackbarMessage} className="error" callback={this.callbackSnackerBarHanlder} open={this.state.snackerBarStatus} />
-            <ResponsiveDialog open={this.state.openDialog} />
-            <Grid container justify="flex-end">
-              <Grid item>
-                <Link href="/" underline="none">
-                  <Button
-                    size="small"
-                    color="primary"
-                  >Bạn đã có tài khoản? Đăng nhập ngay!</Button>
-                </Link>
+                <MuiPickersUtilsProvider utils={DateFnsUtils}>
+                  <Grid item xs={12} sm={4}>
+                    <KeyboardDatePicker
+                      fullWidth
+                      format="dd/MM/yyyy"
+                      id="birthday"
+                      label="Ngày sinh"
+                      margin="normal"
+                      inputVariant="standard"
+                      value={this.state.selectedDate}
+                      onChange={e => this.handleFormChange(e, "selectedDate")}
+                      KeyboardButtonProps={{
+                        'aria-label': 'change date',
+                      }} />
+                  </Grid>
+                  <Grid item xs={12} sm={4}>
+                    <KeyboardDatePicker
+                      fullWidth
+                      inputVariant="standard"
+                      format="dd/MM/yyyy"
+                      id="holy-birthday"
+                      margin="normal"
+                      label="Bổn mạng"
+                      value={this.state.selectedHolyDate}
+                      onChange={e => this.handleFormChange(e, "selectedHolyDate")}
+                      KeyboardButtonProps={{
+                        'aria-label': 'change date',
+                      }} />
+                  </Grid>
+                </MuiPickersUtilsProvider>
               </Grid>
-            </Grid>
-          </form>
-        </div>
-        <Box mt={5}>
-          <Copyright />
-        </Box>
-      </Container>
+            </form>
+            <Toolbar>
+              <FormControlLabel 
+                control={<Checkbox checked={this.state.isAgreePolicies} onClick={() => {this.setState({isAgreePolicies: !this.state.isAgreePolicies})}}/>}
+                label={<Typography variant='subtitle2'>
+                  Khi tích chọn là bạn đã đồng ý với
+                  <Link href='#' style={{marginLeft: '4px', marginRight: '4px'}}>Điều khoản</Link>
+                  của Ban điều hành
+                </Typography>}
+              />
+            </Toolbar>
+          </div>
+        </Grid>
+        <Grid item xs={false} sm={false} md={6} lg={5} className={classes.background} />
+      </Grid>
+      // <Container component="main" maxWidth="xs" className={classes.container}>
+      //   <CssBaseline />
+      //   <div className={classes.paper}>
+      //     <Avatar className={classes.avatar}>
+      //       <PersonAddOutlinedIcon />
+      //     </Avatar>
+      //     <Typography component="h1" variant="h5">
+      //       Đăng ký tài khoản
+      //   </Typography>
+      //     <form className={classes.form} noValidate>
+      //       <Grid container spacing={1}>
+
+      //       </Grid>
+      //       <Button
+      //         disabled={((this.state.holyName !== "" &&
+      //           this.state.firstName !== "" &&
+      //           this.state.lastName !== "" &&
+      //           this.state.email !== "" &&
+      //           this.state.phoneNumber !== "" &&
+      //           this.state.selectedDate !== this.state.defaultDate &&
+      //           this.state.selectedHolyDate !== this.state.defaultDate) && !this.state.isSignupClicked) ? false : true}
+      //         fullWidth
+      //         variant="contained"
+      //         color="primary"
+      //         margin="dense"
+      //         className={classes.submit}
+      //         onClick={e => this.validateAndSend(e)}
+      //       >
+      //         Đăng ký {(this.state.isSignupClicked) ? <CircularProgress className={classes.processing} size={15}></CircularProgress> : null}
+      //       </Button>
+      //       <Button
+      //         disabled={(this.state.isSignupClicked === false) ? false : true}
+      //         fullWidth
+      //         variant="outlined"
+      //         color="primary"
+      //         className={classes.cancel}
+      //         onClick={this.clearAllData}
+      //       >
+      //         Xóa
+      //       </Button>
+      //       <SnackDialog variant="error" message={this.state.snackbarMessage} className="error" callback={this.callbackSnackerBarHanlder} open={this.state.snackerBarStatus} />
+      //       <ResponsiveDialog open={this.state.openDialog} />
+      //       <Grid container justify="flex-end">
+      //         <Grid item>
+      //           <Link href="/" underline="none">
+      //             <Button
+      //               size="small"
+      //               color="primary"
+      //             >Bạn đã có tài khoản? Đăng nhập ngay!</Button>
+      //           </Link>
+      //         </Grid>
+      //       </Grid>
+      //     </form>
+      //   </div>
+      //   <Box mt={5}>
+      //     <Copyright />
+      //   </Box>
+      // </Container>
     )
   };
 }

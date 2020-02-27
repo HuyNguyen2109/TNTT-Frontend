@@ -34,6 +34,11 @@ const googleSlides = '/icons8-google-slides-72.png'
 const googlePdf = '/icons8-pdf-72.png'
 
 const useStyle = theme => ({
+  '@global': {
+    body: {
+      backgroundColor: theme.palette.white
+    }
+  },
   root: {},
   container: {
     padding: theme.spacing(3),

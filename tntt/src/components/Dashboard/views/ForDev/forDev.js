@@ -12,6 +12,11 @@ import CustomHeader from '../../../Dashboard/components/CustomHeader/CustomHeade
 import SnackDialog from '../../../SnackerBar';
 
 const useStyle = theme => ({
+  '@global': {
+    body: {
+      backgroundColor: theme.palette.white
+    }
+  },
   master: {
     padding: theme.spacing(3)
   },

@@ -339,7 +339,6 @@ class General extends React.Component {
   }
 
   updateWindowDimensions() {
-    console.log(window.innerWidth)
     if (this._ismounted) {
       this.setState({
         innerWidth: window.innerWidth,
@@ -2307,6 +2306,7 @@ class General extends React.Component {
                                 responseType: 'blob'
                               })
                                 .then(res => {
+                                  console.log(res)
                                   let data = new Blob([res.data], { type: `${res.headers['content-type']}` })
                                   let csvURL = window.URL.createObjectURL(data);
                                   let link = document.createElement('a');

@@ -1,6 +1,7 @@
 import React from 'react';
 import clsx from 'clsx';
 import moment from 'moment';
+import axios from 'axios';
 import PropTypes from 'prop-types';
 import { withStyles } from '@material-ui/styles';
 import {
@@ -10,7 +11,7 @@ import {
   Divider,
   Fab,
 } from '@material-ui/core';
-import logo from '../AccountProfile/default-user.png';
+import SnackDialog from '../../../../../SnackerBar';
 
 const useStyles = theme => ({
   root: {
@@ -37,7 +38,7 @@ const useStyles = theme => ({
 });
 
 class AccountProfile extends React.Component {
-  constructor(){
+  constructor() {
     super();
 
     this.state = {
@@ -50,14 +51,19 @@ class AccountProfile extends React.Component {
       type: '',
       currentTime: '',
       //set default color
-      themeColor: 'linear-gradient(to right bottom, #a1887f, #795548)'
+      themeColor: 'linear-gradient(to right bottom, #a1887f, #795548)',
+
+      snackerBarStatus: false,
+      snackbarType: 'success',
+      snackbarMessage: '',
+      avatarURL: '',
     };
 
   };
 
   componentDidMount = () => {
     this._isMounted = true;
-    if(this._isMounted === true) {
+    if (this._isMounted === true) {
       this.displayTime();
       this.props.userdata.then(result => {
         this.setState({
@@ -73,6 +79,7 @@ class AccountProfile extends React.Component {
         })
       })
     }
+    this.getUserAvatar();
   };
 
   componentWillUnmount = () => {
@@ -80,7 +87,7 @@ class AccountProfile extends React.Component {
   }
 
   displayTime = () => {
-    if(this._isMounted === true) {
+    if (this._isMounted === true) {
       this.setState({
         currentTime: moment().format('hh:mm:ss A')
       })
@@ -88,22 +95,67 @@ class AccountProfile extends React.Component {
     }
   }
 
+  getUserAvatar = () => {
+    return axios.get(`/backend/user/avatar/by-name/${localStorage.getItem('username')}`, {
+      responseType: 'blob'
+    })
+      .then(res => {
+        let data = new Blob([res.data], { type: `${res.headers['content-type']}` })
+        let avatarUrl = window.URL.createObjectURL(data) || window.webkitURL.createObjectURL(data);
+        if (this._isMounted) {
+          this.setState({
+            avatarURL: avatarUrl
+          })
+        }
+      })
+  }
+
+  uploadAvatar = (e) => {
+    let data = new FormData()
+    data.append('file', e.target.files[0])
+
+    return axios.post(`/backend/user/avatar/by-name/${localStorage.getItem('username')}`, data)
+      .then(res => {
+        if (res.data.code === "I001") {
+          this.setState({
+            snackerBarStatus: true,
+            snackbarType: 'success',
+            snackbarMessage: 'Tải lên thành công',
+          })
+        }
+      })
+      .catch(err => {
+        console.log(err)
+        this.setState({
+          snackerBarStatus: true,
+          snackbarType: 'error',
+          snackbarMessage: 'Đã có lỗi từ máy chủ',
+          isButtonDisabled: false,
+          isLoading: false,
+        })
+      })
+  }
+
+  callbackSnackerBarHanlder = (callback) => {
+    this.setState({ snackerBarStatus: callback });
+  }
+
   render = () => {
     const { classes, className, ...rest } = this.props;
 
     return (
-      <div align="center" style={{marginTop: '-40px'}}>
-        <Avatar className={classes.avatar} src={logo}/>
+      <div align="center" style={{ marginTop: '-40px' }}>
+        <Avatar id={localStorage.getItem('username')} className={classes.avatar} src={this.state.avatarURL} />
         <Paper
-        {...rest}
-        className={clsx(classes.root, className)}
-        elevation={5}
+          {...rest}
+          className={clsx(classes.root, className)}
+          elevation={5}
         >
           <Typography
             className={classes.locationText}
             color="textSecondary"
             variant="body1"
-            style={{paddingBottom: '2em'}}
+            style={{ paddingBottom: '2em' }}
           >
             {this.state.type}
           </Typography>
@@ -116,19 +168,28 @@ class AccountProfile extends React.Component {
             className={classes.dateText}
             color="textSecondary"
             variant="subtitle1"
-            style={{paddingBottom: '1em'}}
+            style={{ paddingBottom: '1em' }}
           >
             {this.state.currentTime} (+7)
           </Typography>
           <Divider />
           <Fab
             className={classes.uploadButton}
-            style={{background: this.state.themeColor}}
+            style={{ background: this.state.themeColor }}
+            onClick={() => { document.getElementById('filePicker').click() }}
             variant="extended"
           >
             Cập nhật ảnh đại diện
           </Fab>
         </Paper>
+        <SnackDialog
+          variant={this.state.snackbarType}
+          message={this.state.snackbarMessage}
+          className={this.state.snackbarType}
+          callback={this.callbackSnackerBarHanlder}
+          open={this.state.snackerBarStatus}
+        />
+        <input id="filePicker" type="file" onChange={e => this.uploadAvatar(e)} accept="image/*" style={{ 'display': 'none' }} />
       </div>
     )
   }

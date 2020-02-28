@@ -7,7 +7,7 @@ import {
   Typography, Chip, TextField,
   Grid, MenuItem, Tooltip, IconButton,
   Menu, ListItemIcon, ListItemText, colors,
-  Card, CardHeader, CardContent, CardActions,
+  Card, CardHeader, CardContent, CardActions, Avatar,
 } from '@material-ui/core';
 
 import {
@@ -64,9 +64,18 @@ const useStyles = (theme) => ({
     width: '100%'
   },
   customInput: {
-    '& label.Mui-focused': { color: '#009688' },
+    '& label.Mui-focused': { color: 'white' },
+    '& .MuiInput-input': {
+      color: '#FFFFFF',
+    },
+    '& .MuiSelect-icon': {
+      color: 'white'
+    },
     '& .MuiInput-underline:after': {
-      borderBottomColor: '#009688',
+      borderBottomColor: 'white',
+    },
+    '& .MuiInput-underline:before': {
+      borderBottomColor: 'white',
     },
   },
 });
@@ -106,6 +115,11 @@ class UserList extends React.Component {
       //for Users TableData
       isLoadingData: true,
       tableColumns: [
+        {
+          title: '',
+          field: 'avatar',
+          render: rowData => <Avatar alt='' src={(rowData.avatar !== '' || rowData.avatar !== undefined)? rowData.avatar : './default-user.png'} style={{width: 40, borderRadius: '50%'}} />
+        },
         {
           title: 'Tên thánh',
           field: 'holyname',
@@ -416,6 +430,31 @@ class UserList extends React.Component {
         }
           subtitle={
             <Toolbar disableGutters variant="dense">
+              <Grid container spacing={1} alignItems="flex-end">
+                <Grid item>
+                  <Typography variant="subtitle2" style={{fontStyle: 'italic'}}>Sinh nhật và bổn mạng:</Typography>
+                </Grid>
+                <Grid item>
+                  <TextField
+                    select
+                    className={classes.customInput}
+                    value={this.state.selectedMonth}
+                    onChange={e => this.handleMonthChange(e, "selectedMonth")}
+                    fullWidth
+                    SelectProps={{
+                      MenuProps: {
+                        className: classes.menu
+                      }
+                    }}
+                  >
+                    {this.state.months.map(month => (
+                      <MenuItem key={month.title} value={month.value}>
+                        {month.title}
+                      </MenuItem>
+                    ))}
+                  </TextField>
+                </Grid>
+              </Grid>
               <div style={{ flex: 1 }} />
               <Tooltip title='Mở rộng'>
                 <IconButton onClick={(e) => this.setState({ isOpenActionMenu: e.target })}>
@@ -428,33 +467,6 @@ class UserList extends React.Component {
           <div className={classes.content} style={{ height: (this.state.windowHeight - 332) }}>
             <MuiThemeProvider theme={customColor}>
               <MaterialTable
-                title={
-                  <Grid container spacing={1} alignItems="flex-end">
-                    <Grid item>
-                      <Typography variant="subtitle1">Sinh nhật và bổn mạng:</Typography>
-                    </Grid>
-                    <Grid item>
-                      <TextField
-                        select
-                        className={classes.customInput}
-                        value={this.state.selectedMonth}
-                        onChange={e => this.handleMonthChange(e, "selectedMonth")}
-                        fullWidth
-                        SelectProps={{
-                          MenuProps: {
-                            className: classes.menu
-                          }
-                        }}
-                      >
-                        {this.state.months.map(month => (
-                          <MenuItem key={month.title} value={month.value}>
-                            {month.title}
-                          </MenuItem>
-                        ))}
-                      </TextField>
-                    </Grid>
-                  </Grid>
-                }
                 icons={tableIcons}
                 data={this.state.usersData.map(row => this.state.selectedRows.find(selected => selected._id === row._id) ? { ...row, tableData: { checked: true } } : { ...row, tableData: { checked: false } })}
                 columns={this.state.tableColumns}
@@ -481,6 +493,7 @@ class UserList extends React.Component {
                     fontSize: 15
                   },
                   search: true,
+                  showTitle: false,
                   maxBodyHeight: this.state.windowHeight - 397,
                   minBodyHeight: this.state.windowHeight - 397,
                   debounceInterval: 500,

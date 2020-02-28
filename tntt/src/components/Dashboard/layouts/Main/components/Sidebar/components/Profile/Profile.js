@@ -3,7 +3,6 @@ import { Link as RouterLink } from 'react-router-dom';
 import clsx from 'clsx';
 import { withStyles } from '@material-ui/styles';
 import { Avatar, Typography, Badge } from '@material-ui/core';
-import logo from './default-user.png';
 import masterLogo from './logo.png';
 import axios from 'axios';
 
@@ -36,12 +35,14 @@ class Profile extends React.Component {
     this.state = {
       fullname: '',
       type:'',
+      avatarURL: ''
     }
   }
 
   componentDidMount = () => {
     this._isMounted = true
     this.getUser();
+    this.getUserAvatar();
   }
 
   componentWillUnmount = () => {
@@ -59,6 +60,21 @@ class Profile extends React.Component {
       default:
         return 'Khách';
     }
+  }
+
+  getUserAvatar = () => {
+    return axios.get(`/backend/user/avatar/by-name/${localStorage.getItem('username')}`, {
+      responseType: 'blob'
+    })
+      .then(res => {
+        let data = new Blob([res.data], { type: `${res.headers['content-type']}` })
+        let avatarUrl = window.URL.createObjectURL(data) || window.webkitURL.createObjectURL(data);
+        if (this._isMounted) {
+          this.setState({
+            avatarURL: avatarUrl
+          })
+        }
+      })
   }
 
   getUser = () => {
@@ -92,7 +108,7 @@ class Profile extends React.Component {
           alt="Person"
           className={classes.avatar}
           component={RouterLink}
-          src={logo}
+          src={this.state.avatarURL}
           to="/account"
         />
         </Badge>

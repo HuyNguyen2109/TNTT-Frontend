@@ -12,7 +12,8 @@ const useStyles = theme => ({
     }
   },
   root: {
-    padding: theme.spacing(3)
+    padding: theme.spacing(2),
+    marginTop: theme.spacing(2)
   }
 });
 
@@ -29,6 +30,7 @@ class Account extends React.Component {
         <Grid
           container
           spacing={4}
+          style={{margin: 0, width: '100%'}}
         >
           <Grid
             item

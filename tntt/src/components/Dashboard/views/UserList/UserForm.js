@@ -56,7 +56,7 @@ class UserForm extends React.Component {
       birthday: moment('1990-01-01').format(),
       holyBirthday: moment('1990-01-01').format(),
       class: '',
-      type: '',
+      type: 'Member',
       defaultDate: moment('1990-01-01').format(),
       // for text field list
       classes: [],

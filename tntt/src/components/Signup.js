@@ -1,16 +1,13 @@
 import React from 'react';
 import axios from 'axios';
 import {
-  Avatar, Button, CssBaseline, TextField, Link, Grid, Box, Typography, Container, Dialog, DialogContent, DialogContentText, DialogTitle,
-  useMediaQuery, useTheme, MenuItem, CircularProgress, DialogActions, AppBar, Toolbar, colors, FormControlLabel, Checkbox
+  Avatar, Button, TextField, Link, Grid, Typography, Dialog, DialogContent, DialogContentText, DialogTitle,
+  useMediaQuery, useTheme, MenuItem, CircularProgress, DialogActions, AppBar, Toolbar, colors, FormControlLabel, Checkbox, Popover, Divider, IconButton
 } from '@material-ui/core';
 import PersonAddOutlinedIcon from '@material-ui/icons/PersonAddOutlined';
-import Copyright from './Copyright';
 import SnackDialog from './SnackerBar';
 import {
   withStyles,
-  createMuiTheme,
-  MuiThemeProvider,
   lighten
 } from '@material-ui/core/styles';
 import { Redirect } from 'react-router';
@@ -22,7 +19,7 @@ import {
 import DateFnsUtils from '@date-io/date-fns';
 import moment from 'moment';
 import backgroundImg from '../img/background2.jpg'
-import { LockOpenOutlined } from '@material-ui/icons';
+import { LockOpenOutlined, Clear } from '@material-ui/icons';
 
 const useStyles = theme => ({
   '@global': {
@@ -53,7 +50,7 @@ const useStyles = theme => ({
   container: {
     position: 'relative',
     top: '50%',
-    left: '50%', 
+    left: '50%',
     transform: 'translate(-50%, -50%)'
   },
   menu: {
@@ -69,13 +66,13 @@ const useStyles = theme => ({
   },
   form: {
     width: '100%', // Fix IE 11 issue.
-    padding: theme.spacing(4)
+    padding: theme.spacing(2)
   },
   submit: {
-    margin: theme.spacing(3, 0, 2),
+    marginRight: theme.spacing(1)
   },
   cancel: {
-    margin: theme.spacing(-1, 0, 2),
+    marginRight: theme.spacing(1)
   },
   processing: {
     margin: theme.spacing(1),
@@ -129,6 +126,64 @@ const ResponsiveDialog = (props) => {
   );
 }
 
+class Policies extends React.Component {
+  callbackForClosePopover = () => {
+    this.props.callback(null)
+  }
+
+  render = () => {
+    const { anchorEl } = this.props
+
+    return (
+      <Popover
+        open={Boolean(anchorEl)}
+        anchorEl={anchorEl}
+        onClose={this.callbackForClosePopover}
+        anchorOrigin={{
+          vertical: 'top',
+          horizontal: 'center',
+        }}
+        transformOrigin={{
+          vertical: 'bottom',
+          horizontal: 'center',
+        }}
+      >
+        <div style={{ margin: '1em', width: '400px' }}>
+          <Toolbar disableGutters>
+            <Typography variant='subtitle1' style={{ fontWeight: 'bold' }}>Điều khoản trang web Xứ Đoàn</Typography>
+            <div style={{ flex: 1 }} />
+            <IconButton onClick={this.callbackForClosePopover}>
+              <Clear fontSize='small'/>
+            </IconButton>
+          </Toolbar>
+          <Divider />
+          <div style={{ overflowX: 'auto', overflowY: 'hidden', marginTop: '1em' }}>
+            <Typography paragraph variant='caption'>
+              Vì lí do bảo mật xin bạn dành ít chút thời gian đọc qua các điều khoản sau:
+            </Typography>
+            <Typography paragraph variant='caption'>
+              1. Điều tiên quyết để được cấp tài khoản: Bạn phải là thành viên còn đang hoạt động trong Xứ Đoàn
+            </Typography>
+            <Typography paragraph variant='caption'>
+              2. Mỗi thành viên khi đăng ký chỉ được cấp phát 1 và chỉ 1 tài khoản trong suốt quá trình hoạt động
+              trong Xứ Doàn
+            </Typography>
+            <Typography paragraph variant='caption'>
+              3. Đây là trang web nội bộ của Xứ Đoàn, xin không chia sẻ bất kì thông tin gì về tài khoản bạn được cấp
+              phép cho người nào khác, việc đó có thể dẫn đến hậu quả nghiêm trọng
+            </Typography>
+            <Typography paragraph variant='caption'>
+              4. Khi không truy cập được tài khoản hay có nghi ngờ tài khoản bị người khác lấy và thay đổi, xin báo ngay
+              cho Ban Quản trị thông qua các kênh liên lạc (Facebook, Email, Nút "Quên mật khẩu tại trang đăng nhập", ....) để sớm khóa tài khoản cũ và cấp
+              lại tài khoản mới
+            </Typography>
+          </div>
+        </div>
+      </Popover>
+    )
+  }
+}
+
 class Signup extends React.Component {
   constructor(props) {
     super(props)
@@ -150,6 +205,7 @@ class Signup extends React.Component {
       windowHeight: 0,
       windowWidth: 0,
       isAgreePolicies: false,
+      isOpenPoliciesPanel: null,
     }
     this.updateWindowDimensions = this.updateWindowDimensions.bind(this);
     this._isMounted = false;
@@ -164,6 +220,15 @@ class Signup extends React.Component {
   componentWillUnmount = () => {
     this._isMounted = false;
     window.removeEventListener("resize", this.updateWindowDimensions.bind(this));
+    this.setState({
+      holyName: "",
+      firstName: "",
+      lastName: "",
+      email: "",
+      phoneNumber: "",
+      selectedDate: moment("1990-01-01").format(),
+      selectedHolyDate: moment("1990-01-01").format(),
+    })
   }
 
   updateWindowDimensions() {
@@ -295,7 +360,7 @@ class Signup extends React.Component {
               </Link>
             </Toolbar>
           </AppBar>
-          <div className={classes.container} style={(this.state.windowWidth <= 840) ? { padding: '1em' } : { padding: '4em' }}>
+          <div className={classes.container} style={(this.state.windowWidth <= 840) ? { padding: '1em', marginTop: '-2em' } : { padding: (0, '4em', 0, '4em'), marginTop: '-4em' }}>
             <Toolbar disableGutters>
               <div style={{ flex: 1 }} />
               <div align={this.state.windowWidth <= 840 ? 'center' : 'right'}>
@@ -431,79 +496,49 @@ class Signup extends React.Component {
                   </Grid>
                 </MuiPickersUtilsProvider>
               </Grid>
-            </form>
-            <Toolbar>
-              <FormControlLabel 
-                control={<Checkbox checked={this.state.isAgreePolicies} onClick={() => {this.setState({isAgreePolicies: !this.state.isAgreePolicies})}}/>}
+              <FormControlLabel
+                control={<Checkbox checked={this.state.isAgreePolicies} onClick={() => { this.setState({ isAgreePolicies: !this.state.isAgreePolicies }) }} />}
                 label={<Typography variant='subtitle2'>
                   Khi tích chọn là bạn đã đồng ý với
-                  <Link href='#' style={{marginLeft: '4px', marginRight: '4px'}}>Điều khoản</Link>
+                  <Link href='#' style={{ marginLeft: '4px', marginRight: '4px' }} onClick={(e) => { this.setState({ isOpenPoliciesPanel: e.target }) }}>Điều khoản</Link>
                   của Ban điều hành
                 </Typography>}
               />
+            </form>
+            <Toolbar disableGutters>
+              <div style={{ flex: 1 }} />
+              <Button
+                disabled={((this.state.holyName !== "" &&
+                  this.state.firstName !== "" &&
+                  this.state.lastName !== "" &&
+                  this.state.email !== "" &&
+                  this.state.phoneNumber !== "" &&
+                  this.state.selectedDate !== this.state.defaultDate &&
+                  this.state.selectedHolyDate !== this.state.defaultDate) && !this.state.isSignupClicked && this.state.isAgreePolicies) ? false : true}
+                variant="contained"
+                color="primary"
+                className={classes.submit}
+                onClick={e => this.validateAndSend(e)}
+              >
+                Đăng ký {(this.state.isSignupClicked) ? <CircularProgress className={classes.processing} size={15}></CircularProgress> : null}
+              </Button>
+              <Button
+                disabled={(this.state.isSignupClicked === false) ? false : true}
+                variant="outlined"
+                color="primary"
+                className={classes.cancel}
+                onClick={this.clearAllData}
+              >
+                Xóa
+            </Button>
             </Toolbar>
           </div>
+          <SnackDialog variant="error" message={this.state.snackbarMessage} className="error" callback={this.callbackSnackerBarHanlder} open={this.state.snackerBarStatus} />
+          <ResponsiveDialog open={this.state.openDialog} />
+          <Policies anchorEl={this.state.isOpenPoliciesPanel} callback={(cb) => { this.setState({ isOpenPoliciesPanel: cb }) }} />
         </Grid>
         <Grid item xs={false} sm={false} md={6} lg={5} className={classes.background} />
       </Grid>
-      // <Container component="main" maxWidth="xs" className={classes.container}>
-      //   <CssBaseline />
-      //   <div className={classes.paper}>
-      //     <Avatar className={classes.avatar}>
-      //       <PersonAddOutlinedIcon />
-      //     </Avatar>
-      //     <Typography component="h1" variant="h5">
-      //       Đăng ký tài khoản
-      //   </Typography>
-      //     <form className={classes.form} noValidate>
-      //       <Grid container spacing={1}>
-
-      //       </Grid>
-      //       <Button
-      //         disabled={((this.state.holyName !== "" &&
-      //           this.state.firstName !== "" &&
-      //           this.state.lastName !== "" &&
-      //           this.state.email !== "" &&
-      //           this.state.phoneNumber !== "" &&
-      //           this.state.selectedDate !== this.state.defaultDate &&
-      //           this.state.selectedHolyDate !== this.state.defaultDate) && !this.state.isSignupClicked) ? false : true}
-      //         fullWidth
-      //         variant="contained"
-      //         color="primary"
-      //         margin="dense"
-      //         className={classes.submit}
-      //         onClick={e => this.validateAndSend(e)}
-      //       >
-      //         Đăng ký {(this.state.isSignupClicked) ? <CircularProgress className={classes.processing} size={15}></CircularProgress> : null}
-      //       </Button>
-      //       <Button
-      //         disabled={(this.state.isSignupClicked === false) ? false : true}
-      //         fullWidth
-      //         variant="outlined"
-      //         color="primary"
-      //         className={classes.cancel}
-      //         onClick={this.clearAllData}
-      //       >
-      //         Xóa
-      //       </Button>
-      //       <SnackDialog variant="error" message={this.state.snackbarMessage} className="error" callback={this.callbackSnackerBarHanlder} open={this.state.snackerBarStatus} />
-      //       <ResponsiveDialog open={this.state.openDialog} />
-      //       <Grid container justify="flex-end">
-      //         <Grid item>
-      //           <Link href="/" underline="none">
-      //             <Button
-      //               size="small"
-      //               color="primary"
-      //             >Bạn đã có tài khoản? Đăng nhập ngay!</Button>
-      //           </Link>
-      //         </Grid>
-      //       </Grid>
-      //     </form>
-      //   </div>
-      //   <Box mt={5}>
-      //     <Copyright />
-      //   </Box>
-      // </Container>
     )
   };
 }

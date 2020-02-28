@@ -1,17 +1,16 @@
 import React from 'react';
 import clsx from 'clsx';
-import { AppBar, Toolbar, Hidden, IconButton, Tooltip, Typography, colors } from '@material-ui/core';
+import { AppBar, Toolbar, Hidden, IconButton, Tooltip, Typography } from '@material-ui/core';
 import MenuIcon from '@material-ui/icons/Menu';
 import {
   PowerSettingsNew, Facebook
 } from '@material-ui/icons';
 import { withStyles } from '@material-ui/styles';
 import Promise from 'bluebird';
-import {lighten} from '@material-ui/core/styles'
 
 const useStyles = theme => ({
   root: {
-    backgroundColor: `${lighten(colors.cyan[50], 0.7)}`,
+    backgroundColor: `white`,
     position: 'absolute',
     background: 'transparent',
     boxShadow: 'none',

@@ -108,6 +108,9 @@ class AccountProfile extends React.Component {
           })
         }
       })
+      .catch(err => {
+        console.log(err)
+      })
   }
 
   uploadAvatar = (e) => {
@@ -122,6 +125,7 @@ class AccountProfile extends React.Component {
             snackbarType: 'success',
             snackbarMessage: 'Tải lên thành công',
           })
+          setTimeout(window.location.reload(), 2000)
         }
       })
       .catch(err => {

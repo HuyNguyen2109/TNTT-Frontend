@@ -51,6 +51,8 @@ class Profile extends React.Component {
 
   formatUserType = (type) => {
     switch(type) {
+      case 'root':
+        return 'Lâp trình viên';
       case 'Admin':
         return 'Ban điều hành';
       case 'Leader': 
@@ -73,6 +75,11 @@ class Profile extends React.Component {
           this.setState({
             avatarURL: avatarUrl
           })
+        }
+      })
+      .catch(err => {
+        if(localStorage.getItem('username') === 'root') {
+          console.log('')
         }
       })
   }

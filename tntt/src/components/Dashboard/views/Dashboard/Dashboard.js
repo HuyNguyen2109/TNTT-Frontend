@@ -414,7 +414,8 @@ class Dashboard extends React.Component {
     return axios
       .delete('/backend/children/delete/by-names', {
         params: {
-          names: childrenNames
+          names: childrenNames,
+          username: localStorage.getItem('username')
         }
       })
       .then(res => {
@@ -447,7 +448,11 @@ class Dashboard extends React.Component {
       'class': this.state.selectedClass
     }
     return axios
-      .post(`backend/children/lock-scores`, typeInfo)
+      .post(`backend/children/lock-scores`, typeInfo, {
+        params: {
+          username: localStorage.getItem('username')
+        }
+      })
       .then(res => {
         if (res.data.code === 'I001') {
           this.reloadData();
@@ -466,7 +471,11 @@ class Dashboard extends React.Component {
   resetScores = () => {
     this.setState({isOpenLockScoreMenu: null})
     return axios
-      .delete(`/backend/children/reset-scores/${this.state.selectedClass}`)
+      .delete(`/backend/children/reset-scores/${this.state.selectedClass}`, {
+        params: {
+          username: localStorage.getItem('username')
+        }
+      })
       .then(res => {
         if (res.data.code === 'I001') {
           this.reloadData();

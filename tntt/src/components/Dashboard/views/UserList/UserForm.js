@@ -10,7 +10,7 @@ import {
 } from '@material-ui/pickers';
 import DateFnsUtils from '@date-io/date-fns';
 import {
-  Grid, Button, TextField, InputAdornment, MenuItem, Collapse, Typography
+  Grid, Button, TextField, InputAdornment, MenuItem, Collapse, Typography, Avatar
 } from '@material-ui/core'
 import {
   AccountCircle
@@ -74,7 +74,13 @@ class UserForm extends React.Component {
           type: 'Member'
         }
       ],
+      windowHeight: 0,
+      windowWidth: 0,
+      userAvatar: '',
     };
+
+    this.updateWindowDimensions = this.updateWindowDimensions.bind(this);
+    this._isMounted = false;
   }
 
   removeVietnameseLetter = (str) => {
@@ -108,17 +114,26 @@ class UserForm extends React.Component {
   }
 
   componentDidMount = () => {
+    this._isMounted = true;
+    this.updateWindowDimensions();
+    window.addEventListener('resize', this.updateWindowDimensions.bind(this));
     return this.getClass();
   }
 
   componentDidUpdate = (prevProps) => {
-    if(this.props.type === 'edit' && prevProps.selectedData !== this.props.selectedData && this.props.selectedData.username !== undefined) {
+    if (this._isMounted && this.props.type === 'edit' && prevProps.selectedData !== this.props.selectedData && this.props.selectedData.username !== undefined) {
       const username = this.props.selectedData.username;
 
-      return axios
-        .get(`/backend/user/get-user/${username}`)
+      return axios.all([
+        axios.get(`/backend/user/get-user/${username}`),
+        axios.get(`/backend/user/avatar/by-name/${username}`, {
+          responseType: 'blob'
+        })
+      ])
         .then(result => {
-          const data = result.data.data;
+          const data = result[0].data.data;
+          let blob = new Blob([result[1].data], { type: `${result[1].headers['content-type']}` })
+          let avatarUrl = window.URL.createObjectURL(blob) || window.webkitURL.createObjectURL(blob);
           this.setState({
             username: data.username,
             holyName: data.holyname,
@@ -129,6 +144,7 @@ class UserForm extends React.Component {
             holyBirthday: (data.holy_birthday === '') ? this.state.holyBirthday : moment(data.holy_birthday).format(),
             class: data.class,
             type: data.type,
+            userAvatar: avatarUrl,
           });
         })
         .catch(err => {
@@ -137,24 +153,38 @@ class UserForm extends React.Component {
     }
   }
 
+  componentWillUnmount = () =>{
+    window.removeEventListener("resize", this.updateWindowDimensions.bind(this));
+    this._isMounted = false;
+  }
+
+  updateWindowDimensions = () => {
+    if (this._isMounted) {
+      this.setState({
+        windowHeight: window.innerHeight,
+        windowWidth: window.innerWidth
+      })
+    }
+  }
+
   createNewUser = () => {
     let arr = this.state.fullname.split(' ');
-    let first = this.removeVietnameseLetter(arr[arr.length -1].toLowerCase());
+    let first = this.removeVietnameseLetter(arr[arr.length - 1].toLowerCase());
     let last = '';
-    for(let i = 0; i < arr.length - 1; i++) {
+    for (let i = 0; i < arr.length - 1; i++) {
       last += arr[i].charAt(0).toLowerCase();
     }
     let birthday = moment(this.state.birthday).format('YYYY-MM-DD');
     const newUser = {
-      'username': first+last+birthday.split('-')[2]+birthday.split('-')[1]+birthday.split('-')[0],
+      'username': first + last + birthday.split('-')[2] + birthday.split('-')[1] + birthday.split('-')[0],
       'email': this.state.email,
       'holyname': this.state.holyName,
       'fullname': this.state.fullname,
       'phone_number': this.state.phone,
-      'birthday': (this.state.birthday !== this.state.defaultDate)? moment(this.state.birthday).format('YYYY-MM-DD') : '',
-      'holy_birthday': (this.state.holyBirthday !== this.state.defaultDate)? moment(this.state.holyBirthday).format('YYYY-MM-DD') : '',
+      'birthday': (this.state.birthday !== this.state.defaultDate) ? moment(this.state.birthday).format('YYYY-MM-DD') : '',
+      'holy_birthday': (this.state.holyBirthday !== this.state.defaultDate) ? moment(this.state.holyBirthday).format('YYYY-MM-DD') : '',
       'type': this.state.type,
-      'class': this.state.class
+      'class': this.state.class,
     };
 
     return axios.post('/backend/user/register', newUser)
@@ -238,170 +268,181 @@ class UserForm extends React.Component {
     const { classes, open } = this.props;
 
     return (
-      <Collapse in={open} style={{marginTop: '2em'}}>
-        <Typography variant="h6">
+      <Collapse in={open} style={{ marginTop: '2em' }}>
+        <Typography variant="h5">
           Thông tin tài khoản
         </Typography>
-        <Grid container spacing={2}>
-          <Grid item xs={12} sm={4}>
-            <TextField
-              fullWidth
-              disabled
-              className={classes.customInput}
-              value={this.state.username}
-              label="Tên tài khoản"
-              onChange={e => this.handleFormChange(e, 'username')}
-              InputProps={{
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <AccountCircle />
-                  </InputAdornment>
-                )
-              }}
-            />
+        <Grid container spacing={2} style={{ margin: 0, width: '100%' }}>
+          <Grid item xs={false} md={3} lg={3} style={(this.state.windowWidth <= 500)? {display: 'none'}: {}}>
+            <div align='center'>
+              <Avatar alt={this.state.username} src={this.state.userAvatar} style={{ width: '10em', height: '10em' }} />
+            </div>
           </Grid>
-          <Grid item xs={12} sm={4}>
-            <TextField
-              fullWidth
-              required
-              className={classes.customInput}
-              disabled={(this.props.type==='edit')? true: false}
-              value={this.state.holyName}
-              label="Tên thánh"
-              onChange={e => this.handleFormChange(e, 'holyName')}
-              InputProps={{
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <AccountCircle />
-                  </InputAdornment>
-                )
-              }}
-            />
-          </Grid>
-          <Grid item xs={12} sm={4}>
-            <TextField
-              fullWidth
-              disabled={(this.props.type==='edit')? true: false}
-              value={this.state.fullname}
-              label="Họ và tên"
-              className={classes.customInput}
-              onChange={e => this.handleFormChange(e, 'fullname')}
-              InputProps={{
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <AccountCircle />
-                  </InputAdornment>
-                )
-              }}
-            />
-          </Grid>
-          <Grid item xs={12} sm={6}>
-            <TextField
-              fullWidth
-              required
-              disabled={(this.props.type==='edit')? true: false}
-              value={this.state.email}
-              className={classes.customInput}
-              label="Email"
-              onChange={e => this.handleFormChange(e, 'email')}
-              InputProps={{
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <AccountCircle />
-                  </InputAdornment>
-                )
-              }}
-            />
-          </Grid>
-          <Grid item xs={12} sm={6}>
-            <TextField
-              fullWidth
-              required
-              className={classes.customInput}
-              disabled={(this.props.type==='edit')? true: false}
-              value={this.state.phone}
-              label="Số điện thoại"
-              onChange={e => this.handleFormChange(e, 'phone')}
-              InputProps={{
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <AccountCircle />
-                  </InputAdornment>
-                )
-              }}
-            />
-          </Grid>
-          <MuiPickersUtilsProvider utils={DateFnsUtils}>
-            <Grid item xs={12} sm={3}>
-              <KeyboardDatePicker
-                fullWidth
-                required
-                disabled={(this.props.type==='edit')? true: false}
-                format="dd/MM/yyyy"
-                label="Ngày sinh"
-                value={this.state.birthday}
-                className={classes.customInput}
-                onChange={e => this.handleFormChange(e, "birthday")}
-                KeyboardButtonProps={{
-                  'aria-label': 'change date',
-                }} />
-            </Grid>
-            <Grid item xs={12} sm={3}>
-              <KeyboardDatePicker
-                fullWidth
-                required
-                disabled={(this.props.type==='edit')? true: false}
-                format="dd/MM/yyyy"
-                label="Bổn mạng"
-                className={classes.customInput}
-                value={this.state.holyBirthday}
-                onChange={e => this.handleFormChange(e, "holyBirthday")}
-                KeyboardButtonProps={{
-                  'aria-label': 'change date',
-                }} />
-            </Grid>
-          </MuiPickersUtilsProvider>
-          <Grid item xs={12} sm={3}>
-            <TextField
-              select
-              label="Chức vụ"
-              value={this.state.type}
-              className={classes.customInput}
-              onChange={e => this.handleFormChange(e, "type")}
-              fullWidth
-              SelectProps={{
-                MenuProps: {
-                  className: classes.menu
-                }
-              }}
-            >
-              {this.state.types.map(typeEl => (
-                <MenuItem key={typeEl.type} value={typeEl.type}>
-                  {typeEl.title}
-                </MenuItem>
-              ))}
-            </TextField>
-          </Grid>
-          <Grid item xs={12} sm={3}>
-            <TextField
-              select
-              label="Lớp"
-              value={this.state.class}
-              className={classes.customInput}
-              onChange={e => this.handleFormChange(e, "class")}
-              fullWidth
-              SelectProps={{
-                MenuProps: {
-                  className: classes.menu
-                }
-              }}
-            >
-              {this.state.classes.map(classEl => (
-                <MenuItem key={classEl.ID} value={classEl.ID}>
-                  {classEl.Value}
-                </MenuItem>
-              ))}
-            </TextField>
+          <Grid item xs={12} md={9} lg={9}>
+            <div>
+              <Grid container spacing={2} style={{ margin: 0, width: '100%' }}>
+                <Grid item xs={12} sm={4}>
+                  <TextField
+                    fullWidth
+                    disabled
+                    className={classes.customInput}
+                    value={this.state.username}
+                    label="Tên tài khoản"
+                    onChange={e => this.handleFormChange(e, 'username')}
+                    InputProps={{
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          <AccountCircle />
+                        </InputAdornment>
+                      )
+                    }}
+                  />
+                </Grid>
+                <Grid item xs={12} sm={4}>
+                  <TextField
+                    fullWidth
+                    required
+                    className={classes.customInput}
+                    disabled={(this.props.type === 'edit') ? true : false}
+                    value={this.state.holyName}
+                    label="Tên thánh"
+                    onChange={e => this.handleFormChange(e, 'holyName')}
+                    InputProps={{
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          <AccountCircle />
+                        </InputAdornment>
+                      )
+                    }}
+                  />
+                </Grid>
+                <Grid item xs={12} sm={4}>
+                  <TextField
+                    fullWidth
+                    disabled={(this.props.type === 'edit') ? true : false}
+                    value={this.state.fullname}
+                    label="Họ và tên"
+                    className={classes.customInput}
+                    onChange={e => this.handleFormChange(e, 'fullname')}
+                    InputProps={{
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          <AccountCircle />
+                        </InputAdornment>
+                      )
+                    }}
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    required
+                    disabled={(this.props.type === 'edit') ? true : false}
+                    value={this.state.email}
+                    className={classes.customInput}
+                    label="Email"
+                    onChange={e => this.handleFormChange(e, 'email')}
+                    InputProps={{
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          <AccountCircle />
+                        </InputAdornment>
+                      )
+                    }}
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    required
+                    className={classes.customInput}
+                    disabled={(this.props.type === 'edit') ? true : false}
+                    value={this.state.phone}
+                    label="Số điện thoại"
+                    onChange={e => this.handleFormChange(e, 'phone')}
+                    InputProps={{
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          <AccountCircle />
+                        </InputAdornment>
+                      )
+                    }}
+                  />
+                </Grid>
+                <MuiPickersUtilsProvider utils={DateFnsUtils}>
+                  <Grid item xs={12} sm={3}>
+                    <KeyboardDatePicker
+                      fullWidth
+                      required
+                      disabled={(this.props.type === 'edit') ? true : false}
+                      format="dd/MM/yyyy"
+                      label="Ngày sinh"
+                      value={this.state.birthday}
+                      className={classes.customInput}
+                      onChange={e => this.handleFormChange(e, "birthday")}
+                      KeyboardButtonProps={{
+                        'aria-label': 'change date',
+                      }} />
+                  </Grid>
+                  <Grid item xs={12} sm={3}>
+                    <KeyboardDatePicker
+                      fullWidth
+                      required
+                      disabled={(this.props.type === 'edit') ? true : false}
+                      format="dd/MM/yyyy"
+                      label="Bổn mạng"
+                      className={classes.customInput}
+                      value={this.state.holyBirthday}
+                      onChange={e => this.handleFormChange(e, "holyBirthday")}
+                      KeyboardButtonProps={{
+                        'aria-label': 'change date',
+                      }} />
+                  </Grid>
+                </MuiPickersUtilsProvider>
+                <Grid item xs={12} sm={3}>
+                  <TextField
+                    select
+                    label="Chức vụ"
+                    value={this.state.type}
+                    className={classes.customInput}
+                    onChange={e => this.handleFormChange(e, "type")}
+                    fullWidth
+                    SelectProps={{
+                      MenuProps: {
+                        className: classes.menu
+                      }
+                    }}
+                  >
+                    {this.state.types.map(typeEl => (
+                      <MenuItem key={typeEl.type} value={typeEl.type}>
+                        {typeEl.title}
+                      </MenuItem>
+                    ))}
+                  </TextField>
+                </Grid>
+                <Grid item xs={12} sm={3}>
+                  <TextField
+                    select
+                    label="Lớp"
+                    value={this.state.class}
+                    className={classes.customInput}
+                    onChange={e => this.handleFormChange(e, "class")}
+                    fullWidth
+                    SelectProps={{
+                      MenuProps: {
+                        className: classes.menu
+                      }
+                    }}
+                  >
+                    {this.state.classes.map(classEl => (
+                      <MenuItem key={classEl.ID} value={classEl.ID}>
+                        {classEl.Value}
+                      </MenuItem>
+                    ))}
+                  </TextField>
+                </Grid>
+              </Grid>
+            </div>
           </Grid>
         </Grid>
         <Grid container alignItems="flex-start" justify="flex-end" direction="row" spacing={2}>
@@ -418,12 +459,12 @@ class UserForm extends React.Component {
               <Button
                 variant="contained"
                 disabled={
-                  (this.state.holyname === '' || 
-                  this.state.fullname === '' || 
-                  this.state.email === '' ||
-                  this.state.phone === '' || 
-                  this.state.birthday === this.state.defaultDate || 
-                  this.state.holyBirthday === this.state.defaultDate)? true : false}
+                  (this.state.holyname === '' ||
+                    this.state.fullname === '' ||
+                    this.state.email === '' ||
+                    this.state.phone === '' ||
+                    this.state.birthday === this.state.defaultDate ||
+                    this.state.holyBirthday === this.state.defaultDate) ? true : false}
                 size="small"
                 className={classes.primaryButton}
                 onClick={this.createNewUser}

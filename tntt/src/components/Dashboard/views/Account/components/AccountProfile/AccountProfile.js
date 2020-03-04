@@ -10,8 +10,11 @@ import {
   Typography,
   Divider,
   Fab,
+  Toolbar,
+  colors,
 } from '@material-ui/core';
 import SnackDialog from '../../../../../SnackerBar';
+import { AccountCircle, Delete } from '@material-ui/icons';
 
 const useStyles = theme => ({
   root: {
@@ -52,6 +55,7 @@ class AccountProfile extends React.Component {
       currentTime: '',
       //set default color
       themeColor: 'linear-gradient(to right bottom, #a1887f, #795548)',
+      secondaryColor: `linear-gradient(to right bottom, ${colors.red[300]}, ${colors.red[500]})`,
 
       snackerBarStatus: false,
       snackbarType: 'success',
@@ -60,6 +64,21 @@ class AccountProfile extends React.Component {
     };
 
   };
+
+  formatUserType = (type) => {
+    switch (type) {
+      case 'root':
+        return 'Lâp trình viên';
+      case 'Admin':
+        return 'Ban điều hành';
+      case 'Leader':
+        return 'Trưởng ngành';
+      case 'Member':
+        return 'Thành viên';
+      default:
+        return 'Khách';
+    }
+  }
 
   componentDidMount = () => {
     this._isMounted = true;
@@ -140,6 +159,30 @@ class AccountProfile extends React.Component {
       })
   }
 
+  deleteAvatar = () => {
+    return axios.delete(`/backend/user/avatar/by-name/${localStorage.getItem('username')}`)
+    .then(res => {
+      if (res.data.code === "I001") {
+        this.setState({
+          snackerBarStatus: true,
+          snackbarType: 'success',
+          snackbarMessage: 'Xóa ảnh đại diện thành công',
+        })
+        setTimeout(window.location.reload(), 1000)
+      }
+    })
+    .catch(err => {
+      console.log(err)
+      this.setState({
+        snackerBarStatus: true,
+        snackbarType: 'error',
+        snackbarMessage: 'Đã có lỗi từ máy chủ',
+        isButtonDisabled: false,
+        isLoading: false,
+      })
+    })
+  }
+
   callbackSnackerBarHanlder = (callback) => {
     this.setState({ snackerBarStatus: callback });
   }
@@ -159,9 +202,9 @@ class AccountProfile extends React.Component {
             className={classes.locationText}
             color="textSecondary"
             variant="body1"
-            style={{ paddingBottom: '2em' }}
+            style={{ paddingBottom: '1em' }}
           >
-            {this.state.type}
+            {this.formatUserType(this.state.type)}
           </Typography>
           <Typography
             variant="h6"
@@ -177,14 +220,27 @@ class AccountProfile extends React.Component {
             {this.state.currentTime} (+7)
           </Typography>
           <Divider />
-          <Fab
-            className={classes.uploadButton}
-            style={{ background: this.state.themeColor }}
-            onClick={() => { document.getElementById('filePicker').click() }}
-            variant="extended"
-          >
-            Cập nhật ảnh đại diện
-          </Fab>
+          <Toolbar disableGutters>
+            <Fab
+              className={classes.uploadButton}
+              style={{ background: this.state.themeColor }}
+              onClick={() => { document.getElementById('filePicker').click() }}
+              variant="extended"
+            >
+              <AccountCircle style={{ marginRight: '5px' }} />
+              Cập nhật ảnh đại diện
+            </Fab>
+            <div style={{flex:1}} />
+            <Fab
+              className={classes.uploadButton}
+              style={{ background: this.state.secondaryColor }}
+              onClick={this.deleteAvatar}
+              variant="extended"
+            >
+              <Delete style={{marginRight: '5px'}}/>
+              Xóa ảnh đại diện
+            </Fab>
+          </Toolbar>
         </Paper>
         <SnackDialog
           variant={this.state.snackbarType}

@@ -141,7 +141,11 @@ class BasicInformation extends React.Component {
     }
 
     return axios
-      .post(`/backend/children/update/by-name/${state.newName}`, updatedData)
+      .post(`/backend/children/update/by-name/${state.newName}`, updatedData, {
+        params: {
+          username: localStorage.getItem('username')
+        }
+      })
       .then(result => {
         if(result.data.code === 'I001') {
           this.props.updateStatus('successfully')
@@ -174,7 +178,11 @@ class BasicInformation extends React.Component {
       'absents': []
     }
     return axios
-      .post('/backend/children/create', newData)
+      .post('/backend/children/create', newData, {
+        params: {
+          username: localStorage.getItem('username')
+        }
+      })
       .then(result => {
         if(result.data.code === 'I001') {
           this.props.updateStatus('successfully')

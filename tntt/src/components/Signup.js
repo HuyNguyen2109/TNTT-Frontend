@@ -132,7 +132,7 @@ class Policies extends React.Component {
   }
 
   render = () => {
-    const { anchorEl } = this.props
+    const { anchorEl, windowWidth } = this.props
 
     return (
       <Popover
@@ -148,7 +148,7 @@ class Policies extends React.Component {
           horizontal: 'center',
         }}
       >
-        <div style={{ margin: '1em', width: '400px' }}>
+        <div style={{ margin: '1em' }}>
           <Toolbar disableGutters>
             <Typography variant='subtitle1' style={{ fontWeight: 'bold' }}>Điều khoản trang web Xứ Đoàn</Typography>
             <div style={{ flex: 1 }} />
@@ -157,7 +157,7 @@ class Policies extends React.Component {
             </IconButton>
           </Toolbar>
           <Divider />
-          <div style={{ overflowX: 'auto', overflowY: 'hidden', marginTop: '1em' }}>
+          <div style={{ overflow: 'auto', marginTop: '1em', width: (windowWidth < 350)? '260px' : ((windowWidth > 350 && windowWidth < 500)? '300px' : '400px') }}>
             <Typography paragraph variant='caption'>
               Vì lí do bảo mật xin bạn dành ít chút thời gian đọc qua các điều khoản sau:
             </Typography>
@@ -535,7 +535,7 @@ class Signup extends React.Component {
           </div>
           <SnackDialog variant="error" message={this.state.snackbarMessage} className="error" callback={this.callbackSnackerBarHanlder} open={this.state.snackerBarStatus} />
           <ResponsiveDialog open={this.state.openDialog} />
-          <Policies anchorEl={this.state.isOpenPoliciesPanel} callback={(cb) => { this.setState({ isOpenPoliciesPanel: cb }) }} />
+          <Policies anchorEl={this.state.isOpenPoliciesPanel} windowWidth={this.state.windowWidth} callback={(cb) => { this.setState({ isOpenPoliciesPanel: cb }) }} />
         </Grid>
         <Grid item xs={false} sm={false} md={6} lg={5} className={classes.background} />
       </Grid>

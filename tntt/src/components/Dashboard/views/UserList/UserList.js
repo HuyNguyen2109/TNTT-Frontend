@@ -38,6 +38,7 @@ const useStyles = (theme) => ({
   },
   masterforDevice: {
     padding: 0,
+    paddingBottom: theme.spacing(3),
     width: '100%'
   },
   root: {
@@ -114,11 +115,12 @@ class UserList extends React.Component {
       snackbarType: "success",
       //for Users TableData
       isLoadingData: true,
+      avatars: [],
       tableColumns: [
         {
           title: '',
-          field: 'avatar',
-          render: rowData => <Avatar alt='' src={(rowData.avatar !== '' || rowData.avatar !== undefined)? rowData.avatar : './default-user.png'} style={{width: 40, borderRadius: '50%'}} />
+          field: 'avatarUrl',
+          render: rowData => <Avatar alt={rowData.username} src={rowData.avatarUrl} />,
         },
         {
           title: 'Tên thánh',
@@ -190,7 +192,6 @@ class UserList extends React.Component {
         },
         {
           title: 'Tháng 7',
-          value: '07'
         },
         {
           title: 'Tháng 8',
@@ -221,10 +222,13 @@ class UserList extends React.Component {
       isLoadingFund: true,
       isOpenActionMenu: null,
     };
+
+    this.updateWindowDimensions = this.updateWindowDimensions.bind(this);
   }
 
   componentDidMount = () => {
     this._isMounted = true;
+    
     this.updateWindowDimensions();
     window.addEventListener('resize', this.updateWindowDimensions.bind(this));
     return this.getUsers()
@@ -245,16 +249,30 @@ class UserList extends React.Component {
   }
 
   getUsers = () => {
+    let users = [];
+    let requests = [];
     return axios
       .get('/backend/user/all')
       .then(result => {
-        let users = result.data.data;
+        users = result.data.data;
         const currentUser = localStorage.getItem('username');
         users.forEach(user => {
           user.birthday = (user.birthday === '') ? '' : moment(user.birthday).format('DD/MM/YYYY');
           user.holy_birthday = (user.holy_birthday === '') ? '' : moment(user.holy_birthday).format('DD/MM/YYYY');
         })
         users = users.filter(user => user.username !== currentUser);
+        requests = users.map((user, i, users) => {
+          return axios.get(`/backend/user/avatar/by-name/${user.username}`, {
+            responseType: 'blob'
+          })
+        })
+        return axios.all(requests)
+      })
+      .then(results => {
+        users.forEach((user, i) => {
+          let data = new Blob([results[i].data], { type: `${results[i].headers['content-type']}` })
+          user.avatarUrl = window.URL.createObjectURL(data) || window.webkitURL.createObjectURL(data);
+        })
         if (this._isMounted) {
           this.setState({
             usersData: users,
@@ -432,7 +450,7 @@ class UserList extends React.Component {
             <Toolbar disableGutters variant="dense">
               <Grid container spacing={1} alignItems="flex-end">
                 <Grid item>
-                  <Typography variant="subtitle2" style={{fontStyle: 'italic'}}>Sinh nhật và bổn mạng:</Typography>
+                  <Typography variant="subtitle2" style={{ fontStyle: 'italic' }}>Sinh nhật và bổn mạng:</Typography>
                 </Grid>
                 <Grid item>
                   <TextField
@@ -497,7 +515,6 @@ class UserList extends React.Component {
                   maxBodyHeight: this.state.windowHeight - 397,
                   minBodyHeight: this.state.windowHeight - 397,
                   debounceInterval: 500,
-                  actionsColumnIndex: -1,
                   rowStyle: rowData => {
                     if (this.state.selectedRows.indexOf(rowData) !== -1 || rowData.tableData.checked === true) {
                       return {

@@ -417,6 +417,20 @@ class General extends React.Component {
     };
   }
 
+  buildFireBaseNotification = (title, content, timestamp, icon) => {
+    let payload = {
+      data: {
+        title: title,
+        body: content,
+        timestamp: timestamp,
+        icon: icon
+      },
+      to: '/topics/TNTT',
+      time_to_live: 30
+    }
+    return payload
+  }
+
   displayTime = () => {
     if (this._ismounted === true) {
       let localeMoment = moment().locale('vi')
@@ -1085,16 +1099,12 @@ class General extends React.Component {
       data.append('username', localStorage.getItem('username'))
       data.append('file', e.target.files[0])
 
-      const firebaseNotification = {
-        data: {
-          title: 'Tài liệu',
-          body: `${localStorage.getItem('username')} vừa tải lên tập tin ${e.target.files[0].name}`,
-          timestamp: moment().format('DD/MM/YYYY hh:mm:ss'),
-          icon: 'Description'
-        },
-        to: '/topics/TNTT',
-        time_to_live: 30
-      }
+      const firebaseNotification = this.buildFireBaseNotification(
+        'Tài liệu',
+        `${localStorage.getItem('username')} vừa tải lên tập tin ${e.target.files[0].name}`,
+        moment().format('DD/MM/YYYY hh:mm:ss'),
+        'Description'
+      )
 
       return axios.post('/backend/document/create', data)
         .then(res => {
@@ -1702,7 +1712,7 @@ class General extends React.Component {
                   <Toolbar disableGutters={true}>
                     <div style={{ flex: 1, marginLeft: '6em' }} />
                     <div>
-                      <Typography variant="h5" style={{ textAlign: 'right' }}>Thông báo</Typography>
+                      <Typography variant="h5" style={{ textAlign: 'right' }}>Sự kiện</Typography>
                       <Typography variant="subtitle2" style={{ textAlign: 'right' }}>Từ Xứ Đoàn</Typography>
                     </div>
                     <Tooltip title="Chỉnh sửa">

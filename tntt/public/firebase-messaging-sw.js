@@ -1,3 +1,4 @@
+
 importScripts("https://www.gstatic.com/firebasejs/7.9.3/firebase-app.js");
 importScripts("https://www.gstatic.com/firebasejs/7.9.3/firebase-messaging.js");
 
@@ -18,11 +19,17 @@ if(firebase.messaging.isSupported()) {
 }
 messaging.usePublicVapidKey("BIAigkeBLHepzKgdHyoHi440KaXBX-7aLgsM5oFs2jasmUcLppxdq_qJB0TKHiXMe5-IeFN0IWBAXB-fTGIcRgg");
 messaging.setBackgroundMessageHandler(payload => {
+  // let notificationPayload = {
+  //   title: payload.data.title,
+  //   body: payload.data.body,
+  //   timestamp: payload.data.timestamp,
+  //   icon: payload.data.icon
+  // }
   const title = payload.data.title;
   const options = {
     body: payload.data.body,
     timestamp: payload.data.timestamp,
     icon: payload.data.icon,
   };
-  return self.registration.showNotification(title, options);
+  return self.registration.showNotification(title, options)
 });

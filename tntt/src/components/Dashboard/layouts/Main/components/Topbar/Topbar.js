@@ -1,9 +1,9 @@
 import React from 'react';
 import clsx from 'clsx';
-import { AppBar, Toolbar, Hidden, IconButton, Tooltip, Typography, Popover, Badge, Grid } from '@material-ui/core';
+import { AppBar, Toolbar, Hidden, IconButton, Tooltip, Typography, Popover, Badge, Grid, Divider } from '@material-ui/core';
 import MenuIcon from '@material-ui/icons/Menu';
 import {
-  PowerSettingsNew, Facebook, Notifications, Description, InfoOutlined
+  PowerSettingsNew, Facebook, Notifications, Description, InfoOutlined, Backspace
 } from '@material-ui/icons';
 import { withStyles } from '@material-ui/styles';
 import Promise from 'bluebird';
@@ -11,6 +11,7 @@ import Promise from 'bluebird';
 import { messaging } from '../../../../../init-fcm';
 import firebaseKey from '../../../../common/firebase.json'
 import axios from 'axios';
+import _ from 'lodash';
 
 const useStyles = theme => ({
   root: {
@@ -66,14 +67,16 @@ class Topbar extends React.Component {
     super(props)
 
     this.state = {
-      notificationsPayload: [],
       title: '',
       isActiveNotificationPanel: null,
+      isBadgeActive: 0,
+      oldNotifications: [],
     }
     this._isMounted = false;
   }
 
   componentDidMount = () => {
+    let payload;
     this.is_Mounted = true;
     messaging.requestPermission()
       .then(() => {
@@ -95,13 +98,29 @@ class Topbar extends React.Component {
         console.log('Unable to get permission to notify: ', err)
       })
     navigator.serviceWorker.addEventListener('message', (message) => {
-      let payload = {
+      payload = {
         data: message.data.firebaseMessaging.payload.data,
         timestamp: message.timeStamp
       }
+
       this.setState({
-        notificationsPayload: this.state.notificationsPayload.concat(payload),
+        isBadgeActive: 1
       })
+
+      return axios.get('/backend/user/all')
+        .then(results => {
+          let users = results.data.data;
+          let requests = [];
+          users.forEach(user => {
+            requests.push(axios.post(`/backend/user/notification/by-user/${user.username}`, payload))
+          })
+
+          return axios.all(requests)
+        })
+        .then((responses) => { })
+        .catch(err => {
+          console.log(err)
+        })
     })
   }
 
@@ -118,12 +137,26 @@ class Topbar extends React.Component {
   }
 
   renderIcon = (icon) => {
-    switch(icon) {
+    switch (icon) {
       case 'Description':
-        return (<Description style={{color: 'green'}} fontSize='large' />)
+        return (<Description style={{ color: 'green' }} fontSize='large' />)
       default:
         return (<InfoOutlined color='primary' fontSize='large' />)
     }
+  }
+
+  getNotification = (username) => {
+    return axios.get(`/backend/user/notification/by-user/${username}`)
+      .then(results => {
+        let notis = results.data.data;
+        notis = _.orderBy(notis, (el) => { return el.data.timestamp }, ['desc'])
+        this.setState({
+          oldNotifications: notis
+        })
+      })
+      .catch(err => {
+        console.log(err)
+      })
   }
 
   logOut = (event) => {
@@ -131,6 +164,22 @@ class Topbar extends React.Component {
       .then(() => {
         localStorage.clear()
         window.location.href = '/'
+      })
+  }
+
+  clearNotification = () => {
+    return axios.delete(`/backend/user/notification/by-user/${localStorage.getItem('username')}`)
+      .then((res) => {
+        if (res.data.code === 'I001') {
+          this.setState({
+            isActiveNotificationPanel: null,
+            oldNotifications: [],
+            isBadgeActive: 0,
+          })
+        }
+      })
+      .catch(err => {
+        console.log(err)
       })
   }
 
@@ -159,9 +208,10 @@ class Topbar extends React.Component {
                 this.setState({
                   isActiveNotificationPanel: e.target,
                 })
+                this.getNotification(localStorage.getItem('username'))
               }}
             >
-              <Badge color="error" badgeContent={this.state.notificationsPayload.length} variant='dot'>
+              <Badge color="error" badgeContent={this.state.isBadgeActive} variant='dot'>
                 <Notifications />
               </Badge>
             </IconButton>
@@ -207,14 +257,31 @@ class Topbar extends React.Component {
             vertical: 'top',
             horizontal: 'right',
           }}
-          onClose={() => { this.setState({ isActiveNotificationPanel: null, notificationsPayload: [] }) }}
+          onClose={() => { this.setState({ isActiveNotificationPanel: null, isBadgeActive: 0 }) }}
         >
           <div
-            style={{ padding: '1em', width: '17em' }}
+            style={{width: '17em' }}
           >
-            {(this.state.notificationsPayload.length !== 0) ?
+            <Toolbar disableGutters>
+              <Typography variant='subtitle1' style={{fontWeight: 'bold', marginLeft: '1em'}}>Thông báo</Typography>
+              <div style={{ flex: 1 }} />
+              <Tooltip title="Xóa toàn bộ thông báo">
+                <IconButton
+                  component='div'
+                  onClick={this.clearNotification}
+                  disabled={this.state.oldNotifications.length > 0 ? false : true}>
+                  <Backspace fontSize='small' />
+                </IconButton>
+              </Tooltip>
+            </Toolbar>
+          </div>
+          <Divider />
+          <div
+            style={{ padding: '1em', width: '17em', overflowX: 'auto', maxHeight: '25em' }}
+          >
+            {(this.state.oldNotifications.length !== 0) ?
               (
-                this.state.notificationsPayload.map(notify => (
+                this.state.oldNotifications.map(notify => (
                   <Grid container spacing={2} style={{ margin: 0, width: '100%' }} key={notify.timestamp}>
                     <Grid item xs={2}>
                       <div className={classes.centerIconNotification}>
@@ -224,14 +291,13 @@ class Topbar extends React.Component {
                     <Grid item xs={10}>
                       <div className={classes.centerNotificationPayload}>
                         <Typography variant='caption'>{notify.data.timestamp}</Typography>
-                        <Typography variant='subtitle1' style={{fontWeight: 'bold'}}>{notify.data.title}</Typography>
+                        <Typography variant='subtitle1' style={{ fontWeight: 'bold' }}>{notify.data.title}</Typography>
                         <Typography variant='body2'>{notify.data.body}</Typography>
                       </div>
                     </Grid>
                   </Grid>
                 ))
-              ) :
-              (
+              ) : (
                 <Grid container spacing={2} style={{ margin: 0, width: '100%' }}>
                   <Grid item xs={2}>
                     <div className={classes.centerIconNotification}>

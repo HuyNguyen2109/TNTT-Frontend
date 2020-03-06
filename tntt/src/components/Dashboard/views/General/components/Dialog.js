@@ -379,7 +379,18 @@ class DialogFrom extends React.Component {
             (
               <IconButton disabled={this.props.disabled} onClick={this.createNew} id="confirmButton"><Check style={style} /></IconButton>
             ) : (
-              <IconButton disabled={this.props.disabled} onClick={this.editData} id="confirmButton"><Check style={style} /></IconButton>
+              <IconButton disabled={this.props.disabled} 
+                          onClick={() => 
+                            {
+                              this.editData();
+                              this.setState({
+                                value: '',
+                                date: moment(),
+                                title: '',
+                                price: 0,
+                                event: ''
+                              }) 
+                            }} id="confirmButton"><Check style={style} /></IconButton>
             )}
           </Tooltip>
         </DialogActions>

@@ -22,6 +22,7 @@ import {
 } from '@material-ui/core';
 import axios from 'axios';
 
+import firebaseKey from '../../../../common/firebase.json'
 
 const useStyles = theme => ({
   root: {
@@ -122,6 +123,20 @@ class BasicInformation extends React.Component {
       })
   }
 
+  buildFireBaseNotification = (title, content, timestamp, icon) => {
+    let payload = {
+      data: {
+        title: title,
+        body: content,
+        timestamp: timestamp,
+        icon: icon
+      },
+      to: '/topics/TNTT',
+      time_to_live: 30
+    }
+    return payload
+  }
+
   updateData = () => {
     const state = this.state;
     const updatedData = {
@@ -139,6 +154,12 @@ class BasicInformation extends React.Component {
       'address': state.newAddress,
       'contact': state.newContact
     }
+    const firebaseNotification = this.buildFireBaseNotification(
+      'Thiếu Nhi',
+      `${localStorage.getItem('username')} vừa chỉnh sửa sơ thông tin cá nhân em ${state.newName}`,
+      moment().format('DD/MM/YYYY hh:mm:ss'),
+      'Edit'
+    )
 
     return axios
       .post(`/backend/children/update/by-name/${state.newName}`, updatedData, {
@@ -151,6 +172,12 @@ class BasicInformation extends React.Component {
           this.props.updateStatus('successfully')
         }
         this.handleCloseFloatingForm();
+        return axios.post(firebaseKey.endpoint, firebaseNotification, {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `key=${firebaseKey.serverKey}`
+          }
+        }).then(res => { })
       })
       .catch(err => {
         console.log(err);
@@ -177,6 +204,13 @@ class BasicInformation extends React.Component {
       'grades': [],
       'absents': []
     }
+    const firebaseNotification = this.buildFireBaseNotification(
+      'Thiếu Nhi',
+      `${localStorage.getItem('username')} vừa tạo sơ yếu lí lịch mới cho em ${state.newName}`,
+      moment().format('DD/MM/YYYY hh:mm:ss'),
+      'Children'
+    )
+
     return axios
       .post('/backend/children/create', newData, {
         params: {
@@ -188,6 +222,12 @@ class BasicInformation extends React.Component {
           this.props.updateStatus('successfully')
         }
         this.handleCloseFloatingForm();
+        return axios.post(firebaseKey.endpoint, firebaseNotification, {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `key=${firebaseKey.serverKey}`
+          }
+        }).then(res => { })
       })
       .catch(err => {
         console.log(err);

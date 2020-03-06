@@ -80,6 +80,20 @@ class AccountProfile extends React.Component {
     }
   }
 
+  buildFireBaseNotification = (title, content, timestamp, icon) => {
+    let payload = {
+      data: {
+        title: title,
+        body: content,
+        timestamp: timestamp,
+        icon: icon
+      },
+      to: '/topics/TNTT',
+      time_to_live: 30
+    }
+    return payload
+  }
+
   componentDidMount = () => {
     this._isMounted = true;
     if (this._isMounted === true) {
@@ -142,10 +156,10 @@ class AccountProfile extends React.Component {
           this.setState({
             snackerBarStatus: true,
             snackbarType: 'success',
-            snackbarMessage: 'Tải lên thành công',
+            snackbarMessage: 'Cập nhật ảnh đại diện thành công',
           })
-          setTimeout(window.location.reload(), 2000)
         }
+        setTimeout(window.location.reload(), 2000)
       })
       .catch(err => {
         console.log(err)

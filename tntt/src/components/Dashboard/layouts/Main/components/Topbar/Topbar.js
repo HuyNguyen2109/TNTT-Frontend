@@ -1,11 +1,11 @@
 import React from 'react';
 import clsx from 'clsx';
-import { AppBar, Toolbar, Hidden, IconButton, Tooltip, Typography, Popover, Badge, Grid, Divider } from '@material-ui/core';
+import { AppBar, Toolbar, Hidden, IconButton, Tooltip, Typography, Popover, Badge, Grid, Divider, colors } from '@material-ui/core';
 import MenuIcon from '@material-ui/icons/Menu';
 import {
-  PowerSettingsNew, Facebook, Notifications, Description, InfoOutlined, Backspace
+  PowerSettingsNew, Facebook, Notifications, Description, InfoOutlined, Backspace, Edit, Delete, Class, EventAvailable, AttachMoney, Face
 } from '@material-ui/icons';
-import { withStyles } from '@material-ui/styles';
+import { withStyles, lighten } from '@material-ui/core/styles';
 import Promise from 'bluebird';
 
 import { messaging } from '../../../../../init-fcm';
@@ -71,6 +71,7 @@ class Topbar extends React.Component {
       isActiveNotificationPanel: null,
       isBadgeActive: 0,
       oldNotifications: [],
+      newNotifications: [],
     }
     this._isMounted = false;
   }
@@ -104,12 +105,13 @@ class Topbar extends React.Component {
       }
 
       this.setState({
+        newNotifications: this.state.newNotifications.concat(payload),
         isBadgeActive: 1
       })
 
       return axios.get('/backend/user/all')
         .then(results => {
-          let users = results.data.data;
+          let users = results.data.data.filter(user => user.username !== localStorage.getItem('username'));
           let requests = [];
           users.forEach(user => {
             requests.push(axios.post(`/backend/user/notification/by-user/${user.username}`, payload))
@@ -122,6 +124,7 @@ class Topbar extends React.Component {
           console.log(err)
         })
     })
+
   }
 
   componentDidUpdate = (prevProps) => {
@@ -139,7 +142,21 @@ class Topbar extends React.Component {
   renderIcon = (icon) => {
     switch (icon) {
       case 'Description':
-        return (<Description style={{ color: 'green' }} fontSize='large' />)
+        return (<Description style={{ color: `${colors.pink[300]}` }} fontSize='large' />)
+      case 'Class':
+        return (<Class style={{ color: `${colors.blue[300]}`}} fontSize='large' />)
+      case 'Event':
+        return (<EventAvailable style={{ color: `${colors.purple[300]}`}} fontSize='large' />)
+      case 'Fund':
+        return (<AttachMoney style={{ color: `${colors.green[300]}`}} fontSize='large' />)
+      case 'InternalFund':
+        return (<AttachMoney style={{ color: `${colors.orange[300]}`}} fontSize='large' />)
+      case 'Children':
+        return (<Face style={{ color: `${colors.purple[300]}` }} fontSize='large' />)
+      case 'Edit':
+        return (<Edit style={{ color: `${colors.cyan[300]}` }} fontSize='large' />)
+      case 'Delete':
+        return (<Delete style={{ color: `${colors.red[300]}` }} fontSize='large' />)
       default:
         return (<InfoOutlined color='primary' fontSize='large' />)
     }
@@ -148,11 +165,15 @@ class Topbar extends React.Component {
   getNotification = (username) => {
     return axios.get(`/backend/user/notification/by-user/${username}`)
       .then(results => {
-        let notis = results.data.data;
-        notis = _.orderBy(notis, (el) => { return el.data.timestamp }, ['desc'])
-        this.setState({
-          oldNotifications: notis
-        })
+        if (results.data.data.length > 0) {
+          let notis = results.data.data;
+          notis = _.orderBy(notis, (el) => { return el.data.timestamp }, ['desc'])
+          notis = _.uniqBy(notis, 'data.timestamp')
+          notis = notis.filter(el => !this.state.newNotifications.some(ell => el.data.timestamp === ell.data.timestamp))
+          this.setState({
+            oldNotifications: notis
+          })
+        }
       })
       .catch(err => {
         console.log(err)
@@ -168,6 +189,11 @@ class Topbar extends React.Component {
   }
 
   clearNotification = () => {
+    if (this.state.newNotifications.length > 0) {
+      this.setState({
+        newNotifications: []
+      })
+    }
     return axios.delete(`/backend/user/notification/by-user/${localStorage.getItem('username')}`)
       .then((res) => {
         if (res.data.code === 'I001') {
@@ -257,13 +283,28 @@ class Topbar extends React.Component {
             vertical: 'top',
             horizontal: 'right',
           }}
-          onClose={() => { this.setState({ isActiveNotificationPanel: null, isBadgeActive: 0 }) }}
+          onClose={() => {
+            this.setState({
+              isActiveNotificationPanel: null,
+              isBadgeActive: 0
+            })
+
+            if (this.state.newNotifications.length > 0) {
+              let requests = []
+              this.state.newNotifications.forEach(notify => {
+                requests.push(axios.post(`/backend/user/notification/by-user/${localStorage.getItem('username')}`, notify))
+              })
+              return axios.all(requests)
+                .then(res => { if (res) this.setState({ newNotifications: [] }) })
+                .catch(err => console.log(err))
+            }
+          }}
         >
           <div
-            style={{width: '17em' }}
+            style={{ width: '17em' }}
           >
             <Toolbar disableGutters>
-              <Typography variant='subtitle1' style={{fontWeight: 'bold', marginLeft: '1em'}}>Thông báo</Typography>
+              <Typography variant='subtitle1' style={{ fontWeight: 'bold', marginLeft: '1em' }}>Thông báo</Typography>
               <div style={{ flex: 1 }} />
               <Tooltip title="Xóa toàn bộ thông báo">
                 <IconButton
@@ -279,6 +320,22 @@ class Topbar extends React.Component {
           <div
             style={{ padding: '1em', width: '17em', overflowX: 'auto', maxHeight: '25em' }}
           >
+            {this.state.newNotifications.map(notify => (
+              <Grid container spacing={2} style={{ margin: 0, width: '100%', backgroundColor: `${lighten(colors.cyan[500], 0.8)}` }} key={notify.timestamp}>
+                <Grid item xs={2}>
+                  <div className={classes.centerIconNotification}>
+                    {this.renderIcon(notify.data.icon)}
+                  </div>
+                </Grid>
+                <Grid item xs={10}>
+                  <div className={classes.centerNotificationPayload}>
+                    <Typography variant='caption'>{notify.data.timestamp}</Typography>
+                    <Typography variant='subtitle1' style={{ fontWeight: 'bold' }}>{notify.data.title}</Typography>
+                    <Typography variant='body2'>{notify.data.body}</Typography>
+                  </div>
+                </Grid>
+              </Grid>
+            ))}
             {(this.state.oldNotifications.length !== 0) ?
               (
                 this.state.oldNotifications.map(notify => (
@@ -297,7 +354,9 @@ class Topbar extends React.Component {
                     </Grid>
                   </Grid>
                 ))
-              ) : (
+              ) : null}
+            {(this.state.newNotifications.length === 0 && this.state.oldNotifications.length === 0) ?
+              (
                 <Grid container spacing={2} style={{ margin: 0, width: '100%' }}>
                   <Grid item xs={2}>
                     <div className={classes.centerIconNotification}>
@@ -310,7 +369,7 @@ class Topbar extends React.Component {
                     </div>
                   </Grid>
                 </Grid>
-              )}
+              ) : null}
           </div>
         </Popover>
       </AppBar>

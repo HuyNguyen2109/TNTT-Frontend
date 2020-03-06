@@ -46,6 +46,7 @@ import FloatingForm from './components/floatingForm';
 import tableIcons from './components/tableIcon';
 import SnackDialog from '../../../SnackerBar';
 import CustomHeader from '../../../Dashboard/components/CustomHeader/CustomHeader';
+import firebaseKey from '../../common/firebase.json';
 
 const useStyles = theme => ({
   '@global': {
@@ -279,6 +280,20 @@ class Dashboard extends React.Component {
     }
   }
 
+  buildFireBaseNotification = (title, content, timestamp, icon) => {
+    let payload = {
+      data: {
+        title: title,
+        body: content,
+        timestamp: timestamp,
+        icon: icon
+      },
+      to: '/topics/TNTT',
+      time_to_live: 30
+    }
+    return payload
+  }
+
   getClasses = () => {
     return axios
       .get('/backend/class/all')
@@ -411,6 +426,15 @@ class Dashboard extends React.Component {
       childrenNames.push(row.name)
     });
 
+    const firebaseNotification = this.buildFireBaseNotification(
+      'Thiếu Nhi',
+      (childrenNames.length < 2)? 
+        `${localStorage.getItem('username')} vừa xóa em ${childrenNames[0]} ra khỏi danh sách` : 
+        `${localStorage.getItem('username')} vừa xóa ${childrenNames.length} em ra khỏi danh sách`,
+      moment().format('DD/MM/YYYY hh:mm:ss'),
+      'Delete'
+    )
+
     return axios
       .delete('/backend/children/delete/by-names', {
         params: {
@@ -422,13 +446,17 @@ class Dashboard extends React.Component {
         if (res.data.code === "I001") {
           this.reloadData();
           this.setState({
-            selectedRows: []
-          })
-          this.setState({
+            selectedRows: [],
             snackbarType: 'success',
             snackerBarStatus: true,
             snackbarMessage: 'Xóa thành công'
           })
+          return axios.post(firebaseKey.endpoint, firebaseNotification, {
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `key=${firebaseKey.serverKey}`
+            }
+          }).then(res => { })
         }
       })
       .catch(err => {
@@ -447,6 +475,13 @@ class Dashboard extends React.Component {
       'type': scoreType,
       'class': this.state.selectedClass
     }
+    const firebaseNotification = this.buildFireBaseNotification(
+      'Thiếu Nhi',
+      `${localStorage.getItem('username')} vừa khóa điểm ${typeInfo.type} cho lớp ${typeInfo.class}`,
+      moment().format('DD/MM/YYYY hh:mm:ss'),
+      'Edit'
+    )
+
     return axios
       .post(`backend/children/lock-scores`, typeInfo, {
         params: {
@@ -457,6 +492,12 @@ class Dashboard extends React.Component {
         if (res.data.code === 'I001') {
           this.reloadData();
         }
+        return axios.post(firebaseKey.endpoint, firebaseNotification, {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `key=${firebaseKey.serverKey}`
+          }
+        }).then(res => { })
       })
       .catch(err => {
         console.log(err)

@@ -210,6 +210,7 @@ class General extends React.Component {
           render: rowData => <Chip style={{ backgroundColor: rowData.colorChip }} />
         }
       ],
+      oldClassName: '',
       selectedClassRows: [],
       isOpenAddClassForm: false,
       isButtonDisabled: false,
@@ -263,6 +264,7 @@ class General extends React.Component {
       isOpenDocumentActionMenu: null,
       isOpenExpansionPanel: false,
       selectedDocumentId: '',
+      oldDocumentName: '',
       documentName: '',
       documentDate: '',
       documentModifiedDate: '',
@@ -314,9 +316,9 @@ class General extends React.Component {
   }
 
   componentWillUnmount = () => {
+    this._ismounted = false;
     window.removeEventListener("resize", this.updateWindowDimensions.bind(this));
     this.axiosCancelSource.cancel('Unmounted!')
-    this._ismounted = false;
   }
 
   componentDidUpdate = (prevProps, prevState) => {
@@ -855,21 +857,21 @@ class General extends React.Component {
   }
 
   getTumblrPost = () => {
-    if (this._ismounted) {
-      return axios.get('/backend/database/tumblr/posts', { cancelToken: this.axiosCancelSource.token })
-        .then(res => {
+    return axios.get('/backend/database/tumblr/posts', { cancelToken: this.axiosCancelSource.token })
+      .then(res => {
+        if (this._ismounted) {
           this.setState({
             tumblrImageURL: res.data.data.img,
             tumblrImagePage: res.data.data.url,
             tumbleContent: res.data.data.content,
             isTumblrLoading: false,
           })
-        })
-        .catch(err => {
-          console.log(err)
-          this.setState({ isTumblrLoading: false })
-        })
-    }
+        }
+      })
+      .catch(err => {
+        console.log(err)
+        if(this._ismounted) {this.setState({ isTumblrLoading: false })}
+      })
   }
 
   createNewClass = (classInformation) => {
@@ -887,6 +889,12 @@ class General extends React.Component {
       'group': classInformation.group,
       'path': `/dashboard/${classID}`
     }
+    const firebaseNotification = this.buildFireBaseNotification(
+      'Lớp',
+      `${localStorage.getItem('username')} vừa tạo lớp ${this.capitalizeWord(className)}`,
+      moment().format('DD/MM/YYYY hh:mm:ss'),
+      'Class'
+    )
 
     return axios.post('/backend/class/add', newClass)
       .then(res => {
@@ -894,8 +902,15 @@ class General extends React.Component {
           this.setState({
             isButtonDisabled: false,
             isOpenAddClassForm: false,
+            oldClassName: this.capitalizeWord(className)
           })
           this.getClassData(this.state.selectedPieChartType);
+          return axios.post(firebaseKey.endpoint, firebaseNotification, {
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `key=${firebaseKey.serverKey}`
+            }
+          }).then(res => { })
         }
       })
       .catch(err => {
@@ -934,6 +949,13 @@ class General extends React.Component {
       'path': `/dashboard/${classID}`
     }
 
+    const firebaseNotification = this.buildFireBaseNotification(
+      'Lớp',
+      `${localStorage.getItem('username')} vừa đổi tên lớp ${this.state.oldClassName} thành ${this.capitalizeWord(className)}`,
+      moment().format('DD/MM/YYYY hh:mm:ss'),
+      'Edit'
+    )
+
     return axios.put(`/backend/class/update/${classData._id}`, classInformation)
       .then(res => {
         if (res.data.code === 'I001') {
@@ -943,6 +965,12 @@ class General extends React.Component {
             selectedPieChartType: 'Lớp',
           })
           this.getClassData(this.state.selectedPieChartType);
+          return axios.post(firebaseKey.endpoint, firebaseNotification, {
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `key=${firebaseKey.serverKey}`
+            }
+          }).then(res => { })
         }
       })
       .catch(err => {
@@ -954,6 +982,12 @@ class General extends React.Component {
     this.setState({ isButtonDisabled: true, isLoading: true })
 
     if (this.state.selectedFundType === 'QTN') {
+      const firebaseNotification = this.buildFireBaseNotification(
+        'Quỹ Thiếu Nhi',
+        `${localStorage.getItem('username')} vừa thêm nhật kỹ quỹ mới`,
+        moment().format('DD/MM/YYYY hh:mm:ss'),
+        'Fund'
+      )
       return axios
         .post('/backend/children-fund/new-fund', fund)
         .then(res => {
@@ -961,8 +995,17 @@ class General extends React.Component {
             this.setState({
               isButtonDisabled: false,
               isOpenAddFundForm: false,
+              snackerBarStatus: true,
+              snackbarType: 'success',
+              snackbarMessage: 'Tạo nhật ký thành công',
             })
             this.getFundData(this.state.selectedMonths, this.state.selectedFundType);
+            return axios.post(firebaseKey.endpoint, firebaseNotification, {
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `key=${firebaseKey.serverKey}`
+              }
+            }).then(res => { })
           }
         })
         .catch(err => {
@@ -976,6 +1019,12 @@ class General extends React.Component {
         })
     }
     else {
+      const firebaseNotification = this.buildFireBaseNotification(
+        'Quỹ Nội Bộ',
+        `${localStorage.getItem('username')} vừa thêm nhật kỹ quỹ mới`,
+        moment().format('DD/MM/YYYY hh:mm:ss'),
+        'InteralFund'
+      )
       return axios
         .post('/backend/internal-fund/new-fund', fund)
         .then(res => {
@@ -983,8 +1032,17 @@ class General extends React.Component {
             this.setState({
               isButtonDisabled: false,
               isOpenAddFundForm: false,
+              snackerBarStatus: true,
+              snackbarType: 'success',
+              snackbarMessage: 'Tạo nhật ký thành công',
             })
             this.getFundData(this.state.selectedMonths, this.state.selectedFundType);
+            return axios.post(firebaseKey.endpoint, firebaseNotification, {
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `key=${firebaseKey.serverKey}`
+              }
+            }).then(res => { })
           }
         })
         .catch(err => {
@@ -1006,30 +1064,61 @@ class General extends React.Component {
       'title': fundData.title,
       'price': fundData.price
     }
+    let firebaseNotification;
     switch (this.state.selectedFundType) {
       case 'QTN':
+        firebaseNotification = this.buildFireBaseNotification(
+          'Quỹ Thiếu Nhi',
+          `${localStorage.getItem('username')} vừa cập nhật nhật ký quỹ Thiếu Nhi`,
+          moment().format('DD/MM/YYYY hh:mm:ss'),
+          'Edit'
+        )
         return axios.put(`/backend/children-fund/update/${fundData._id}`, fundInformation)
           .then(res => {
             if (res.data.code === 'I001') {
               this.setState({
                 isButtonDisabled: false,
                 isOpenAddFundForm: false,
+                snackerBarStatus: true,
+                snackbarType: 'success',
+                snackbarMessage: 'Cập nhật thành công',
               })
-              return this.getFundData(this.state.selectedMonths, this.state.selectedFundType);
+              this.getFundData(this.state.selectedMonths, this.state.selectedFundType);
+              return axios.post(firebaseKey.endpoint, firebaseNotification, {
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `key=${firebaseKey.serverKey}`
+                }
+              }).then(res => { })
             }
           })
           .catch(err => {
             console.log(err)
           })
       case 'QR':
+        firebaseNotification = this.buildFireBaseNotification(
+          'Quỹ Nội Bộ',
+          `${localStorage.getItem('username')} vừa cập nhật nhật ký quỹ Nội Bộ`,
+          moment().format('DD/MM/YYYY hh:mm:ss'),
+          'Edit'
+        )
         return axios.put(`/backend/internal-fund/update/${fundData._id}`, fundInformation)
           .then(res => {
             if (res.data.code === 'I001') {
               this.setState({
                 isButtonDisabled: false,
                 isOpenAddFundForm: false,
+                snackerBarStatus: true,
+                snackbarType: 'success',
+                snackbarMessage: 'Cập nhật thành công',
               })
-              return this.getFundData(this.state.selectedMonths, this.state.selectedFundType);
+              this.getFundData(this.state.selectedMonths, this.state.selectedFundType);
+              return axios.post(firebaseKey.endpoint, firebaseNotification, {
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `key=${firebaseKey.serverKey}`
+                }
+              }).then(res => { })
             }
           })
           .catch(err => {
@@ -1042,6 +1131,12 @@ class General extends React.Component {
 
   createNewEvent = (event) => {
     this.setState({ isButtonDisabled: true, isLoading: true })
+    const firebaseNotification = this.buildFireBaseNotification(
+      'Sự kiện',
+      `${localStorage.getItem('username')} vừa tạo sự kiện mới`,
+      moment().format('DD/MM/YYYY hh:mm:ss'),
+      'Event'
+    )
 
     return axios
       .post('/backend/event/new-event', event)
@@ -1052,6 +1147,12 @@ class General extends React.Component {
             isOpenAddEventForm: false,
           })
           this.getEventData();
+          return axios.post(firebaseKey.endpoint, firebaseNotification, {
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `key=${firebaseKey.serverKey}`
+            }
+          }).then(res => { })
         }
       })
       .catch(err => {
@@ -1071,6 +1172,13 @@ class General extends React.Component {
       'content': eventData.content
     }
 
+    const firebaseNotification = this.buildFireBaseNotification(
+      'Sự kiện',
+      `${localStorage.getItem('username')} vừa chỉnh sửa sự kiện`,
+      moment().format('DD/MM/YYYY hh:mm:ss'),
+      'Edit'
+    )
+
     return axios.put(`/backend/event/update/${eventData._id}`, eventInformation)
       .then(res => {
         if (res.data.code === 'I001') {
@@ -1079,6 +1187,12 @@ class General extends React.Component {
             isOpenAddEventForm: false,
           })
           this.getEventData();
+          return axios.post(firebaseKey.endpoint, firebaseNotification, {
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `key=${firebaseKey.serverKey}`
+            }
+          }).then(res => { })
         }
       })
       .catch(err => {
@@ -1116,12 +1230,12 @@ class General extends React.Component {
               snackbarMessage: 'Tải lên thành công',
             })
           }
-          return axios.post(firebaseKey.endpoint, firebaseNotification,{
+          return axios.post(firebaseKey.endpoint, firebaseNotification, {
             headers: {
               'Content-Type': 'application/json',
               'Authorization': `key=${firebaseKey.serverKey}`
             }
-          }).then(res => {})
+          }).then(res => { })
         })
         .catch(err => {
           if (err.response.status === 409) {
@@ -1161,6 +1275,14 @@ class General extends React.Component {
       'filename': this.state.documentName,
       'modifiedDate': moment().format('YYYY-MM-DD hh:mm:ss')
     }
+
+    const firebaseNotification = this.buildFireBaseNotification(
+      'Tài liệu',
+      `${localStorage.getItem('username')} vừa đổi tên tập tin ${this.state.oldDocumentName} thành ${this.state.documentName}`,
+      moment().format('DD/MM/YYYY hh:mm:ss'),
+      'Edit'
+    )
+
     return axios.put(`/backend/document/rename/${this.state.selectedDocumentId}`, documentDetail)
       .then(res => {
         if (res.data.code === 'I001') {
@@ -1173,6 +1295,12 @@ class General extends React.Component {
             selectedDocumentId: ''
           })
           this.getDocumentData();
+          return axios.post(firebaseKey.endpoint, firebaseNotification, {
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `key=${firebaseKey.serverKey}`
+            }
+          }).then(res => { })
         }
       })
       .catch(err => {
@@ -1566,7 +1694,7 @@ class General extends React.Component {
                       <Typography variant="subtitle2" style={{ textAlign: 'right' }}>Nhật ký</Typography>
                     </div>
                     <Tooltip title="Chỉnh sửa">
-                      <IconButton onClick={(e) => { console.log(e.target); this.setState({ isOpenFundActionMenu: e.target }) }} >
+                      <IconButton onClick={(e) => { this.setState({ isOpenFundActionMenu: e.target }) }} >
                         <MoreVert />
                       </IconButton>
                     </Tooltip>
@@ -2121,7 +2249,7 @@ class General extends React.Component {
                           {(!this.state.isRename) ?
                             (
                               <Tooltip title='Đổi tên'>
-                                <IconButton onClick={() => this.setState({ isRename: true })}>
+                                <IconButton onClick={() => this.setState({ isRename: true, oldDocumentName: this.state.documentName })}>
                                   <Edit style={{ color: '#e91e63' }} />
                                 </IconButton>
                               </Tooltip>
@@ -2181,6 +2309,12 @@ class General extends React.Component {
                           </Tooltip>
                           <Tooltip title='Xóa'>
                             <IconButton onClick={() => {
+                              const firebaseNotification = this.buildFireBaseNotification(
+                                'Tài liệu',
+                                `${localStorage.getItem('username')} vừa xóa tập tin ${this.state.documentName}`,
+                                moment().format('DD/MM/YYYY hh:mm:ss'),
+                                'Delete'
+                              )
                               return axios.delete(`/backend/document/delete-by-id/${this.state.selectedDocumentId}`)
                                 .then(res => {
                                   if (res.data.code === 'I001') {
@@ -2194,6 +2328,12 @@ class General extends React.Component {
                                       isOpenExpansionPanel: false
                                     })
                                   }
+                                  return axios.post(firebaseKey.endpoint, firebaseNotification, {
+                                    headers: {
+                                      'Content-Type': 'application/json',
+                                      'Authorization': `key=${firebaseKey.serverKey}`
+                                    }
+                                  }).then(res => { })
                                 })
                                 .catch(err => {
                                   console.log(err)
@@ -2330,11 +2470,23 @@ class General extends React.Component {
                               icon: () => { return <Clear style={{ color: 'red' }} /> },
                               tooltip: 'Xóa',
                               onClick: (e, rowData) => {
+                                const firebaseNotification = this.buildFireBaseNotification(
+                                  'Lớp',
+                                  `${localStorage.getItem('username')} vừa xóa lớp ${rowData.Value}`,
+                                  moment().format('DD/MM/YYYY hh:mm:ss'),
+                                  'Delete'
+                                )
                                 return axios.delete(`/backend/class/delete/by-id/${rowData.ID}`)
                                   .then(res => {
                                     if (res.data.code === 'I001') {
                                       this.getClassData(this.state.selectedPieChartType);
                                     }
+                                    return axios.post(firebaseKey.endpoint, firebaseNotification, {
+                                      headers: {
+                                        'Content-Type': 'application/json',
+                                        'Authorization': `key=${firebaseKey.serverKey}`
+                                      }
+                                    }).then(res => { })
                                   })
                                   .catch(err => {
                                     if (err.response.status === 404) {

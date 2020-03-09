@@ -122,6 +122,7 @@ class General extends React.Component {
       monthCount: 0,
       username: localStorage.getItem('username'),
       duration: 300,
+      currentUserPosition: '',
       // Report results
       childrenTotalCount: 0,
       userTotalCount: 0,
@@ -313,6 +314,14 @@ class General extends React.Component {
     this.getEventData()
     this.getDocumentData()
     this.getTumblrPost();
+    return axios.get(`/backend/user/get-user/${localStorage.getItem('username')}`)
+      .then(res => {
+        if(this._ismounted) {
+          this.setState({
+            currentUserPosition: res.data.data.type
+          })
+        }
+      })
   }
 
   componentWillUnmount = () => {
@@ -570,7 +579,7 @@ class General extends React.Component {
             classData.push(res.data.data)
             unconfirmedData -= res.data.data
           })
-          classLabels.unshift('Chưa có lớp/Đã xong');
+          classLabels.unshift('Chưa xếp lớp/Đã tốt nghiệp');
           classData.unshift(unconfirmedData);
           //draw chart
           if (window.ChildrenCountChart) {
@@ -1714,7 +1723,7 @@ class General extends React.Component {
                       }}
                     >
                       <MenuItem
-                        disabled={(localStorage.getItem('type') !== 'Admin') ? true : false}
+                        disabled={(this.state.currentUserPosition !== 'Admin') ? true : false}
                         onClick={() => {
                           this.setState({
                             isOpenAddFundForm: true,
@@ -1754,13 +1763,14 @@ class General extends React.Component {
                           emptyDataSourceMessage: 'Không có dữ liệu!'
                         },
                         header: {
-                          actions: 'Chỉnh sửa'
+                          actions: ''
                         }
                       }}
                       actions={[
                         {
                           icon: () => { return <Edit style={{ color: '#ff9800' }} /> },
                           tooltip: 'Chỉnh sửa',
+                          hidden: this.state.currentUserPosition !== 'Admin'? true :false,
                           onClick: (e, rowData) => {
                             this.setState({
                               isOpenAddFundForm: true,
@@ -1773,6 +1783,7 @@ class General extends React.Component {
                         {
                           icon: () => { return <Clear style={{ color: 'red' }} /> },
                           tooltip: 'Xóa',
+                          hidden: this.state.currentUserPosition !== 'Admin'? true :false,
                           onClick: (e, rowData) => {
                             switch (this.state.selectedFundType) {
                               case 'QTN':
@@ -1864,7 +1875,7 @@ class General extends React.Component {
                       }}
                     >
                       <MenuItem
-                        disabled={(localStorage.getItem('type') !== 'Admin' && localStorage.getItem('type') !== 'Member') ? true : false}
+                        disabled={(this.state.currentUserPosition === 'Guest') ? true : false}
                         onClick={() => {
                           this.setState({
                             isOpenAddEventForm: true,
@@ -1877,7 +1888,7 @@ class General extends React.Component {
                         <ListItemText primary="Tạo mới sự kiện" />
                       </MenuItem>
                       <MenuItem
-                        disabled={(localStorage.getItem('type') !== 'Admin' && localStorage.getItem('type') !== 'Member') ? true : false}
+                        disabled={(this.state.currentUserPosition !== 'Admin') ? true : false}
                         onClick={() => {
                           return axios.delete('/backend/event/delete-checked')
                             .then(res => {
@@ -1978,6 +1989,7 @@ class General extends React.Component {
                           {
                             icon: () => { return <Edit style={{ color: '#9c27b0' }} /> },
                             tooltip: 'Chỉnh sửa',
+                            hidden: (this.state.currentUserPosition === 'Guest')? true : false,
                             position: 'row',
                             onClick: (e, rowData) => {
                               this.setState({
@@ -2045,7 +2057,7 @@ class General extends React.Component {
                       }}
                     >
                       <MenuItem
-                        disabled={(localStorage.type !== 'Admin') ? true : false}
+                        disabled={(this.state.currentUserPosition === 'Guest') ? true : false}
                         onClick={() => {
                           this.setState({
                             isOpenDocumentActionMenu: null
@@ -2249,7 +2261,8 @@ class General extends React.Component {
                           {(!this.state.isRename) ?
                             (
                               <Tooltip title='Đổi tên'>
-                                <IconButton onClick={() => this.setState({ isRename: true, oldDocumentName: this.state.documentName })}>
+                                <IconButton onClick={() => this.setState({ isRename: true, oldDocumentName: this.state.documentName })}
+                                  disabled={this.state.documentUser !== localStorage.getItem('username')? true : false}>
                                   <Edit style={{ color: '#e91e63' }} />
                                 </IconButton>
                               </Tooltip>
@@ -2344,7 +2357,8 @@ class General extends React.Component {
                                     isLoading: false,
                                   })
                                 })
-                            }}>
+                            }}
+                            disabled={this.state.documentUser !== localStorage.getItem('username')? true : false}>
                               <Delete style={{ color: 'red' }} />
                             </IconButton>
                           </Tooltip>

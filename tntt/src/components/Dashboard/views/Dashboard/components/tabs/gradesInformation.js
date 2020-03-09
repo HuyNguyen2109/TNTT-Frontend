@@ -19,6 +19,7 @@ import {
   MenuItem,
   Collapse,
   InputAdornment,
+  Paper,
 } from '@material-ui/core';
 import {
   Add,
@@ -437,14 +438,17 @@ class GradesInformation extends React.Component {
                   onClick: (e, rowData) => this.deleteItem(e, rowData, 'grade')
                 }
               ]}
+              components={{
+                Container: props => <Paper {...props} elevation={0} />
+              }}
             />
             <Collapse in={this.state.isAddGradeClicked}>
               <Grid container spacing={2}>
-                <Grid item xs={12} sm={2}>
+                <Grid item xs={12} sm={4}>
                   <TextField
                     required
                     className={classes.customInput}
-                    style={{ marginTop: '1em'}}
+                    style={{ marginTop: '1em' }}
                     select
                     label="Loại điểm"
                     name="gradeType"
@@ -472,7 +476,7 @@ class GradesInformation extends React.Component {
                     ))}
                   </TextField>
                 </Grid>
-                <Grid item xs={12} sm={2}>
+                <Grid item xs={12} sm={4}>
                   <TextField
                     required
                     className={classes.customInput}
@@ -504,7 +508,23 @@ class GradesInformation extends React.Component {
                     ))}
                   </TextField>
                 </Grid>
-                <Grid item xs={12} sm={5}>
+                <Grid item xs={12} sm={4}>
+                  <TextField
+                    fullWidth
+                    className={classes.customInput}
+                    style={{ marginTop: '1em' }}
+                    label="Điểm"
+                    value={this.state.newGrade}
+                    onChange={e => this.handleChange(e, "newGrade")}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <Grade />
+                        </InputAdornment>
+                      )
+                    }} />
+                </Grid>
+                <Grid item xs={12} sm={9}>
                   <TextField
                     fullWidth
                     required
@@ -521,23 +541,7 @@ class GradesInformation extends React.Component {
                       )
                     }} />
                 </Grid>
-                <Grid item xs={12} sm={1}>
-                  <TextField
-                    fullWidth
-                    className={classes.customInput}
-                    style={{ marginTop: '1em' }}
-                    label="Điểm"
-                    value={this.state.newGrade}
-                    onChange={e => this.handleChange(e, "newGrade")}
-                    InputProps={{
-                      startAdornment: (
-                        <InputAdornment position="start">
-                          <Grade />
-                        </InputAdornment>
-                      )
-                    }} />
-                </Grid>
-                <Grid item xs={12} sm={2}>
+                <Grid item xs={12} sm={3}>
                   {(this.state.gradeTextFieldStatus === 'add') ?
                     <IconButton
                       style={{ marginTop: '1em' }}
@@ -619,10 +623,13 @@ class GradesInformation extends React.Component {
                   onClick: (e, rowData) => this.deleteItem(e, rowData, 'absent')
                 }
               ]}
+              components={{
+                Container: props => <Paper {...props} elevation={0} />
+              }}
             />
             <Collapse in={this.state.isAddAbsentClicked}>
               <Grid container spacing={2}>
-                <Grid item xs={12} sm={3}>
+                <Grid item xs={12} sm={6}>
                   <TextField
                     required
                     className={classes.customInput}
@@ -654,7 +661,7 @@ class GradesInformation extends React.Component {
                     ))}
                   </TextField>
                 </Grid>
-                <Grid item xs={12} sm={3}>
+                <Grid item xs={12} sm={6}>
                   <MuiPickersUtilsProvider utils={DateFnsUtils}>
                     <KeyboardDatePicker
                       fullWidth
@@ -671,7 +678,7 @@ class GradesInformation extends React.Component {
                       }} />
                   </MuiPickersUtilsProvider>
                 </Grid>
-                <Grid item xs={12} sm={3}>
+                <Grid item xs={12} sm={9}>
                   <TextField
                     fullWidth
                     className={classes.customInput}

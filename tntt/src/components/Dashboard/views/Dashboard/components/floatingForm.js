@@ -68,7 +68,7 @@ class FloatingForm extends React.Component {
   }
 
   render = () => {
-    const { classes, open, type } = this.props;
+    const { classes, open, type, userPosition } = this.props;
     return (
       <Collapse in={open} className={classes.root} timeout='auto' ref={this.props.refProps}>
         <Tabs value={this.state.value} onChange={(e, value) => this.handleChangeTab(e, value)} classes={{ indicator: classes.tab }}>
@@ -82,7 +82,8 @@ class FloatingForm extends React.Component {
             type={this.props.type}
             selectedData={this.state.selectedData}
             updateStatus={this.props.updateStatus}
-            resetSelectedRow={this.props.resetSelectedRow}/>
+            resetSelectedRow={this.props.resetSelectedRow}
+            userPosition={userPosition}/>
           <GradesInformation
             value={this.state.value}
             callback={this.props.callback}
@@ -90,7 +91,8 @@ class FloatingForm extends React.Component {
             updateStatus={this.props.updateStatus}
             resetSelectedRow={this.props.resetSelectedRow}
             type={this.props.type}
-            index={1}/>
+            index={1}
+            userPosition={userPosition}/>
       </Collapse>
     )
   }

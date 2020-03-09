@@ -49,7 +49,7 @@ const useStyles = theme => ({
     margin: theme.spacing(1),
   },
   quotes: {
-    position: 'absolute',
+    position: 'fixed',
     bottom: '1em',
     left: '1em',
     color: 'white',

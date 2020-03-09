@@ -16,6 +16,8 @@ import {
   AccountCircle
 } from '@material-ui/icons';
 
+import firebaseKey from '../../common/firebase.json'
+
 const useStyles = theme => ({
   root: {},
   primaryButton: {
@@ -47,6 +49,7 @@ class UserForm extends React.Component {
     super(props)
 
     this.state = {
+      currentUserPosition: '',
       //for Remote Data
       username: '',
       holyName: '',
@@ -113,11 +116,33 @@ class UserForm extends React.Component {
       })
   }
 
+  buildFireBaseNotification = (title, content, timestamp, icon) => {
+    let payload = {
+      data: {
+        title: title,
+        body: content,
+        timestamp: timestamp,
+        icon: icon
+      },
+      to: '/topics/TNTT',
+      time_to_live: 30
+    }
+    return payload
+  }
+
   componentDidMount = () => {
     this._isMounted = true;
     this.updateWindowDimensions();
     window.addEventListener('resize', this.updateWindowDimensions.bind(this));
-    return this.getClass();
+    return this.getClass() &&
+    axios.get(`/backend/user/get-user/${localStorage.getItem('username')}`)
+      .then(res => {
+        if (this._isMounted) {
+          this.setState({
+            currentUserPosition: res.data.data.type
+          })
+        }
+      });
   }
 
   componentDidUpdate = (prevProps) => {
@@ -153,7 +178,7 @@ class UserForm extends React.Component {
     }
   }
 
-  componentWillUnmount = () =>{
+  componentWillUnmount = () => {
     window.removeEventListener("resize", this.updateWindowDimensions.bind(this));
     this._isMounted = false;
   }
@@ -187,12 +212,25 @@ class UserForm extends React.Component {
       'class': this.state.class,
     };
 
+    const firebaseNotification = this.buildFireBaseNotification(
+      'Huynh Trưởng/GLV',
+      `${localStorage.getItem('username')} vừa tạo tài khoản ${newUser.username}`,
+      moment().format('DD/MM/YYYY hh:mm:ss'),
+      'User'
+    )
+
     return axios.post('/backend/user/register', newUser)
       .then(res => {
         if (res.data.code === 'I001') {
           this.props.status('successfully')
         }
         this.handleCloseFloatingForm();
+        return axios.post(firebaseKey.endpoint, firebaseNotification, {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `key=${firebaseKey.serverKey}`
+          }
+        }).then(res => { })
       })
       .catch(err => {
         this.props.status('failed')
@@ -208,6 +246,13 @@ class UserForm extends React.Component {
       }
     }
 
+    const firebaseNotification = this.buildFireBaseNotification(
+      'Huynh Trưởng/GLV',
+      `${localStorage.getItem('username')} vừa cập nhật lớp/chức danh cho tài khoản ${updateUser.username}`,
+      moment().format('DD/MM/YYYY hh:mm:ss'),
+      'Edit'
+    )
+
     return axios
       .post('/backend/user/update', updateUser)
       .then(res => {
@@ -215,6 +260,12 @@ class UserForm extends React.Component {
           this.props.status('successfully')
         }
         this.handleCloseFloatingForm();
+        return axios.post(firebaseKey.endpoint, firebaseNotification, {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `key=${firebaseKey.serverKey}`
+          }
+        }).then(res => { })
       })
       .catch(err => {
         this.props.status('failed')
@@ -273,7 +324,7 @@ class UserForm extends React.Component {
           Thông tin tài khoản
         </Typography>
         <Grid container spacing={2} style={{ margin: 0, width: '100%' }}>
-          <Grid item xs={false} md={3} lg={3} style={(this.state.windowWidth <= 500)? {display: 'none'}: {}}>
+          <Grid item xs={false} md={3} lg={3} style={(this.state.windowWidth <= 500) ? { display: 'none' } : {}}>
             <div align='center'>
               <Avatar alt={this.state.username} src={this.state.userAvatar} style={{ width: '10em', height: '10em' }} />
             </div>
@@ -402,6 +453,7 @@ class UserForm extends React.Component {
                 <Grid item xs={12} sm={3}>
                   <TextField
                     select
+                    disabled={this.state.currentUserPosition !== 'Admin'? true : false}
                     label="Chức vụ"
                     value={this.state.type}
                     className={classes.customInput}
@@ -423,6 +475,7 @@ class UserForm extends React.Component {
                 <Grid item xs={12} sm={3}>
                   <TextField
                     select
+                    disabled={this.state.currentUserPosition !== 'Admin'? true : false}
                     label="Lớp"
                     value={this.state.class}
                     className={classes.customInput}
@@ -451,7 +504,8 @@ class UserForm extends React.Component {
               variant="contained"
               className={classes.primaryButton}
               size='small'
-              onClick={this.updateData}>
+              onClick={this.updateData}
+              disabled={this.state.currentUserPosition !== 'Admin'? true : false}>
               Cập nhật
             </Button>
             :

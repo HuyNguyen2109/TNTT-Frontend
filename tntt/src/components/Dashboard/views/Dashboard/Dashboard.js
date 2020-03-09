@@ -162,6 +162,8 @@ class Dashboard extends React.Component {
     super(props)
 
     this.state = {
+      currentUserPosition: '',
+      currentUserClass: '',
       firstname: '',
       lastname: '',
       fatherName: '',
@@ -215,6 +217,11 @@ class Dashboard extends React.Component {
           title: 'Điểm cả năm',
           field: 'finalScore'
         },
+        {
+          title: 'Ghi chú',
+          field: 'note',
+          cellStyle: { minWidth: 200, maxWidth: 200}
+        }
       ],
       isLoadingData: true,
       action: 'view',
@@ -263,7 +270,16 @@ class Dashboard extends React.Component {
     this._isMounted = true;
     this.updateWindowDimensions();
     window.addEventListener("resize", this.updateWindowDimensions.bind(this));
-    return this.getData("", this.state.tablePage, this.state.itemPerPage, null) && this.getNumberOfRecord("") && this.getClasses();
+    return this.getData("", this.state.tablePage, this.state.itemPerPage, null) && this.getNumberOfRecord("") && this.getClasses() &&
+      axios.get(`/backend/user/get-user/${localStorage.getItem('username')}`)
+        .then(res => {
+          if (this._isMounted) {
+            this.setState({
+              currentUserPosition: res.data.data.type,
+              currentUserClass: res.data.data.class,
+            })
+          }
+        });
   }
 
   componentWillUnmount = () => {
@@ -428,8 +444,8 @@ class Dashboard extends React.Component {
 
     const firebaseNotification = this.buildFireBaseNotification(
       'Thiếu Nhi',
-      (childrenNames.length < 2)? 
-        `${localStorage.getItem('username')} vừa xóa em ${childrenNames[0]} ra khỏi danh sách` : 
+      (childrenNames.length < 2) ?
+        `${localStorage.getItem('username')} vừa xóa em ${childrenNames[0]} ra khỏi danh sách` :
         `${localStorage.getItem('username')} vừa xóa ${childrenNames.length} em ra khỏi danh sách`,
       moment().format('DD/MM/YYYY hh:mm:ss'),
       'Delete'
@@ -470,7 +486,7 @@ class Dashboard extends React.Component {
   }
 
   lockSemesterScores = (scoreType) => {
-    this.setState({isOpenLockScoreMenu: null})
+    this.setState({ isOpenLockScoreMenu: null })
     const typeInfo = {
       'type': scoreType,
       'class': this.state.selectedClass
@@ -510,7 +526,7 @@ class Dashboard extends React.Component {
   }
 
   resetScores = () => {
-    this.setState({isOpenLockScoreMenu: null})
+    this.setState({ isOpenLockScoreMenu: null })
     return axios
       .delete(`/backend/children/reset-scores/${this.state.selectedClass}`, {
         params: {
@@ -559,7 +575,7 @@ class Dashboard extends React.Component {
     if (callback === 'successfully') {
       this.setState({
         snackerBarStatus: true,
-        snackbarMessage: "Thay đổi thành công",
+        snackbarMessage: "Cập nhật/thêm mới thành công",
         snackbarType: "success",
       })
       this.reloadData();
@@ -567,7 +583,7 @@ class Dashboard extends React.Component {
     else {
       this.setState({
         snackerBarStatus: true,
-        snackbarMessage: "Đã có lỗi xảy ra trong quá trình thay đổi",
+        snackbarMessage: "Đã có lỗi xảy ra trong quá trình cập nhật/thêm mới",
         snackbarType: "error",
       })
     }
@@ -638,7 +654,10 @@ class Dashboard extends React.Component {
     this.setState({ isOpenActionMenu: null });
     axios
       .get('/backend/children/export', {
-        responseType: 'blob'
+        responseType: 'blob', 
+        params: {
+          classID: this.state.selectedClass
+        }
       })
       .then(result => {
         let data = new Blob([result.data], { type: result.headers['content-type'] });
@@ -689,6 +708,7 @@ class Dashboard extends React.Component {
     this.setState({
       isLoadingData: true,
       tablePage: 0,
+      currentTeachers: [],
     })
     this.getData(e.target.value, 0, this.state.itemPerPage, null);
     this.getNumberOfRecord(e.target.value)
@@ -745,7 +765,7 @@ class Dashboard extends React.Component {
               </div>
               <div style={{ flex: 1 }} />
               <Tooltip title='Mở rộng'>
-                <IconButton onClick={(e) => this.setState({ isOpenActionMenu: e.target })}>
+                <IconButton onClick={(e) => this.setState({ isOpenActionMenu: e.target })} component='div'>
                   <MoreVert style={{ color: 'white' }} />
                 </IconButton>
               </Tooltip>
@@ -784,7 +804,9 @@ class Dashboard extends React.Component {
                       </Grid>
                     </Grid>
                     <Tooltip title='Chọn toàn bộ trang này'>
-                      <IconButton onClick={this.handleSelectAll}>
+                      <IconButton onClick={this.handleSelectAll}
+                      disabled={(this.state.currentClass !== 'Chung' && this.state.selectedClass === this.state.currentUserClass) ? false : true}
+                      component='div'>
                         <PlaylistAddCheck />
                       </IconButton>
                     </Tooltip>
@@ -833,7 +855,7 @@ class Dashboard extends React.Component {
                   pageSize: this.state.itemPerPage,
                   paging: true,
                   sorting: false,
-                  selection: true,
+                  selection: (this.state.currentClass !== 'Chung' && this.state.selectedClass === this.state.currentUserClass) ? true : false,
                   showSelectAllCheckbox: false,
                   showTextRowsSelected: false,
                   headerStyle: {
@@ -848,7 +870,6 @@ class Dashboard extends React.Component {
                   search: true,
                   emptyRowsWhenPaging: false,
                   debounceInterval: 1500,
-                  actionsColumnIndex: -1,
                   rowStyle: rowData => {
                     if (this.state.selectedRows.indexOf(rowData) !== -1 || rowData.tableData.checked === true) {
                       return { backgroundColor: '#e1bee7' }
@@ -870,6 +891,7 @@ class Dashboard extends React.Component {
                   {
                     icon: () => { return <Edit style={{ color: '#9c27b0' }} /> },
                     tooltip: 'Chỉnh sửa',
+                    hidden: (this.state.currentClass !== 'Chung' && this.state.selectedClass === this.state.currentUserClass) ? false : true,
                     position: 'row',
                     onClick: (e, rowData) => this.handleRowSelection(e, rowData)
                   }
@@ -949,12 +971,14 @@ class Dashboard extends React.Component {
                         <IconButton
                           onClick={this.multipleDelete}
                           style={{ marginLeft: 'auto', color: 'red' }}
+                          component='div'
                         ><Delete /></IconButton>
                       </Tooltip>
                       <Tooltip title='Hủy'>
                         <IconButton
                           onClick={this.handleCancelAll}
                           style={{ color: `${colors.purple[300]}` }}
+                          component='div'
                         ><Clear /></IconButton>
                       </Tooltip>
                     </CardActions>
@@ -969,7 +993,8 @@ class Dashboard extends React.Component {
             type={this.state.floatingFormType}
             selectedData={this.state.selectedRecord}
             updateStatus={this.handleStatusFromFloatingForm}
-            resetSelectedRow={this.handleResetSelectedRow} />
+            resetSelectedRow={this.handleResetSelectedRow}
+            userPosition={this.state.currentUserPosition} />
         </Paper>
         <SnackDialog
           variant={this.state.snackbarType}
@@ -980,7 +1005,7 @@ class Dashboard extends React.Component {
           type={this.state.floatingFormType}
         />
         <Zoom
-          in={(this.state.currentClass !== 'Chung' && this.state.selectedClass === localStorage.getItem('currentClass')) ? true : false}
+          in={(this.state.currentClass !== 'Chung' && this.state.selectedClass === this.state.currentUserClass) ? true : false}
           style={{
             transitionDelay: `0ms`,
           }}

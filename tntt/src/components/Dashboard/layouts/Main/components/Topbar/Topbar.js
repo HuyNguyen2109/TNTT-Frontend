@@ -3,7 +3,7 @@ import clsx from 'clsx';
 import { AppBar, Toolbar, Hidden, IconButton, Tooltip, Typography, Popover, Badge, Grid, Divider, colors } from '@material-ui/core';
 import MenuIcon from '@material-ui/icons/Menu';
 import {
-  PowerSettingsNew, Facebook, Notifications, Description, InfoOutlined, Backspace, Edit, Delete, Class, EventAvailable, AttachMoney, Face
+  PowerSettingsNew, Facebook, Notifications, Description, InfoOutlined, Backspace, Edit, Delete, Class, EventAvailable, AttachMoney, Face, People
 } from '@material-ui/icons';
 import { withStyles, lighten } from '@material-ui/core/styles';
 import Promise from 'bluebird';
@@ -144,13 +144,15 @@ class Topbar extends React.Component {
       case 'Description':
         return (<Description style={{ color: `${colors.pink[300]}` }} fontSize='large' />)
       case 'Class':
-        return (<Class style={{ color: `${colors.blue[300]}`}} fontSize='large' />)
+        return (<Class style={{ color: `${colors.blue[300]}` }} fontSize='large' />)
       case 'Event':
-        return (<EventAvailable style={{ color: `${colors.purple[300]}`}} fontSize='large' />)
+        return (<EventAvailable style={{ color: `${colors.purple[300]}` }} fontSize='large' />)
       case 'Fund':
-        return (<AttachMoney style={{ color: `${colors.green[300]}`}} fontSize='large' />)
+        return (<AttachMoney style={{ color: `${colors.green[300]}` }} fontSize='large' />)
+      case 'User':
+        return (<People style={{ color: `${colors.teal[300]}` }} fontSize='large' />)
       case 'InternalFund':
-        return (<AttachMoney style={{ color: `${colors.orange[300]}`}} fontSize='large' />)
+        return (<AttachMoney style={{ color: `${colors.orange[300]}` }} fontSize='large' />)
       case 'Children':
         return (<Face style={{ color: `${colors.purple[300]}` }} fontSize='large' />)
       case 'Edit':

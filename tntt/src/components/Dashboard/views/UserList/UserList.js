@@ -10,6 +10,8 @@ import {
   Card, CardHeader, CardContent, CardActions, Avatar,
 } from '@material-ui/core';
 
+import firebaseKey from '../../common/firebase.json';
+
 import {
   Cached,
   Delete,
@@ -109,6 +111,7 @@ class UserList extends React.Component {
     this.state = {
       windowHeight: 0,
       windowWidth: 0,
+      currentUserPosition: '',
       //for SnackDialog
       snackerBarStatus: false,
       snackbarMessage: "",
@@ -228,10 +231,18 @@ class UserList extends React.Component {
 
   componentDidMount = () => {
     this._isMounted = true;
-    
+
     this.updateWindowDimensions();
     window.addEventListener('resize', this.updateWindowDimensions.bind(this));
-    return this.getUsers()
+    return this.getUsers('') &&
+      axios.get(`/backend/user/get-user/${localStorage.getItem('username')}`)
+        .then(res => {
+          if (this._isMounted) {
+            this.setState({
+              currentUserPosition: res.data.data.type
+            })
+          }
+        })
   }
 
   componentWillUnmount = () => {
@@ -248,7 +259,21 @@ class UserList extends React.Component {
     }
   }
 
-  getUsers = () => {
+  buildFireBaseNotification = (title, content, timestamp, icon) => {
+    let payload = {
+      data: {
+        title: title,
+        body: content,
+        timestamp: timestamp,
+        icon: icon
+      },
+      to: '/topics/TNTT',
+      time_to_live: 30
+    }
+    return payload
+  }
+
+  getUsers = (type) => {
     let users = [];
     let requests = [];
     return axios
@@ -261,6 +286,7 @@ class UserList extends React.Component {
           user.holy_birthday = (user.holy_birthday === '') ? '' : moment(user.holy_birthday).format('DD/MM/YYYY');
         })
         users = users.filter(user => user.username !== currentUser);
+        if (type !== '') users = users.filter(user => user.birthday.split('/')[1] === type || user.holy_birthday.split('/')[1] === type);
         requests = users.map((user, i, users) => {
           return axios.get(`/backend/user/avatar/by-name/${user.username}`, {
             responseType: 'blob'
@@ -294,7 +320,7 @@ class UserList extends React.Component {
     this.setState({
       isLoadingData: true
     })
-    return this.getUsers();
+    return this.getUsers('');
   }
 
   multipleDelete = () => {
@@ -302,6 +328,15 @@ class UserList extends React.Component {
     this.state.selectedRows.forEach(row => {
       usernames.push(row.username);
     });
+
+    const firebaseNotification = this.buildFireBaseNotification(
+      'Huynh Trưởng/GLV',
+      (usernames.length < 2) ?
+        `${localStorage.getItem('username')} vừa xóa tài khoản ${usernames[0]} ra khỏi danh sách` :
+        `${localStorage.getItem('username')} vừa xóa ${usernames.length} tài khoản ra khỏi danh sách`,
+      moment().format('DD/MM/YYYY hh:mm:ss'),
+      'Delete'
+    )
 
     return axios
       .delete('/backend/user/delete/by-usernames', {
@@ -313,13 +348,17 @@ class UserList extends React.Component {
         if (res.data.code === "I001") {
           this.reloadData();
           this.setState({
-            selectedRows: []
-          })
-          this.setState({
+            selectedRows: [],
             snackbarType: 'success',
             snackerBarStatus: true,
             snackbarMessage: 'Xóa thành công'
           })
+          return axios.post(firebaseKey.endpoint, firebaseNotification, {
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `key=${firebaseKey.serverKey}`
+            }
+          }).then(res => { })
         }
       })
       .catch(err => {
@@ -387,13 +426,12 @@ class UserList extends React.Component {
   }
 
   handleRowSelection = (e, rowData) => {
-    if (localStorage.getItem('type') === 'Admin') {
-      this.setState({
-        isOpeningUserFrom: true,
-        typeOfForm: 'edit',
-        selectedRecord: rowData
-      })
-    }
+    this.setState({
+      isOpeningUserFrom: true,
+      typeOfForm: 'edit',
+      selectedRecord: rowData,
+      selectedRows: []
+    })
   }
 
   handleResetSelectedRow = (callback) => {
@@ -410,25 +448,10 @@ class UserList extends React.Component {
       isLoadingData: true
     })
     if (e.target.value !== '') {
-      return axios
-        .get('/backend/user/all')
-        .then(result => {
-          let users = result.data.data;
-          const currentUser = localStorage.getItem('username');
-          users.forEach(user => {
-            user.birthday = (user.birthday === '') ? '' : moment(user.birthday).format('DD/MM/YYYY');
-            user.holy_birthday = (user.holy_birthday === '') ? '' : moment(user.holy_birthday).format('DD/MM/YYYY');
-          })
-          users = users.filter(user => user.username !== currentUser);
-          users = users.filter(user => user.birthday.split('/')[1] === e.target.value || user.holy_birthday.split('/')[1] === e.target.value);
-          this.setState({
-            usersData: users,
-            isLoadingData: false
-          })
-        })
+      this.getUsers(e.target.value)
     }
     else {
-      return this.getUsers();
+      return this.getUsers('');
     }
   }
 
@@ -501,7 +524,7 @@ class UserList extends React.Component {
                 options={{
                   paging: false,
                   sorting: false,
-                  selection: true,
+                  selection: this.state.currentUserPosition === 'Admin' ? true : false,
                   showSelectAllCheckbox: false,
                   showTextRowsSelected: false,
                   headerStyle: {
@@ -556,7 +579,7 @@ class UserList extends React.Component {
                     tooltip: 'Chỉnh sửa',
                     position: 'row',
                     onClick: (e, rowData) => this.handleRowSelection(e, rowData),
-                    hidden: (localStorage.getItem('type') === 'Admin') ? false : true
+                    hidden: (this.state.currentUserPosition === 'Guest') ? true : false
                   },
                 ]}
               />
@@ -584,7 +607,7 @@ class UserList extends React.Component {
                     isOpenActionMenu: null,
                   })
                 }}
-                disabled={(localStorage.getItem('type') === 'Admin') ? false : true}
+                disabled={(this.state.currentUserPosition === 'Admin') ? false : true}
               >
                 <ListItemIcon><PersonAdd /></ListItemIcon>
                 <ListItemText primary='Tạo tài khoản mới' />
@@ -621,7 +644,7 @@ class UserList extends React.Component {
                     <CardContent className={classes.chipsContainer}>
                       <Grid container spacing={1} style={{ margin: 0, width: '100%' }}>
                         {this.state.selectedRows.map(row => (
-                          <Grid item xs={12} sm={6} md={4} lg={3} key={row.name}>
+                          <Grid item xs={12} sm={6} md={4} lg={3} key={row.fullname}>
                             <MuiThemeProvider theme={colorChips}>
                               <Chip
                                 icon={<Person />}

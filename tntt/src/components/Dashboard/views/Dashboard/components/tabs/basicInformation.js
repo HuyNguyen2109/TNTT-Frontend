@@ -70,6 +70,7 @@ class BasicInformation extends React.Component {
       newDayofEucharist: moment("1990-01-01").format(),
       newDayofConfirmation: moment("1990-01-01").format(),
       defaultDate: moment("1990-01-01").format(),
+      newNote: '',
 
       dioceses: ['Giuse', 'Nữ Vương Mân Côi', 'Anna', 'Phêrô'],
       genders: ['Nam', 'Nữ'],
@@ -92,7 +93,7 @@ class BasicInformation extends React.Component {
       const dayOfBaptism = `${this.props.selectedData.day_of_baptism.split('/')[2]}-${this.props.selectedData.day_of_baptism.split('/')[1]}-${this.props.selectedData.day_of_baptism.split('/')[0]}`;
       const dayOfConfirmation = `${this.props.selectedData.day_of_confirmation.split('/')[2]}-${this.props.selectedData.day_of_confirmation.split('/')[1]}-${this.props.selectedData.day_of_confirmation.split('/')[0]}`;
       const dayOfEucharist = `${this.props.selectedData.day_of_eucharist.split('/')[2]}-${this.props.selectedData.day_of_eucharist.split('/')[1]}-${this.props.selectedData.day_of_eucharist.split('/')[0]}`;
-      if(this._isMounted) {
+      if (this._isMounted) {
         this.setState({
           newName: this.props.selectedData.name,
           newFatherName: this.props.selectedData.father_name,
@@ -105,7 +106,8 @@ class BasicInformation extends React.Component {
           newGender: (this.props.selectedData.male === 'x') ? "Nam" : "Nữ",
           newContact: this.props.selectedData.contact,
           newClass: this.props.selectedData.class,
-          newDiocese: this.props.selectedData.diocese
+          newDiocese: this.props.selectedData.diocese,
+          newNote: this.props.selectedData.note,
         });
       }
     }
@@ -152,7 +154,8 @@ class BasicInformation extends React.Component {
       'day_of_eucharist': (state.newDayofEucharist === state.defaultDate) ? '' : moment(state.newDayofEucharist).format('YYYY-MM-DD'),
       'day_of_confirmation': (state.newDayofConfirmation === state.defaultDate) ? '' : moment(state.newDayofConfirmation).format('YYYY-MM-DD'),
       'address': state.newAddress,
-      'contact': state.newContact
+      'contact': state.newContact,
+      'note': state.newNote,
     }
     const firebaseNotification = this.buildFireBaseNotification(
       'Thiếu Nhi',
@@ -168,7 +171,7 @@ class BasicInformation extends React.Component {
         }
       })
       .then(result => {
-        if(result.data.code === 'I001') {
+        if (result.data.code === 'I001') {
           this.props.updateStatus('successfully')
         }
         this.handleCloseFloatingForm();
@@ -202,7 +205,8 @@ class BasicInformation extends React.Component {
       'address': state.newAddress,
       'contact': state.newContact,
       'grades': [],
-      'absents': []
+      'absents': [],
+      'note': '',
     }
     const firebaseNotification = this.buildFireBaseNotification(
       'Thiếu Nhi',
@@ -218,7 +222,7 @@ class BasicInformation extends React.Component {
         }
       })
       .then(result => {
-        if(result.data.code === 'I001') {
+        if (result.data.code === 'I001') {
           this.props.updateStatus('successfully')
         }
         this.handleCloseFloatingForm();
@@ -249,6 +253,7 @@ class BasicInformation extends React.Component {
       newDayOfBaptism: moment("1990-01-01").format(),
       newDayofEucharist: moment("1990-01-01").format(),
       newDayofConfirmation: moment("1990-01-01").format(),
+      newNote: '',
     })
     this.props.callback(false);
     this.props.resetSelectedRow('');
@@ -268,6 +273,7 @@ class BasicInformation extends React.Component {
       newDayOfBaptism: moment("1990-01-01").format(),
       newDayofEucharist: moment("1990-01-01").format(),
       newDayofConfirmation: moment("1990-01-01").format(),
+      newNote: '',
     })
   }
 
@@ -300,7 +306,7 @@ class BasicInformation extends React.Component {
             <TextField
               required
               className={classes.customInput}
-              disabled={(this.props.type === 'edit')? true : false}
+              disabled={(this.props.type === 'edit') ? true : false}
               autoFocus
               label="Tên Thiếu nhi"
               name="name"
@@ -519,6 +525,17 @@ class BasicInformation extends React.Component {
               ))}
             </TextField>
           </Grid>
+          <Grid item xs={12}>
+            <TextField
+              label="Ghi chú"
+              name="note"
+              id="note"
+              className={classes.customInput}
+              value={this.state.newNote}
+              onChange={e => this.handleFormChange(e, "newNote")}
+              fullWidth
+            />
+          </Grid>
         </Grid>
         <Grid container alignItems="flex-start" justify="flex-end" direction="row" spacing={2}>
           {(this.props.type === "edit") ?
@@ -534,7 +551,7 @@ class BasicInformation extends React.Component {
               <Button
                 variant="contained"
                 size='small'
-                disabled={(this.state.newName === '' || this.state.newFatherName === '' || this.state.newMotherName === '')? true : false}
+                disabled={(this.state.newName === '' || this.state.newFatherName === '' || this.state.newMotherName === '') ? true : false}
                 className={classes.primaryButton}
                 onClick={this.createNewChildren}
               >Tạo mới</Button>

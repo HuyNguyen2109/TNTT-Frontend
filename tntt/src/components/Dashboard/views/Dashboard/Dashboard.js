@@ -19,9 +19,8 @@ import {
   LooksOne,
   LooksTwo,
   MoreVert,
-  Edit,
   ReportProblemRounded,
-  Person
+  Person,
 } from '@material-ui/icons/';
 import {
   Paper,
@@ -42,11 +41,11 @@ import {
 } from '@material-ui/core';
 import MaterialTable from 'material-table';
 
-import FloatingForm from './components/floatingForm';
 import tableIcons from './components/tableIcon';
 import SnackDialog from '../../../SnackerBar';
 import CustomHeader from '../../../Dashboard/components/CustomHeader/CustomHeader';
 import firebaseKey from '../../common/firebase.json';
+import Detail from './components/detail';
 
 const useStyles = theme => ({
   '@global': {
@@ -198,14 +197,6 @@ class Dashboard extends React.Component {
           cellStyle: { minWidth: 200 }
         },
         {
-          title: 'Giáo khu',
-          field: 'diocese'
-        },
-        {
-          title: 'Ngày sinh',
-          field: 'birthday'
-        },
-        {
           title: 'Điểm HKI',
           field: 'scoreI',
         },
@@ -220,10 +211,11 @@ class Dashboard extends React.Component {
         {
           title: 'Ghi chú',
           field: 'note',
-          cellStyle: { minWidth: 200, maxWidth: 200}
+          cellStyle: { minWidth: 200, maxWidth: 200 }
         }
       ],
       isLoadingData: true,
+      isDelete: false,
       action: 'view',
 
       selectedRows: [],
@@ -270,7 +262,7 @@ class Dashboard extends React.Component {
     this._isMounted = true;
     this.updateWindowDimensions();
     window.addEventListener("resize", this.updateWindowDimensions.bind(this));
-    return this.getData("", this.state.tablePage, this.state.itemPerPage, null) && this.getNumberOfRecord("") && this.getClasses() &&
+    return this.getData("", this.state.tablePage, this.state.itemPerPage, null) && this.getClasses() &&
       axios.get(`/backend/user/get-user/${localStorage.getItem('username')}`)
         .then(res => {
           if (this._isMounted) {
@@ -391,25 +383,46 @@ class Dashboard extends React.Component {
 
   getData = (classID, page, itemPerPage, search) => {
     const className = classID;
-    return axios.get(`/backend/children/all/${page}`, {
-      params: {
-        itemPerPage: itemPerPage,
-        class: className,
-        search: search
-      }
-    })
+    return axios.all([
+      axios.get(`/backend/children/all/${page}`, {
+        params: {
+          itemPerPage: itemPerPage,
+          class: className,
+          search: search
+        }
+      }),
+      axios.get('/backend/children/count', {
+        params: {
+          condition: className
+        }
+      })
+    ])
       .then(result => {
         if (this._isMounted) {
-          let modifiedData = result.data.data;
-          modifiedData.forEach(row => {
-            row.birthday = (row.birthday === '' ? row.birthday : moment(row.birthday).format('DD/MM/YYYY'))
-            row.day_of_baptism = (row.day_of_baptism === '' ? row.day_of_baptism : moment(row.day_of_baptism).format('DD/MM/YYYY'))
-            row.day_of_eucharist = (row.day_of_eucharist === '' ? row.day_of_eucharist : moment(row.day_of_eucharist).format('DD/MM/YYYY'))
-            row.day_of_confirmation = (row.day_of_confirmation === '' ? row.day_of_confirmation : moment(row.day_of_confirmation).format('DD/MM/YYYY'));
+          let modifiedData = [];
+          result[0].data.data.forEach(data => {
+            modifiedData.push({
+              '_id': data._id,
+              'name': data.name,
+              'scoreI': data.scoreI,
+              'scoreII': data.scoreII,
+              'finalScore': data.finalScore,
+              'note': data.note
+            })
           })
           this.setState({
             records: modifiedData,
             isLoadingData: false,
+            numberOfRecord: search !== null? modifiedData.length : result[1].data.data,
+          })
+        }
+        if (className !== '') {
+          return axios.get(`/backend/user/get-user-by-class/${className}`).then(result => {
+            if (this._isMounted) {
+              this.setState({
+                currentTeachers: result.data.data
+              })
+            }
           })
         }
       })
@@ -433,7 +446,7 @@ class Dashboard extends React.Component {
       isOpenActionMenu: null
     });
 
-    return this.getData(this.state.selectedClass, 0, 10, null) && this.getNumberOfRecord(this.state.selectedClass);
+    return this.getData(this.state.selectedClass, 0, 10, null)
   }
 
   multipleDelete = () => {
@@ -465,7 +478,8 @@ class Dashboard extends React.Component {
             selectedRows: [],
             snackbarType: 'success',
             snackerBarStatus: true,
-            snackbarMessage: 'Xóa thành công'
+            snackbarMessage: 'Xóa thành công',
+            isDelete: false
           })
           return axios.post(firebaseKey.endpoint, firebaseNotification, {
             headers: {
@@ -548,7 +562,9 @@ class Dashboard extends React.Component {
       itemPerPage: size,
       isLoadingData: true
     })
-    return (this.state.action === 'search') ? this.getData(this.state.selectedClass, this.state.tablePage, size, this.state.search) : this.getData(this.state.selectedClass, this.state.tablePage, size);
+    return (this.state.action === 'search') ? 
+    this.getData(this.state.selectedClass, this.state.tablePage, size, this.state.search) : 
+    this.getData(this.state.selectedClass, this.state.tablePage, size, null);
   }
 
   handleChangePage = (page) => {
@@ -556,7 +572,9 @@ class Dashboard extends React.Component {
       tablePage: page,
       isLoadingData: true,
     })
-    return (this.state.action === 'search') ? this.getData(this.state.selectedClass, page, this.state.itemPerPage, this.state.search) : this.getData(this.state.selectedClass, page, this.state.itemPerPage);
+    return (this.state.action === 'search') ? 
+    this.getData(this.state.selectedClass, page, this.state.itemPerPage, this.state.search) : 
+    this.getData(this.state.selectedClass, page, this.state.itemPerPage, null);
   }
 
   handleCallBackFloatingform = (callback) => {
@@ -616,37 +634,13 @@ class Dashboard extends React.Component {
       action: 'search'
     })
     if (text !== '') {
-      const className = this.state.selectedClass;
-      return axios.get(`/backend/children/all/${this.state.tablePage}`, {
-        params: {
-          itemPerPage: this.state.tablePage,
-          class: className,
-          search: text
-        }
-      })
-        .then(result => {
-          let modifiedData = result.data.data;
-          modifiedData.forEach(row => {
-            row.birthday = (row.birthday === '' ? row.birthday : moment(row.birthday).format('DD/MM/YYYY'))
-            row.day_of_baptism = (row.day_of_baptism === '' ? row.day_of_baptism : moment(row.day_of_baptism).format('DD/MM/YYYY'))
-            row.day_of_eucharist = (row.day_of_eucharist === '' ? row.day_of_eucharist : moment(row.day_of_eucharist).format('DD/MM/YYYY'))
-            row.day_of_confirmation = (row.day_of_confirmation === '' ? row.day_of_confirmation : moment(row.day_of_confirmation).format('DD/MM/YYYY'));
-          })
-          this.setState({
-            records: modifiedData,
-            isLoadingData: false,
-            numberOfRecord: modifiedData.length
-          })
-        })
-        .catch(err => {
-          console.log(err);
-        })
+      this.getData(this.state.selectedClass, this.state.tablePage, this.state.itemPerPage, text)
     }
     else {
       this.setState({
         action: 'view'
       })
-      return this.getData(this.state.selectedClass, 0, this.state.itemPerPage) && this.getNumberOfRecord(this.state.selectedClass)
+      return this.getData(this.state.selectedClass, 0, this.state.itemPerPage, null)
     }
   }
 
@@ -654,7 +648,7 @@ class Dashboard extends React.Component {
     this.setState({ isOpenActionMenu: null });
     axios
       .get('/backend/children/export', {
-        responseType: 'blob', 
+        responseType: 'blob',
         params: {
           classID: this.state.selectedClass
         }
@@ -711,7 +705,6 @@ class Dashboard extends React.Component {
       currentTeachers: [],
     })
     this.getData(e.target.value, 0, this.state.itemPerPage, null);
-    this.getNumberOfRecord(e.target.value)
     let className = (e.target.value === "") ? "all" : e.target.value;
     return axios
       .get(`/backend/class/by-id/${className}`)
@@ -764,6 +757,13 @@ class Dashboard extends React.Component {
                 </Toolbar>
               </div>
               <div style={{ flex: 1 }} />
+              <Tooltip title='Xóa'>
+                <IconButton
+                  onClick={() => { this.setState({ isDelete: !this.state.isDelete }) }}
+                  disabled={(this.state.currentClass !== 'Chung' && this.state.selectedClass === this.state.currentUserClass) ? false : true}
+                  component='div'
+                ><Delete style={{ color: 'white' }} /></IconButton>
+              </Tooltip>
               <Tooltip title='Mở rộng'>
                 <IconButton onClick={(e) => this.setState({ isOpenActionMenu: e.target })} component='div'>
                   <MoreVert style={{ color: 'white' }} />
@@ -805,8 +805,8 @@ class Dashboard extends React.Component {
                     </Grid>
                     <Tooltip title='Chọn toàn bộ trang này'>
                       <IconButton onClick={this.handleSelectAll}
-                      disabled={(this.state.currentClass !== 'Chung' && this.state.selectedClass === this.state.currentUserClass) ? false : true}
-                      component='div'>
+                        disabled={(this.state.currentClass !== 'Chung' && this.state.selectedClass === this.state.currentUserClass && this.state.isDelete) ? false : true}
+                        component='div'>
                         <PlaylistAddCheck />
                       </IconButton>
                     </Tooltip>
@@ -818,6 +818,7 @@ class Dashboard extends React.Component {
                 onChangePage={(page) => this.handleChangePage(page)}
                 onChangeRowsPerPage={pageSize => this.handleChangeRowsPerPage(pageSize)}
                 onSearchChange={(text) => this.handleSearchChange(text)}
+                onRowClick={(e, rowData) => this.handleRowSelection(e, rowData)}
                 totalCount={this.state.numberOfRecord}
                 isLoading={this.state.isLoadingData}
                 page={this.state.tablePage}
@@ -855,7 +856,7 @@ class Dashboard extends React.Component {
                   pageSize: this.state.itemPerPage,
                   paging: true,
                   sorting: false,
-                  selection: (this.state.currentClass !== 'Chung' && this.state.selectedClass === this.state.currentUserClass) ? true : false,
+                  selection: (this.state.currentClass !== 'Chung' && this.state.selectedClass === this.state.currentUserClass && this.state.isDelete) ? true : false,
                   showSelectAllCheckbox: false,
                   showTextRowsSelected: false,
                   headerStyle: {
@@ -869,7 +870,7 @@ class Dashboard extends React.Component {
                   minBodyHeight: this.state.windowsHeight - 417,
                   search: true,
                   emptyRowsWhenPaging: false,
-                  debounceInterval: 1500,
+                  debounceInterval: 500,
                   rowStyle: rowData => {
                     if (this.state.selectedRows.indexOf(rowData) !== -1 || rowData.tableData.checked === true) {
                       return { backgroundColor: '#e1bee7' }
@@ -887,15 +888,6 @@ class Dashboard extends React.Component {
                 components={{
                   Container: props => <Paper {...props} elevation={0} />
                 }}
-                actions={[
-                  {
-                    icon: () => { return <Edit style={{ color: '#9c27b0' }} /> },
-                    tooltip: 'Chỉnh sửa',
-                    hidden: (this.state.currentClass !== 'Chung' && this.state.selectedClass === this.state.currentUserClass) ? false : true,
-                    position: 'row',
-                    onClick: (e, rowData) => this.handleRowSelection(e, rowData)
-                  }
-                ]}
               />
             </MuiThemeProvider>
             <Menu
@@ -987,14 +979,14 @@ class Dashboard extends React.Component {
               </Grid>
             </div>
           </Collapse>
-          <FloatingForm
+          <Detail
             open={this.state.isExpansionButton}
             callback={this.handleCallBackFloatingform}
             type={this.state.floatingFormType}
             selectedData={this.state.selectedRecord}
             updateStatus={this.handleStatusFromFloatingForm}
-            resetSelectedRow={this.handleResetSelectedRow}
-            userPosition={this.state.currentUserPosition} />
+            resetSelectedRow={this.handleResetSelectedRow} 
+            userClass={this.state.currentUserClass}/>
         </Paper>
         <SnackDialog
           variant={this.state.snackbarType}

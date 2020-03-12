@@ -2177,7 +2177,7 @@ class General extends React.Component {
                                   (
                                     <InputAdornment posision='end'>
                                       <Tooltip title='Xác nhận'>
-                                        <IconButton onClick={this.renameDocument}>
+                                        <IconButton onClick={this.renameDocument} component='div'>
                                           <Check style={{ color: 'green' }} />
                                         </IconButton>
                                       </Tooltip>
@@ -2262,7 +2262,8 @@ class General extends React.Component {
                             (
                               <Tooltip title='Đổi tên'>
                                 <IconButton onClick={() => this.setState({ isRename: true, oldDocumentName: this.state.documentName })}
-                                  disabled={this.state.documentUser !== localStorage.getItem('username')? true : false}>
+                                  disabled={this.state.documentUser !== localStorage.getItem('username')? true : false}
+                                  component='div'>
                                   <Edit style={{ color: '#e91e63' }} />
                                 </IconButton>
                               </Tooltip>
@@ -2358,7 +2359,8 @@ class General extends React.Component {
                                   })
                                 })
                             }}
-                            disabled={this.state.documentUser !== localStorage.getItem('username')? true : false}>
+                            disabled={this.state.documentUser !== localStorage.getItem('username')? true : false}
+                            component='div'>
                               <Delete style={{ color: 'red' }} />
                             </IconButton>
                           </Tooltip>
